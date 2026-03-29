@@ -3,7 +3,7 @@ local Config = {
     AutoSkillCheck = {
         Activate = true, -- auto skillcheck
         Ratio = "Perfect", -- perfect hit
-        Delay = 0.0, -- delay before hit
+        Delay = 0.0, -- delay before hit (0 means instant)
     },
     Esp = {
         Activate = true, -- main esp toggle
@@ -107,20 +107,23 @@ local function normalizeAngle(angle)
     return angle < 0 and angle + 360 or angle
 end
 
--- fast distance
+-- fast distance with nil safeguard
 local function GetDistance(v1, v2)
+    if not v1 or not v2 then return 99999 end
     local dx, dy, dz = v1.X - v2.X, v1.Y - v2.Y, v1.Z - v2.Z
     return math_sqrt(dx*dx + dy*dy + dz*dz)
 end
 
--- blur fix
+-- blur fix with nil safeguard
 local function roundVec2(v)
+    if not v then return Vector2_new(0, 0) end
     return Vector2_new(math_floor(v.X + 0.5), math_floor(v.Y + 0.5))
 end
 
 local BoxEdges = {{1,2}, {3,4}, {1,3}, {2,4}, {5,6}, {7,8}, {5,7}, {6,8}, {1,5}, {2,6}, {3,7}, {4,8}}
 
 local function GetCorners3D(part, pos)
+    if not pos then return {} end
     local sx, sy, sz = part.Size.X/2, part.Size.Y/2, part.Size.Z/2
     local m = MemoryManager.GetRotationMatrix(part)
     local r = m and Vector3_new(m[0], m[3], m[6]) * sx or Vector3_new(sx, 0, 0)
@@ -231,6 +234,9 @@ local function RenderPlayers()
         
         if hrp then
             local pos = hrp.Position
+            -- fatal math crash guard
+            if not pos then continue end 
+            
             local dist = GetDistance(pos, camPos)
             
             local cache = PlayerDrawings[plrName]
@@ -268,7 +274,7 @@ local function RenderPlayers()
             local espCol = isKiller and Config.Esp.KillerColor or Config.Esp.SurvivorColor
 
             -- name esp
-            if nameTog and nOn then
+            if nameTog and nOn and namePos then
                 cache.Name.Position = roundVec2(namePos)
                 cache.Name.Text = plrName
                 cache.Name.Color = espCol
@@ -291,8 +297,11 @@ local function RenderPlayers()
                     local offset3d = Vector3_new(mults.x * radius, -3, mults.z * radius)
                     local sc, on = WTS(pos + offset3d)
                     
-                    if not on then allOn = false end
-                    pts[j] = roundVec2(sc)
+                    if not on or not sc then 
+                        allOn = false 
+                    else
+                        pts[j] = roundVec2(sc)
+                    end
                 end
                 
                 if allOn then
@@ -325,7 +334,7 @@ local function RenderPlayers()
                         local tracerOrigin = pos + Vector3_new(0, -3, 0) + (lookVec * Config.Esp.CircleRadius)
                         local prevPos = tracerOrigin
                         local prevScreen, prevOn = WTS(prevPos)
-                        if prevOn then prevScreen = roundVec2(prevScreen) end
+                        if prevOn and prevScreen then prevScreen = roundVec2(prevScreen) end
                         
                         local c1 = Config.Esp.TracerColor
                         local c2 = Config.Esp.TracerColor2
@@ -336,10 +345,10 @@ local function RenderPlayers()
                             local t = j / segments
                             local current3d = tracerOrigin + (lookVec * (Config.Esp.TracerLength * t))
                             local currScreen, currOn = WTS(current3d)
-                            if currOn then currScreen = roundVec2(currScreen) end
+                            if currOn and currScreen then currScreen = roundVec2(currScreen) end
                             
                             local line = cache.LookLines[j]
-                            if currOn and prevOn then
+                            if currOn and prevOn and prevScreen and currScreen then
                                 line.From = prevScreen
                                 line.To = currScreen
                                 line.Color = Color3_new(c1.R + dr * t, c1.G + dg * t, c1.B + db * t)
@@ -407,6 +416,8 @@ local function UpdateGens()
     -- update live gens
     for part in pairs(currentGens) do
         local pos = part.Position
+        if not pos then continue end -- fatal math crash guard
+        
         local cache = GenCache[part]
         
         if not cache then
@@ -433,11 +444,13 @@ local function RenderGens()
     local camPos = cam and cam.Position or Vector3_new(0, 0, 0)
     
     for part, cache in pairs(GenCache) do
+        if not cache.CachedPos then continue end
+        
         local dist = GetDistance(cache.CachedPos, camPos)
         
         if Config.Esp.Activate and dist <= Config.Esp.MaxDistance then
             local cp, on = WTS(cache.CachedPos)
-            if on and Config.Esp.Text then
+            if on and cp and Config.Esp.Text then
                 cache.Text.Position = roundVec2(cp)
                 cache.Text.Color = Config.Esp.TextColor
                 cache.Text.Transparency = Config.Esp.TextOpacity
@@ -448,12 +461,15 @@ local function RenderGens()
                 cache.Text.Visible = false 
             end
             
-            if Config.Esp.Box3D then
+            if Config.Esp.Box3D and cache.Corners then
                 local pts, allOn = {}, true
                 for c=1,8 do 
                     local sc, o = WTS(cache.Corners[c]) 
-                    pts[c] = roundVec2(sc) 
-                    if not o then allOn = false end 
+                    if not o or not sc then 
+                        allOn = false 
+                    else
+                        pts[c] = roundVec2(sc) 
+                    end
                 end
                 
                 if allOn then
@@ -469,7 +485,9 @@ local function RenderGens()
             end
         else
             cache.Text.Visible = false
-            for l=1,12 do cache.Lines[l].Visible = false end
+            if cache.Lines then
+                for l=1,12 do cache.Lines[l].Visible = false end
+            end
         end
     end
 end
@@ -561,7 +579,7 @@ UILib:RegisterActivity(function()
     return "Skill Delay: " .. tostring(Config.AutoSkillCheck.Delay) .. "s"
 end)
 
-UILib:Notification("femboys hmu pls", 5)
+UILib:Notification("ai slop", 5)
 math.randomseed(os.time())
 
 -- main loop
