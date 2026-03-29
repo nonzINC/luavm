@@ -579,7 +579,7 @@ UILib:RegisterActivity(function()
     return "Skill Delay: " .. tostring(Config.AutoSkillCheck.Delay) .. "s"
 end)
 
-UILib:Notification("ai slop", 5)
+UILib:Notification("femboys hmu in dms", 5)
 math.randomseed(os.time())
 
 -- main loop
