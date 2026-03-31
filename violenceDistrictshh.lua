@@ -1,4 +1,7 @@
 -- config setup
+-- activate: ac kapa
+-- maxdistance: esp ve aimbot max calisma mesafesi
+-- textfont: yazi tipi, ui falan filan
 local Config = {
     AutoSkillCheck = {
         Activate = true, -- auto skillcheck
@@ -88,7 +91,12 @@ local keyrelease = keyrelease
 local mem_read = memory_read
 local WTS = WorldToScreen
 
-local Players = game:GetService("Players")
+-- wait for players service so external vm doesnt panic
+local Players
+repeat
+    Players = game:GetService("Players")
+    task_wait()
+until Players
 
 -- matcha paths
 local WorkspacePath = "C:/matcha/workspace/"
@@ -114,7 +122,13 @@ if UILib._inputs then
     UILib._inputs['m5'] = {id=0x06, held=false, click=false}
 end
 
-local Player = Players.LocalPlayer
+-- safe localplayer fetch for external environments
+local Player
+repeat
+    Player = Players.LocalPlayer
+    task_wait()
+until Player
+
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
 -- mouse fix
