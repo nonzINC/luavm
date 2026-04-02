@@ -1,8 +1,10 @@
 --[[
-credits to  @nulare on discord 
-original library repo
+original repo
 https://github.com/catowice/p
+
+i had to change sum things
 ]]
+
 
 UILib = {
     _font_face = Drawing.Fonts.UI,
@@ -26,8 +28,8 @@ UILib = {
     _active_dropdown = nil,
     _active_colorpicker = nil,
     _copied_color = nil,
-    _tooltip_hover_time = nil,
-    _tooltip_mouse_prev = nil,
+    _menu_fade_done = false,
+    _section_fade_done = false,
     _activities = {},
 
     title = 'My menu',
@@ -63,14 +65,6 @@ local function clamp(x, a, b)
     end
 end
 
-local function getDictLength(dict)
-    local i = 0
-    for _ in pairs(dict) do
-        i = i + 1
-    end
-    return i
-end
-
 local function rgbToHsv(r, g, b)
     local max = math.max(r, g, b)
     local min = math.min(r, g, b)
@@ -99,6 +93,10 @@ local function rgbToHsv(r, g, b)
 
     return h, s, v
 end
+
+-- textbox input maps (hoisted to avoid per-frame allocation)
+local _charMap = {space=' ',dash='-',colon=':',period='.',comma=',',slash='/',semicolon=';',quote='\'',leftbracket='[',rightbracket=']',backslash='\\',equals='=',minus='-'}
+local _shiftMap = {['1']='!',['2']='@',['3']='#',['4']='$',['5']='%',['6']='^',['7']='&',['8']='*',['9']='(',['0']=')',['-']='_',['=']='+',['[']='{',[']']='}',[';']=':',['\'']='"',[',']='<',['.']='>',['/']='?',['\\']='|'}
 
 do
     function UILib:_KeyIDToName(keyId)
@@ -179,7 +177,7 @@ do
 
             draw.Position = rectPosition
             draw.Size = rectSize
-            draw.Filled = rectFilled
+            if draw.Filled ~= rectFilled then draw.Filled = rectFilled end
         elseif drawType == 'text' then
             if not draw then
                 self._drawings[drawId] = Drawing.new('Text')
@@ -197,10 +195,12 @@ do
                 draw.Position = textPosition
             end
 
-            draw.Text = textContent
-            draw.Outline = textOutline
-            draw.Font = textFontFace or self._font_face
-            draw.Size = textSize or self._font_size
+            if draw.Text ~= textContent then draw.Text = textContent end
+            if draw.Outline ~= textOutline then draw.Outline = textOutline end
+            local resolvedFont = textFontFace or self._font_face
+            if draw.Font ~= resolvedFont then draw.Font = resolvedFont end
+            local resolvedSize = textSize or self._font_size
+            if draw.Size ~= resolvedSize then draw.Size = resolvedSize end
         elseif drawType == 'line' then
             if not draw then
                 self._drawings[drawId] = Drawing.new('Line')
@@ -211,7 +211,8 @@ do
 
             draw.From = lineFrom
             draw.To = lineTo
-            draw.Filled = lineThickness or 1
+            local resolvedThickness = lineThickness or 1
+            if draw.Thickness ~= resolvedThickness then draw.Thickness = resolvedThickness end
         elseif drawType == 'triangle' then
             if not draw then
                 self._drawings[drawId] = Drawing.new('Triangle')
@@ -220,7 +221,7 @@ do
 
             local triangleFilled, trianglePointA, trianglePointB, trianglePointC = ...
 
-            draw.Filled = triangleFilled
+            if draw.Filled ~= triangleFilled then draw.Filled = triangleFilled end
             draw.PointA = trianglePointA
             draw.PointB = trianglePointB
             draw.PointC = trianglePointC
@@ -287,14 +288,15 @@ do
         end
 
         draw.Color = drawColor
-        draw.ZIndex = drawZIndex
-        draw.Visible = true
+        if draw.ZIndex ~= drawZIndex then draw.ZIndex = drawZIndex end
+        if not draw.Visible then draw.Visible = true end
     end
 
     function UILib:_RemoveDraw(drawId)
         local drawObject = self._drawings[drawId]
         if drawObject then
             drawObject:Remove()
+            self._drawings[drawId] = nil
         end
     end
 
@@ -313,25 +315,29 @@ do
     end
 
     function UILib:_RemoveDrawStartsWith(drawId)
-        for drawName, _drawObject in pairs(self._drawings) do
-            if drawName:sub(1, #drawId) == drawId then
-                UILib:_RemoveDraw(drawName)
+        local len = #drawId
+        for drawName, drawObject in pairs(self._drawings) do
+            if drawName:sub(1, len) == drawId then
+                drawObject:Remove()
+                self._drawings[drawName] = nil
             end
         end
     end
 
     function UILib:_UndrawStartsWith(drawId)
-        for drawName, _drawObject in pairs(self._drawings) do
-            if drawName:sub(1, #drawId) == drawId then
-                UILib:_Undraw(drawName)
+        local len = #drawId
+        for drawName, drawObject in pairs(self._drawings) do
+            if drawName:sub(1, len) == drawId then
+                drawObject.Visible = false
             end
         end
     end
 
     function UILib:_SetOpacityStartsWith(drawId, opacity)
-        for drawName, _drawObject in pairs(self._drawings) do
-            if drawName:sub(1, #drawId) == drawId then
-                UILib:_SetOpacity(drawName, opacity)
+        local len = #drawId
+        for drawName, drawObject in pairs(self._drawings) do
+            if drawName:sub(1, len) == drawId then
+                drawObject.Transparency = opacity
             end
         end
     end
@@ -526,7 +532,6 @@ do
             type_ = 'textbox',
             label = label,
             value = value,
-            autocomplete = autocomplete,
             callback = callback
         }
 
@@ -547,6 +552,7 @@ do
         self._tree[tabName]._items[sectionName] = {
             _items = {}
         }
+        self._tree[tabName]._section_count = self._tree[tabName]._section_count + 1
 
         return {
             Toggle = function(_, ...)
@@ -610,7 +616,8 @@ do
 
     function UILib:Tab(tabName)
         self._tree[tabName] = {
-            _items = {}
+            _items = {},
+            _section_count = 0
         }
         table.insert(self._tab_order, tabName)
 
@@ -787,6 +794,7 @@ do
         if menuKeyPressed then
             self._menu_open = not self._menu_open
             self._menu_toggled_at = os.clock()
+            self._menu_fade_done = false
         end
 
         -- draw watermark
@@ -815,11 +823,13 @@ do
         -- ... and notifications
         local notificationsOrigin = watermarkPos + (self._watermark_enabled and Vector2.new(0, watermarkSize.y + self._padding) or Vector2.new(0, 0))
         local totalNotificationsHeight = 0
-        for notificationIter, notification in ipairs(self._notifications) do
+        local notifIdx = 1
+        while notifIdx <= #self._notifications do
+            local notification = self._notifications[notifIdx]
             local shouldFade = os.clock() > notification._spawned_at + notification.time
             local notificationText = notification.text
             local notificationTextSize = self:_GetTextBounds(notificationText)
-                                    
+
             local t = math.max(0, math.min(notification._spawned_at - os.clock() + (shouldFade and notification.time + 1 or 1), 1))
             local notificationFade = math.abs((shouldFade and 0 or 1) - (t * t * (3 - 2 * t)))
 
@@ -839,7 +849,9 @@ do
 
             if os.clock() - 1 > notification._spawned_at + notification.time then
                 self:_RemoveDrawStartsWith(notificationDrawId)
-                table.remove(self._notifications, notificationIter)
+                table.remove(self._notifications, notifIdx)
+            else
+                notifIdx = notifIdx + 1
             end
         end
 
@@ -1032,16 +1044,18 @@ do
                 if not isOpen and clickFrame and self:_IsMouseWithinBounds(tabPosition, tabSize) then
                     self._open_tab = tabName
                     self._tab_change_at = os.clock()
+                    self._section_fade_done = false
                     self._input_ctx = nil
                 end
 
-                -- tab content
-                local sectionFade = 1 - (self._tab_change_at - (os.clock() - 0.25)) / 0.25
-                if sectionFade < 1.1 then
-                    self:_SetOpacityStartsWith('menu_section_', clamp(sectionFade, 0, 1))
+                -- tab content fade
+                if not self._section_fade_done then
+                    local st = clamp((os.clock() - self._tab_change_at) / 0.25, 0, 1)
+                    self:_SetOpacityStartsWith('menu_section_', st * st * (3 - 2 * st))
+                    if st >= 1 then self._section_fade_done = true end
                 end
 
-                local sectionCount = getDictLength(tabContent._items)
+                local sectionCount = tabContent._section_count
                 local sectionIter = 0
                 local sectionWidth = bodyContentSize.x/2 - self._padding * 1.5
                 local totalSectionHeightR = self._padding * 1.5
@@ -1198,27 +1212,12 @@ do
 
                                     if isHoveringHint then
                                         local mousePos = self:_GetMousePos()
-                                        if not self._tooltip_mouse_prev then
-                                            -- init tooltip
-                                            self._tooltip_mouse_prev = mousePos
-                                            self._tooltip_hover_time = os.clock()
-                                        elseif self._tooltip_mouse_prev.x ~= mousePos.x then
-                                            -- cancel tooltip
-                                            self._tooltip_mouse_prev = nil
-                                            self._tooltip_hover_time = nil
-                                        elseif os.clock() - self._tooltip_hover_time > 0.2 then
-                                            local tooltipFade =  1 - ((self._tooltip_hover_time + 0.2) - (os.clock() - 0.25)) / 0.25
-                                            if tooltipFade < 1.1 then
-                                                self:_SetOpacityStartsWith('menu_tooltip', math.abs((self._menu_open and 0 or 1) - clamp(tooltipFade, 0, 1)))
-                                            end
-
-                                            local tooltipOrigin = Vector2.new(mousePos.x + 11, mousePos.y)
-                                            local tooltipSize = self:_GetTextBounds(sectionItem.tooltip)
-                                            self:_Draw('menu_tooltip_body', 'rect', self._theming.surface1, 1000, tooltipOrigin, tooltipSize + Vector2.new(self._padding, self._padding), true)
-                                            self:_Draw('menu_tooltip_crust', 'rect', self._theming.crust, 1001, tooltipOrigin, tooltipSize + Vector2.new(self._padding, self._padding), false)
-                                            self:_Draw('menu_tooltip_border', 'rect', self._theming.border1, 1002, tooltipOrigin + Vector2.new(1, 1), tooltipSize + Vector2.new(self._padding - 2, self._padding - 2), false)
-                                            self:_Draw('menu_tooltip_text', 'text', self._theming.text, 1003, tooltipOrigin + Vector2.new(3, tooltipSize.y / 2), sectionItem.tooltip, true)
-                                        end
+                                        local tooltipOrigin = Vector2.new(mousePos.x + 11, mousePos.y)
+                                        local tooltipSize = self:_GetTextBounds(sectionItem.tooltip)
+                                        self:_Draw('menu_tooltip_body', 'rect', self._theming.surface1, 1000, tooltipOrigin, tooltipSize + Vector2.new(self._padding, self._padding), true)
+                                        self:_Draw('menu_tooltip_crust', 'rect', self._theming.crust, 1001, tooltipOrigin, tooltipSize + Vector2.new(self._padding, self._padding), false)
+                                        self:_Draw('menu_tooltip_border', 'rect', self._theming.border1, 1002, tooltipOrigin + Vector2.new(1, 1), tooltipSize + Vector2.new(self._padding - 2, self._padding - 2), false)
+                                        self:_Draw('menu_tooltip_text', 'text', self._theming.text, 1003, tooltipOrigin + Vector2.new(3, tooltipSize.y / 2), sectionItem.tooltip, true)
                                     else
                                         self:_UndrawStartsWith('menu_tooltip')
                                     end
@@ -1419,14 +1418,11 @@ do
                                 end
 
                                 if isTyping then
-                                    local charMap = {space=' ',dash='-',colon=':',period='.',comma=',',slash='/',semicolon=';',quote='\'',leftbracket='[',rightbracket=']',backslash='\\',equals='=',minus='-'}
-                                    local shiftMap ={['1']='!',['2']='@',['3']='#',['4']='$',['5']='%',['6']='^',['7']='&',['8']='*',['9']='(',['0']=')',['-']='_',['=']='+',['[']='{',[']']='}',[';']=':',['\'']='"',[',']='<',['.']='>',['/']='?',['\\']='|'}
-
                                     local newValue = itemValue or ''
                                     local shiftCtx = self:_IsKeyHeld('lshift') or self:_IsKeyHeld('rshift')
                                     for char, _ in pairs(self._inputs) do
                                         if self:_IsKeyPressed(char) then
-                                            local mapped = charMap[char] or char
+                                            local mapped = _charMap[char] or char
                                             if mapped == 'enter' then
                                                 -- done/cancel input
                                                 self._input_ctx = nil
@@ -1437,8 +1433,8 @@ do
                                             elseif mapped then
                                                 -- input
                                                 if #mapped == 1 then
-                                                    if shiftCtx and shiftMap[mapped] then
-                                                        mapped = shiftMap[mapped]
+                                                    if shiftCtx and _shiftMap[mapped] then
+                                                        mapped = _shiftMap[mapped]
                                                     elseif shiftCtx then
                                                         mapped = mapped:upper()
                                                     end
@@ -1503,12 +1499,18 @@ do
             self:_RemoveDropdown()
         end
 
-        -- fade the menu
-        local menuFade =  1 - (self._menu_toggled_at - (os.clock() - 0.25)) / 0.25
-        if menuFade < 1.1 then
-            self:_SetOpacityStartsWith('menu_', math.abs((self._menu_open and 0 or 1) - clamp(menuFade, 0, 1)))
-        elseif not self._menu_open and menuFade > 1.1 and menuFade < 1.6 then
-            self:_UndrawStartsWith('menu_')
+        -- fade the menu (smoothstep easing)
+        if not self._menu_fade_done then
+            local t = clamp((os.clock() - self._menu_toggled_at) / 0.3, 0, 1)
+            local eased = t * t * (3 - 2 * t)
+            local opacity = self._menu_open and eased or (1 - eased)
+            self:_SetOpacityStartsWith('menu_', opacity)
+            if t >= 1 then
+                self._menu_fade_done = true
+                if not self._menu_open then
+                    self:_UndrawStartsWith('menu_')
+                end
+            end
         end
     end
 
