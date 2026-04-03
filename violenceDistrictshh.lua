@@ -1,3 +1,6 @@
+-- iskilelr version 
+
+
 -- config setup
 local Config = {
     AutoSkillCheck = {
@@ -97,6 +100,10 @@ local _gravityFallbackLogged = false
 local _velocityFallbackLogged = false
 local _rsFailLogged = false
 
+-- killer role gate
+local _isLocalKiller = false
+local _wasLocalKiller = false
+
 -- speedup globals
 local math_floor = math.floor
 local math_cos = math.cos
@@ -116,6 +123,7 @@ local mem_read = memory_read
 local mem_write = memory_write
 local WTS = WorldToScreen
 local mouse1release = mouse1release
+local isrbxactive = isrbxactive
 local string_rep = string.rep
 local math_clamp = math.clamp
 
@@ -129,6 +137,10 @@ repeat
     Players = game:GetService("Players")
     task_wait()
 until Players
+
+-- killer tag service
+local CollectionService
+pcall(function() CollectionService = game:GetService("CollectionService") end)
 
 -- matcha paths
 local WorkspacePath = "C:/matcha/workspace/"
@@ -1325,6 +1337,22 @@ local function RenderVeilAimbot(pls)
     end
 end
 
+-- one-time cleanup when local player loses killer tag
+local function CleanupVeilState()
+    _aimWx, _aimWy, _aimWz = nil, nil, nil
+    _lockedTarget = nil
+    _lastAimTime = nil
+    pierceStartTime = nil
+    triggerChargeStart = nil
+    triggerLockTime = nil
+    m1WasHeld = false
+    aimTargetCount = 0
+    if Config.Veil.AimActive then VeilAimTog:Set(false) end
+    if Config.Veil.PierceActive then VeilPierceTog:Set(false) end
+    for i = 1, #veilObjs do hideVeilObj(veilObjs[i]) end
+    veilLockLine.Visible = false
+end
+
 UILib:Notification("Not finished yet, so early beta.", 10)
 
 -- auto dodge dark severance
@@ -1339,7 +1367,7 @@ task_spawn(function()
     while true do
         task_wait(0.05)
 
-        if not Config.Survi.AbyssDodge then
+        if _isLocalKiller or not Config.Survi.AbyssDodge then
             prevPos = nil
             dashTriggered = false
             for i = 1, 5 do speedHistory[i] = 0 end
@@ -1413,9 +1441,10 @@ task_spawn(function()
         -- auto dodge
         if avgSpeed > 28 and not dashTriggered then
             dashTriggered = true
-            if dist <= Config.Survi.DodgeDist and os_clock() > dodgeCooldown then
+            if dist <= Config.Survi.DodgeDist and os_clock() > dodgeCooldown and isrbxactive() then
                 task_spawn(function()
                     if Config.Survi.DodgeDelay > 0 then task_wait(Config.Survi.DodgeDelay) end
+                    if not isrbxactive() then return end -- recheck after delay
                     local key = Config.Survi.DodgeKey
                     local code = (key == "c" or key == "C") and 67 or 17
                     pcall(function()
@@ -1518,11 +1547,40 @@ end
 while true do
     local ok, err = pcall(function()
         UILib:Step()
+
+        -- killer role check via collection service tag
+        _wasLocalKiller = _isLocalKiller
+        if CollectionService then
+            local tagged = CollectionService:GetTagged("Killer")
+            _isLocalKiller = false
+            for i = 1, #tagged do
+                if tagged[i] == Player then _isLocalKiller = true; break end
+            end
+        else
+            _isLocalKiller = false
+        end
+
+        -- any team change: refresh stale refs + reset state
+        if _wasLocalKiller ~= _isLocalKiller then
+            PlayerGui = Player:FindFirstChild("PlayerGui")
+            hasClicked = false
+            clickPending = false
+            lastMap = nil
+            LastCacheTime = 0
+            if not _isLocalKiller then
+                CleanupVeilState()
+            end
+        end
+
+        if not isrbxactive() then return end
         local pls = Players:GetPlayers()
-        if Config.AutoSkillCheck.Activate then Autogen() end
+
+        if not _isLocalKiller and Config.AutoSkillCheck.Activate then Autogen() end
         RenderGens()
         RenderPlayers(pls)
-        RenderVeilAimbot(pls)
+        if _isLocalKiller then
+            RenderVeilAimbot(pls)
+        end
         RenderWaveEsp()
         if configDirty then
             local now = os_clock()
