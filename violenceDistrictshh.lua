@@ -1,5 +1,4 @@
--- iskiller version
-
+-- v2
 -- config setup
 local Config = {
     AutoSkillCheck = {
@@ -54,9 +53,6 @@ local Config = {
         PierceKey = 'q', -- pierce key
         PierceMode = 'Toggle', -- pierce mode
         CancelKey = 'q', -- cancel key
-
-        SpeedNormal = 400, -- normal spear speed
-        SpeedPierce = 460, -- pierce spear speed
         
         GravityMult = 3.90, -- gravity mult hidden from ui
         HitThresh = 10, -- green hit distance hidden from ui
@@ -273,8 +269,6 @@ local function SaveConfig()
             PierceKey    = Config.Veil.PierceKey,
             PierceMode   = Config.Veil.PierceMode,
             CancelKey    = Config.Veil.CancelKey,
-            SpeedNormal  = Config.Veil.SpeedNormal,
-            SpeedPierce  = Config.Veil.SpeedPierce,
             LockLine     = Config.Veil.LockLine,
             EspActive    = Config.Veil.EspActive,
             EspCross     = Config.Veil.EspCross,
@@ -463,7 +457,8 @@ local function calcPrediction(ox, oy, oz, part)
     local dz = tp.Z - oz
     local hDist = math_sqrt(dx*dx + dz*dz)
     
-    local v = Config.Veil.PierceActive and Config.Veil.SpeedPierce or Config.Veil.SpeedNormal
+    -- HARDCODED SPEEDS HERE
+    local v = Config.Veil.PierceActive and 460 or 400
     local t = hDist / v -- time of flight calc
     
     -- future pos
@@ -1027,11 +1022,6 @@ vTrigger:Toggle("Triggerbot Active", Config.Veil.TriggerActive, function(v) Conf
 vTrigger:Slider("Min Charge Normal", Config.Veil.TriggerMinCharge, 0.1, 0.3, 3.0, "s", function(v) Config.Veil.TriggerMinCharge = v; configDirty = true end)
 vTrigger:Slider("Min Charge Pierce", Config.Veil.TriggerMinChargePierce, 0.1, 0.3, 3.0, "s", function(v) Config.Veil.TriggerMinChargePierce = v; configDirty = true end)
 vTrigger:Slider("Trigger Delay", Config.Veil.TriggerDelay, 0.01, 0.0, 0.5, "s", function(v) Config.Veil.TriggerDelay = v; configDirty = true end)
-
-local vSpeed = VeilTab:Section("dont touch if dont know whats it")
-vSpeed:Slider("Speed Normal", Config.Veil.SpeedNormal, 10, 100, 1000, "", function(v) Config.Veil.SpeedNormal = v; configDirty = true end)
-vSpeed:Slider("Speed Pierce", Config.Veil.SpeedPierce, 10, 100, 1000, "", function(v) Config.Veil.SpeedPierce = v; configDirty = true end)
-
 
 -- survivor tab
 local AbyssSec = MainTab:Section("Abysswalker - Dark Severance")
