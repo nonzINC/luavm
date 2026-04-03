@@ -1,5 +1,4 @@
--- iskilelr version 
-
+-- iskiller version
 
 -- config setup
 local Config = {
