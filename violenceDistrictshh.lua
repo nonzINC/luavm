@@ -137,10 +137,6 @@ repeat
     task_wait()
 until Players
 
--- killer tag service
-local CollectionService
-pcall(function() CollectionService = game:GetService("CollectionService") end)
-
 -- matcha paths
 local WorkspacePath = "C:/matcha/workspace/"
 local LibPath = WorkspacePath .. "vd-uilib.lua"
@@ -1547,16 +1543,12 @@ while true do
     local ok, err = pcall(function()
         UILib:Step()
 
-        -- killer role check via collection service tag
+        -- killer role check via team
         _wasLocalKiller = _isLocalKiller
-        if CollectionService then
-            local tagged = CollectionService:GetTagged("Killer")
-            _isLocalKiller = false
-            for i = 1, #tagged do
-                if tagged[i] == Player then _isLocalKiller = true; break end
-            end
-        else
-            _isLocalKiller = false
+        _isLocalKiller = false
+        local myTeam = Player and Player.Team
+        if myTeam and myTeam.Name == "Killer" then
+            _isLocalKiller = true
         end
 
         -- any team change: refresh stale refs + reset state
