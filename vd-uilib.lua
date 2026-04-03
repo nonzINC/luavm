@@ -3,8 +3,8 @@ original repo
 https://github.com/catowice/p
 
 i had to change sum things
+-> Fixed Section rendering order issue (LuaVM Scripter)
 ]]
-
 
 UILib = {
     _font_face = Drawing.Fonts.UI,
@@ -549,10 +549,13 @@ do
     end
 
     function UILib:_Section(tabName, sectionName)
-        self._tree[tabName]._items[sectionName] = {
-            _items = {}
-        }
-        self._tree[tabName]._section_count = self._tree[tabName]._section_count + 1
+        if not self._tree[tabName]._items[sectionName] then
+            self._tree[tabName]._items[sectionName] = {
+                _items = {}
+            }
+            table.insert(self._tree[tabName]._section_order, sectionName)
+            self._tree[tabName]._section_count = self._tree[tabName]._section_count + 1
+        end
 
         return {
             Toggle = function(_, ...)
@@ -617,6 +620,7 @@ do
     function UILib:Tab(tabName)
         self._tree[tabName] = {
             _items = {},
+            _section_order = {},
             _section_count = 0
         }
         table.insert(self._tab_order, tabName)
@@ -1060,7 +1064,9 @@ do
                 local sectionWidth = bodyContentSize.x/2 - self._padding * 1.5
                 local totalSectionHeightR = self._padding * 1.5
                 local totalSectionHeightL = self._padding * 1.5
-                for sectionName, sectionContent in pairs(tabContent._items) do
+                for sIdx = 1, #tabContent._section_order do
+                    local sectionName = tabContent._section_order[sIdx]
+                    local sectionContent = tabContent._items[sectionName]
                     local sectionDrawId = 'menu_section_' .. tostring(sectionIter) .. '_' .. tostring(tabIter)
                     local isLastSection = sectionIter >= sectionCount-2
                     local isSectionMirror = sectionIter % 2 == 1
