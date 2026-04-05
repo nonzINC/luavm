@@ -75,13 +75,12 @@ local Config = {
         TriggerMinCharge = 1.2, -- normal spear min charge time
         TriggerMinChargePierce = 2.0, -- pierce spear min charge time
         TriggerDelay = 0.05, -- stabilization delay
-        ChargeBar = true,     -- mostrar indicador de carga
+        ChargeBar = true,     -- show charge indicator
         ChargeMode = "Bar",   -- "Bar" o "Percent"
-        ChargeAttrMax = 30,    -- max valor del atributo charge del juego (calibrar)
-        ChargeFullTime = 3.5,   -- tiempo en segundos para carga al 100% (calibrar)
-        ChargeBarW = 120,     -- ancho de la barra en px
-        ChargeBarH = 8,       -- alto de la barra en px
-        ChargeBarOffY = 32,   -- distancia hacia abajo del centro de pantalla
+        ChargeFullTime = 1.0,   -- hardcoded: 1 second
+        ChargeBarW = 120,     -- bar width in px
+        ChargeBarH = 8,       -- bar height in px
+        ChargeBarOffY = 32,   -- distance below screen center
     },
     -- survivor settings
     Survi = {
@@ -291,7 +290,6 @@ local function SaveConfig()
             TriggerDelay        = Config.Veil.TriggerDelay,
             ChargeBar     = Config.Veil.ChargeBar,
             ChargeMode    = Config.Veil.ChargeMode,
-            ChargeAttrMax = Config.Veil.ChargeAttrMax,
             ChargeFullTime = Config.Veil.ChargeFullTime,
             ChargeBarW    = Config.Veil.ChargeBarW,
             ChargeBarH    = Config.Veil.ChargeBarH,
@@ -1003,7 +1001,7 @@ sNameTog:AddColorpicker("Color", Config.Esp.SurvivorColor, false, function(c) Co
 SurvSec:Toggle("3D Circle", Config.Esp.SurvivorCircle, function(v) Config.Esp.SurvivorCircle = v; configDirty = true end)
 
 -- ==============================================================
--- YENİ ALT SEKME SİSTEMİ İLE VEILBOT 
+-- VEILBOT WITH SUBTAB SYSTEM
 -- ==============================================================
 local VeilTab = UILib:Tab("VeilBOT")
 
@@ -1078,11 +1076,6 @@ vCharge:Dropdown("Display Mode", {Config.Veil.ChargeMode}, {"Bar", "Percent"}, f
 vCharge:Slider("Bar Width",   Config.Veil.ChargeBarW,    5,  50, 300, "px", function(v) Config.Veil.ChargeBarW    = v; configDirty = true end)
 vCharge:Slider("Bar Height",  Config.Veil.ChargeBarH,    1,   4,  20, "px", function(v) Config.Veil.ChargeBarH    = v; configDirty = true end)
 vCharge:Slider("Y Offset",    Config.Veil.ChargeBarOffY, 1,  10, 150, "px", function(v) Config.Veil.ChargeBarOffY = v; configDirty = true end)
-
--- Advanced calibration (forced to right column via column=2)
-local vChargeAdv = VeilVisualsSub:Section("Charge Indicator - Advanced", 2)
-vChargeAdv:Slider("Charge Max (calibrate)", Config.Veil.ChargeAttrMax,  1,  10, 100, "",  function(v) Config.Veil.ChargeAttrMax  = v; configDirty = true end)
-vChargeAdv:Slider("Full Charge Time",       Config.Veil.ChargeFullTime, 1, 0.5,  10, "s", function(v) Config.Veil.ChargeFullTime = v; configDirty = true end)
 
 -- ==============================================================
 
@@ -1348,7 +1341,7 @@ local function RenderVeilAimbot(pls)
                 _lastAimTime = nil
             end
 
-            -- triggerbot: m1 presionado + carga lista + cross en hitbox = suelto
+            -- triggerbot: m1 held + charge ready + cross on hitbox = release
             if Config.Veil.TriggerActive and hasSpearEquipped() then
                 local m1Held = UILib:_IsKeyHeld("m1")
                 if m1Held and triggerChargeStart then
@@ -1629,7 +1622,7 @@ while true do
         if _isLocalKiller then
             RenderVeilAimbot(pls)
         end
-        -- ── charge bar ──
+        -- charge bar
         do
             local m1NowHeld = UILib:_IsKeyHeld("m1")
             local showCharge = Config.Veil.ChargeBar and _isLocalKiller and m1NowHeld and triggerChargeStart ~= nil and hasSpearEquipped()
@@ -1637,19 +1630,8 @@ while true do
                 local cam = workspace.CurrentCamera
                 local cX  = cam and cam.ViewportSize.X / 2 or 960
                 local cY  = cam and cam.ViewportSize.Y / 2 or 540
-                local char = Player.Character
-                local weapon = char and char:FindFirstChild("Weapon")
-                local chargeAttr = weapon and weapon:GetAttribute("charge")
-                local spear1 = char and char:FindFirstChild("Spear1")
-                local chargeAttr2 = spear1 and spear1:GetAttribute("charge")
-                local rawCharge = chargeAttr or chargeAttr2
-
-                local charge
-                if type(rawCharge) == "number" and rawCharge > 0 then
-                    charge = math_clamp(rawCharge / Config.Veil.ChargeAttrMax, 0, 1)
-                else
-                    charge = math_clamp((os_clock() - triggerChargeStart) / Config.Veil.ChargeFullTime, 0, 1)
-                end
+                -- time-based charge (hardcoded 1s full charge)
+                local charge = math_clamp((os_clock() - triggerChargeStart) / 1.0, 0, 1)
                 local ready  = charge >= 1
                 local fillCol = ready
                     and Color3.fromRGB(80, 255, 80)
