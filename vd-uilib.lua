@@ -1,9 +1,7 @@
 --[[
 original repo
 https://github.com/catowice/p
-
 i had to change sum things
--> Fixed Section rendering order issue (LuaVM Scripter)
 ]]
 
 UILib = {
@@ -548,10 +546,12 @@ do
         }
     end
 
-    function UILib:_Section(tabName, sectionName)
+    function UILib:_Section(tabName, sectionName, subTabName, column)
         if not self._tree[tabName]._items[sectionName] then
             self._tree[tabName]._items[sectionName] = {
-                _items = {}
+                _items = {},
+                _subtab = subTabName or "Default",
+                _column = column or nil
             }
             table.insert(self._tree[tabName]._section_order, sectionName)
             self._tree[tabName]._section_count = self._tree[tabName]._section_count + 1
@@ -618,20 +618,38 @@ do
     end
 
     function UILib:Tab(tabName)
-        self._tree[tabName] = {
-            _items = {},
-            _section_order = {},
-            _section_count = 0
-        }
-        table.insert(self._tab_order, tabName)
+        if not self._tree[tabName] then
+            self._tree[tabName] = {
+                _items = {},
+                _section_order = {},
+                _section_count = 0,
+                _subtabs = {},
+                _active_subtab = nil
+            }
+            table.insert(self._tab_order, tabName)
+        end
 
         if not self._open_tab then
             self._open_tab = tabName
         end
 
         return {
-            Section = function(_, sectionName)
-                return self:_Section(tabName, sectionName)
+            Section = function(_, sectionName, column)
+                return self:_Section(tabName, sectionName, nil, column)
+            end,
+            SubTab = function(_, subTabName)
+                local t = self._tree[tabName]
+                local found = false
+                for _, v in ipairs(t._subtabs) do if v == subTabName then found = true break end end
+                if not found then
+                    table.insert(t._subtabs, subTabName)
+                    if not t._active_subtab then t._active_subtab = subTabName end
+                end
+                return {
+                    Section = function(_, sectionName, column)
+                        return self:_Section(tabName, sectionName, subTabName, column)
+                    end
+                }
             end
         }
     end
@@ -1061,30 +1079,95 @@ do
 
                 local sectionCount = tabContent._section_count
                 local sectionIter = 0
+                local activeSectionIter = 0
+                
+                local hasSubtabs = #tabContent._subtabs > 0
+                local subtabOffset = hasSubtabs and 24 or 0
+
+                if isOpen and hasSubtabs then
+                    local subTabIter = 0
+                    local subTabCount = #tabContent._subtabs
+                    for _, stName in ipairs(tabContent._subtabs) do
+                        local stDrawId = 'menu_subtab_' .. tostring(tabIter) .. '_' .. tostring(subTabIter)
+                        local stSize = Vector2.new(bodyContentSize.x / subTabCount, 24)
+                        local stPosition = Vector2.new(bodyContentPos.x + stSize.x * subTabIter, bodyContentPos.y + self._tab_h)
+                        local isSubOpen = tabContent._active_subtab == stName
+
+                        if not isSubOpen then
+                            self:_Undraw(stDrawId .. '_backdrop_active')
+                            self:_Draw(stDrawId .. '_backdrop', 'rect', self._theming.surface1, 12, stPosition, stSize, true)
+                            self:_Draw(stDrawId .. '_border_b', 'rect', self._theming.border1, 13, stPosition + Vector2.new(0, stSize.y), Vector2.new(stSize.x, 1), true)
+                        else
+                            self:_Undraw(stDrawId .. '_backdrop')
+                            self:_Undraw(stDrawId .. '_border_b')
+                            self:_Draw(stDrawId .. '_backdrop_active', 'rect', self._theming.body, 12, stPosition, stSize + Vector2.new(0,1), true)
+                        end
+
+                        self:_Draw(stDrawId .. '_text', 'text', isSubOpen and self._theming.accent or self._theming.subtext, 14, stPosition + Vector2.new(stSize.x/2, stSize.y/2), stName, true, 'center')
+                        if subTabIter ~= subTabCount-1 then 
+                            self:_Draw(stDrawId .. '_border_r', 'rect', self._theming.border1, 13, stPosition + Vector2.new(stSize.x, 0), Vector2.new(1, stSize.y), true) 
+                        end
+
+                        if not isSubOpen and clickFrame and self:_IsMouseWithinBounds(stPosition, stSize) then
+                            tabContent._active_subtab = stName
+                            self._tab_change_at = os.clock()
+                            self._section_fade_done = false
+                            self._input_ctx = nil
+                            clickFrame = false
+                        end
+                        subTabIter = subTabIter + 1
+                    end
+                elseif not isOpen and hasSubtabs then
+                    -- Sabit: İnaktif tabların subtableri burada tam ismine göre temizleniyor
+                    local subTabCount = #tabContent._subtabs
+                    for subTabIter = 0, subTabCount - 1 do
+                        local stDrawId = 'menu_subtab_' .. tostring(tabIter) .. '_' .. tostring(subTabIter)
+                        self:_UndrawStartsWith(stDrawId)
+                    end
+                end
+
+                local activeSectionCount = 0
+                for _, sc in pairs(tabContent._items) do
+                    if not hasSubtabs or sc._subtab == tabContent._active_subtab then activeSectionCount = activeSectionCount + 1 end
+                end
+
                 local sectionWidth = bodyContentSize.x/2 - self._padding * 1.5
-                local totalSectionHeightR = self._padding * 1.5
-                local totalSectionHeightL = self._padding * 1.5
+                local totalSectionHeightR = self._padding * 1.5 + subtabOffset
+                local totalSectionHeightL = self._padding * 1.5 + subtabOffset
+
                 for sIdx = 1, #tabContent._section_order do
                     local sectionName = tabContent._section_order[sIdx]
                     local sectionContent = tabContent._items[sectionName]
                     local sectionDrawId = 'menu_section_' .. tostring(sectionIter) .. '_' .. tostring(tabIter)
-                    local isLastSection = sectionIter >= sectionCount-2
-                    local isSectionMirror = sectionIter % 2 == 1
-
-                    local sectionTitleSize = self:_GetTextBounds(sectionName)
-
-                    local sectionPos = Vector2.new(bodyContentPos.x + self._padding, bodyContentPos.y + tabSize.y)
-                    local sectionHeight = self._padding + sectionTitleSize.y/2
-
-                    if isSectionMirror then
-                        sectionPos = sectionPos + Vector2.new(sectionWidth + self._padding, totalSectionHeightR + sectionTitleSize.y/2)
-                    else
-                        sectionPos = sectionPos + Vector2.new(0, totalSectionHeightL + sectionTitleSize.y/2)
-                    end
 
                     if isOpen then
+                        if hasSubtabs and sectionContent._subtab ~= tabContent._active_subtab then
+                            self:_UndrawStartsWith(sectionDrawId)
+                            sectionIter = sectionIter + 1
+                            continue
+                        end
+
+                        local isLastSection = activeSectionIter >= activeSectionCount-2
+                        local _col = sectionContent._column
+                        local isSectionMirror
+                        if _col ~= nil then
+                            isSectionMirror = (_col == 2)
+                        else
+                            isSectionMirror = (activeSectionIter % 2 == 1)
+                        end
+
+                        local sectionTitleSize = self:_GetTextBounds(sectionName)
+                        local sectionPos = Vector2.new(bodyContentPos.x + self._padding, bodyContentPos.y + tabSize.y)
+                        local sectionHeight = self._padding + sectionTitleSize.y/2
+
+                        if isSectionMirror then
+                            sectionPos = sectionPos + Vector2.new(sectionWidth + self._padding, totalSectionHeightR + sectionTitleSize.y/2)
+                        else
+                            sectionPos = sectionPos + Vector2.new(0, totalSectionHeightL + sectionTitleSize.y/2)
+                        end
+
                         -- section items
-                        self:_Draw(sectionDrawId .. '_title', 'text', self._theming.text, 20, sectionPos + Vector2.new(self._padding, -menuTitleSize.y/2), sectionName, true)          
+                        self:_Draw(sectionDrawId .. '_title', 'text', self._theming.text, 20, sectionPos + Vector2.new(self._padding, -menuTitleSize.y/2), sectionName, true)         
 
                         for sectionItemIter, sectionItem in ipairs(sectionContent._items) do
                             local sectionItemId = sectionDrawId .. '_item_' .. tostring(sectionItemIter)
@@ -1290,7 +1373,6 @@ do
                                 self:_Draw(sectionItemId .. '_slider', 'gradient', nil, 20, 'vertical', sliderOrigin + Vector2.new(1, 1), Vector2.new(sliderSize.x * fillPercent - 2, sliderSize.y - 2), tickColor)
 
                                 local displayedValue = tostring(itemValue) .. sectionItem.suffix
-                                -- local valueSize = self:_GetTextBounds(displayedValue, nil, 12)
                                 self:_Draw(sectionItemId .. '_value', 'text', self._theming.text, 22, sliderOrigin + Vector2.new(sliderSize.x * fillPercent, sliderSize.y), displayedValue, true, 'center', 12)
 
                                 self:_Draw(sectionItemId .. '_border', 'rect', self._theming.crust, 21, sliderOrigin, sliderSize, false)
@@ -1482,17 +1564,19 @@ do
                         self:_Draw(sectionDrawId .. '_border', 'rect', self._theming.border0, 12, sectionPos, Vector2.new(sectionWidth, sectionHeight), false)
 
                         if isSectionMirror then
-                            totalSectionHeightR = totalSectionHeightR + self._padding
+                            totalSectionHeightR = totalSectionHeightR + self._padding * 2
                         else
-                            totalSectionHeightL = totalSectionHeightL + self._padding
+                            totalSectionHeightL = totalSectionHeightL + self._padding * 2
                         end
+
+                        activeSectionIter = activeSectionIter + 1
                     else
                         self:_UndrawStartsWith(sectionDrawId)
                     end
 
                     sectionIter = sectionIter + 1
                 end
-
+                
                 tabIter = tabIter + 1
             end
 
