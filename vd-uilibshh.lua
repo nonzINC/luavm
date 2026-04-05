@@ -5,7 +5,7 @@ https://github.com/catowice/p
 i had to change sum things
 -> Fixed Section rendering order issue 
 -> Added SubTab Architecture for Sub-Menus
--> Fixed SubTab ghosting issue on tab switch
+-> Fixed SubTab ghosting issue on tab switch (Force Undraw approach)
 ]]
 
 UILib = {
@@ -1040,6 +1040,9 @@ do
             self:_Draw('menu_body_border_inner', 'rect', self._theming.border1, 11, bodyContentPos - Vector2.new(1, 1), bodyContentSize + Vector2.new(2, 2), false)
             self:_Draw('menu_body_content', 'rect', self._theming.body, 10, bodyContentPos, bodyContentSize, true)
 
+            -- Force Hide All Subtabs before drawing loop starts
+            self:_UndrawStartsWith('menu_subtab_')
+
             -- tabs
             local tabIter = 0
             local tabCount = #self._tab_order
@@ -1087,7 +1090,6 @@ do
                 local hasSubtabs = #tabContent._subtabs > 0
                 local subtabOffset = hasSubtabs and 24 or 0
 
-                -- SUBTAB ÇİZİM MANTIĞI DÜZELTİLDİ (EKSİK ELSE EKLENDİ)
                 if isOpen and hasSubtabs then
                     local subTabIter = 0
                     local subTabCount = #tabContent._subtabs
@@ -1101,9 +1103,7 @@ do
                             self:_Draw(stDrawId .. '_backdrop', 'rect', self._theming.surface1, 12, stPosition, stSize, true)
                             self:_Draw(stDrawId .. '_border_b', 'rect', self._theming.border1, 13, stPosition + Vector2.new(0, stSize.y), Vector2.new(stSize.x, 1), true)
                         else
-                            self:_UndrawStartsWith(stDrawId .. '_backdrop')
                             self:_Draw(stDrawId .. '_backdrop_active', 'rect', self._theming.body, 12, stPosition, stSize + Vector2.new(0,1), true)
-                            self:_Undraw(stDrawId .. '_border_b')
                         end
 
                         self:_Draw(stDrawId .. '_text', 'text', isSubOpen and self._theming.accent or self._theming.subtext, 14, stPosition + Vector2.new(stSize.x/2, stSize.y/2), stName, true, 'center')
@@ -1118,8 +1118,6 @@ do
                         end
                         subTabIter = subTabIter + 1
                     end
-                else
-                    self:_UndrawStartsWith('menu_subtab_' .. tostring(tabIter))
                 end
 
                 local activeSectionCount = 0
