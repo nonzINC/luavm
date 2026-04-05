@@ -550,11 +550,12 @@ do
         }
     end
 
-    function UILib:_Section(tabName, sectionName, subTabName)
+    function UILib:_Section(tabName, sectionName, subTabName, column)
         if not self._tree[tabName]._items[sectionName] then
             self._tree[tabName]._items[sectionName] = {
                 _items = {},
-                _subtab = subTabName or "Default"
+                _subtab = subTabName or "Default",
+                _column = column or nil
             }
             table.insert(self._tree[tabName]._section_order, sectionName)
             self._tree[tabName]._section_count = self._tree[tabName]._section_count + 1
@@ -637,8 +638,8 @@ do
         end
 
         return {
-            Section = function(_, sectionName)
-                return self:_Section(tabName, sectionName, nil)
+            Section = function(_, sectionName, column)
+                return self:_Section(tabName, sectionName, nil, column)
             end,
             SubTab = function(_, subTabName)
                 local t = self._tree[tabName]
@@ -649,8 +650,8 @@ do
                     if not t._active_subtab then t._active_subtab = subTabName end
                 end
                 return {
-                    Section = function(_, sectionName)
-                        return self:_Section(tabName, sectionName, subTabName)
+                    Section = function(_, sectionName, column)
+                        return self:_Section(tabName, sectionName, subTabName, column)
                     end
                 }
             end
@@ -1151,7 +1152,8 @@ do
                         end
 
                         local isLastSection = activeSectionIter >= activeSectionCount-2
-                        local isSectionMirror = activeSectionIter % 2 == 1
+                        local _col = sectionContent._column
+                        local isSectionMirror = _col ~= nil and (_col == 2) or (_col == nil and activeSectionIter % 2 == 1)
 
                         local sectionTitleSize = self:_GetTextBounds(sectionName)
                         local sectionPos = Vector2.new(bodyContentPos.x + self._padding, bodyContentPos.y + tabSize.y)
