@@ -142,7 +142,7 @@ until Players
 
 -- matcha paths
 local WorkspacePath = "C:/matcha/workspace/"
-local LibPath = WorkspacePath .. "vd-uilib-v3.lua" -- YENİ ALT SEKME KÜTÜPHANESİ
+local LibPath = WorkspacePath .. "vd-uilib-v4.lua" -- YENİ ALT SEKME KÜTÜPHANESİ
 local FolderPath = WorkspacePath .. "ViolenceDistrict/"
 local ModuleFolder = FolderPath .. "Modules/"
 
@@ -152,10 +152,8 @@ if not isfolder(FolderPath) then makefolder(FolderPath) end
 if not isfolder(ModuleFolder) then makefolder(ModuleFolder) end
 
 -- load ui lib
-if not isfile(LibPath) then
-    local src = game:HttpGet("https://raw.githubusercontent.com/nonzINC/luavm/main/vd-uilibshh.lua")
-    if src and type(src) == "string" and #src > 100 then writefile(LibPath, src) end
-end
+-- vd-uilib-v4.lua manuel olarak workspace'e koyulmalı (düzenlenmiş versiyon)
+assert(isfile(LibPath), "[VD] vd-uilib-v4.lua bulunamadı! Dosyayı workspace klasörüne koy.")
 local UILib = require(LibPath)
 
 -- mouse 4 and 5 fix
