@@ -5,7 +5,7 @@ https://github.com/catowice/p
 i had to change sum things
 -> Fixed Section rendering order issue (LuaVM Scripter)
 -> ADDED: Independent Column Scrolling & MouseWheel (LuaVM Scripter)
--> FIXED: Replaced outlined rects with layered solid rects for perfect scissor clipping
+-> FIXED: Draw flickering and column overlapping via explicit ID undraws and static bounds
 ]]
 
 UILib = {
@@ -715,6 +715,7 @@ do
             end
 
             -- draw the dropdown
+            self._clip_box = nil
             local dropdown = self._active_dropdown
             if dropdown then
                 local dropdownFade =  1 - (dropdown._spawned_at - (os.clock() - 0.25)) / 0.25
@@ -874,8 +875,8 @@ do
                     local maxScrollL = math.max(0, maxHL - viewH + self._padding)
                     local maxScrollR = math.max(0, maxHR - viewH + self._padding)
 
-                    -- Apply Mouse Wheel
-                    if mwDelta ~= 0 and self:_IsMouseWithinBounds(bodyContentPos, bodyContentSize) then
+                    -- Apply Mouse Wheel independent scroll
+                    if mwDelta ~= 0 and self:_IsMouseWithinBounds(Vector2.new(bodyContentPos.x, bodyContentPos.y + self._tab_h), Vector2.new(bodyContentSize.x, viewH)) then
                         local mx = self:_GetMousePos().x
                         local midX = bodyContentPos.x + bodyContentSize.x / 2
                         if mx < midX then
@@ -891,13 +892,13 @@ do
                     tabContent._scroll_R = clamp(tabContent._scroll_R or 0, 0, maxScrollR)
 
                     local sbWidth = 4
-                    local sectionWidth = bodyContentSize.x / 2 - self._padding * 1.5
+                    local sectionWidth = (bodyContentSize.x - self._padding * 3 - sbWidth * 2) / 2
                     local sbY = bodyContentPos.y + self._tab_h + 2
                     local sbH = viewH - 4
 
                     -- Left Scrollbar
+                    local sbXL = bodyContentPos.x + self._padding + sectionWidth + 1
                     if maxScrollL > 0 then
-                        local sbXL = bodyContentPos.x + sectionWidth + 2
                         local thumbHL = math.max(20, (viewH / maxHL) * sbH)
                         local thumbYL = sbY + (tabContent._scroll_L / maxScrollL) * (sbH - thumbHL)
 
@@ -918,17 +919,17 @@ do
                         end
 
                         self._clip_box = nil
-                        self:_Draw('menu_sb_bg_L', 'rect', self._theming.surface1, 25, Vector2.new(sbXL, sbY), Vector2.new(sbWidth, sbH), true)
-                        self:_Draw('menu_sb_thumb_L', 'rect', self._theming.border1, 26, Vector2.new(sbXL, thumbYL), Vector2.new(sbWidth, thumbHL), true)
+                        self:_Draw('menu_sb_bg_L_'..tabIter, 'rect', self._theming.surface1, 25, Vector2.new(sbXL, sbY), Vector2.new(sbWidth, sbH), true)
+                        self:_Draw('menu_sb_thumb_L_'..tabIter, 'rect', self._theming.border1, 26, Vector2.new(sbXL, thumbYL), Vector2.new(sbWidth, thumbHL), true)
                     else
-                        self:_Undraw('menu_sb_bg_L')
-                        self:_Undraw('menu_sb_thumb_L')
+                        self:_Undraw('menu_sb_bg_L_'..tabIter)
+                        self:_Undraw('menu_sb_thumb_L_'..tabIter)
                         tabContent._scroll_L = 0
                     end
 
                     -- Right Scrollbar
+                    local sbXR = bodyContentPos.x + bodyContentSize.x - sbWidth - 2
                     if maxScrollR > 0 then
-                        local sbXR = bodyContentPos.x + bodyContentSize.x - sbWidth - 2
                         local thumbHR = math.max(20, (viewH / maxHR) * sbH)
                         local thumbYR = sbY + (tabContent._scroll_R / maxScrollR) * (sbH - thumbHR)
 
@@ -949,11 +950,11 @@ do
                         end
 
                         self._clip_box = nil
-                        self:_Draw('menu_sb_bg_R', 'rect', self._theming.surface1, 25, Vector2.new(sbXR, sbY), Vector2.new(sbWidth, sbH), true)
-                        self:_Draw('menu_sb_thumb_R', 'rect', self._theming.border1, 26, Vector2.new(sbXR, thumbYR), Vector2.new(sbWidth, thumbHR), true)
+                        self:_Draw('menu_sb_bg_R_'..tabIter, 'rect', self._theming.surface1, 25, Vector2.new(sbXR, sbY), Vector2.new(sbWidth, sbH), true)
+                        self:_Draw('menu_sb_thumb_R_'..tabIter, 'rect', self._theming.border1, 26, Vector2.new(sbXR, thumbYR), Vector2.new(sbWidth, thumbHR), true)
                     else
-                        self:_Undraw('menu_sb_bg_R')
-                        self:_Undraw('menu_sb_thumb_R')
+                        self:_Undraw('menu_sb_bg_R_'..tabIter)
+                        self:_Undraw('menu_sb_thumb_R_'..tabIter)
                         tabContent._scroll_R = 0
                     end
 
@@ -972,14 +973,13 @@ do
                         local isLastSection = sectionIter >= sectionCount-2
                         local isSectionMirror = sectionIter % 2 == 1
                         local sectionTitleSize = self:_GetTextBounds(sectionName)
-
-                        local sectionPos = Vector2.new(bodyContentPos.x + self._padding, bodyContentPos.y + tabSize.y)
                         local sectionHeight = self._padding + sectionTitleSize.y/2
 
+                        local sectionPos
                         if isSectionMirror then
-                            sectionPos = sectionPos + Vector2.new(sectionWidth + self._padding, totalSectionHeightR + sectionTitleSize.y/2 - tabContent._scroll_R)
+                            sectionPos = Vector2.new(bodyContentPos.x + self._padding * 2 + sectionWidth + sbWidth, bodyContentPos.y + self._tab_h + totalSectionHeightR - tabContent._scroll_R)
                         else
-                            sectionPos = sectionPos + Vector2.new(0, totalSectionHeightL + sectionTitleSize.y/2 - tabContent._scroll_L)
+                            sectionPos = Vector2.new(bodyContentPos.x + self._padding, bodyContentPos.y + self._tab_h + totalSectionHeightL - tabContent._scroll_L)
                         end
 
                         -- section items
@@ -1325,18 +1325,17 @@ do
                             totalSectionHeightL = totalSectionHeightL + sectionHeight + sectionTitleSize.y/2
                         end
 
-                        -- Dynamic stretching if space remains
                         if isLastSection then
-                            if isSectionMirror then
-                                local remaining = viewH - totalSectionHeightR
+                            if isSectionMirror and maxScrollR <= 0 then
+                                local remaining = viewH - totalSectionHeightR - self._padding
                                 if remaining > 0 then sectionHeight = sectionHeight + remaining end
-                            else
-                                local remaining = viewH - totalSectionHeightL
+                            elseif not isSectionMirror and maxScrollL <= 0 then
+                                local remaining = viewH - totalSectionHeightL - self._padding
                                 if remaining > 0 then sectionHeight = sectionHeight + remaining end
                             end
                         end
 
-                        self:_Draw(sectionDrawId .. '_border', 'rect', self._theming.border0, 11, sectionPos, Vector2.new(sectionWidth, sectionHeight), true)
+                        self:_Draw(sectionDrawId .. '_border', 'rect', self._theming.border1, 11, sectionPos, Vector2.new(sectionWidth, sectionHeight), true)
                         self:_Draw(sectionDrawId .. '_backdrop', 'rect', self._theming.surface0, 12, sectionPos + Vector2.new(1, 1), Vector2.new(sectionWidth - 2, sectionHeight - 2), true)
 
                         if isSectionMirror then
@@ -1350,7 +1349,14 @@ do
                     tabContent._max_height_R = totalSectionHeightR
                     self._clip_box = nil
                 else
-                    self:_UndrawStartsWith('menu_section_')
+                    for sIdx = 1, #tabContent._section_order do
+                        local sectionDrawId = 'menu_section_' .. tostring(sIdx - 1) .. '_' .. tostring(tabIter)
+                        self:_UndrawStartsWith(sectionDrawId)
+                    end
+                    self:_Undraw('menu_sb_bg_L_'..tabIter)
+                    self:_Undraw('menu_sb_thumb_L_'..tabIter)
+                    self:_Undraw('menu_sb_bg_R_'..tabIter)
+                    self:_Undraw('menu_sb_thumb_R_'..tabIter)
                 end
 
                 tabIter = tabIter + 1
