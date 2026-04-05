@@ -1,4 +1,5 @@
 -- v2
+--
 -- config setup
 local Config = {
     AutoSkillCheck = {
@@ -72,9 +73,16 @@ local Config = {
         StickyThresh = 200, -- screen distance to release lock
 
         TriggerActive = false, -- triggerbot toggle
-        TriggerMinCharge = 1.0, -- normal spear min charge time
+        TriggerMinCharge = 1.2, -- normal spear min charge time
         TriggerMinChargePierce = 2.0, -- pierce spear min charge time
         TriggerDelay = 0.05, -- stabilization delay
+        ChargeBar = true,     -- mostrar indicador de carga
+        ChargeMode = "Bar",   -- "Bar" o "Percent"
+        ChargeAttrMax = 30,    -- max valor del atributo charge del juego (calibrar)
+        ChargeFullTime = 3.5,   -- tiempo en segundos para carga al 100% (calibrar)
+        ChargeBarW = 120,     -- ancho de la barra en px
+        ChargeBarH = 8,       -- alto de la barra en px
+        ChargeBarOffY = 32,   -- distancia hacia abajo del centro de pantalla
     },
     -- survivor settings
     Survi = {
@@ -91,9 +99,9 @@ local Config = {
 
 -- fallback log flags, prints once then shuts up
 -- FALSE = GONNA PRINT // TRUE = AINT GONNA PRINT
-local _gravityFallbackLogged = false
-local _velocityFallbackLogged = false
-local _rsFailLogged = false
+local _gravityFallbackLogged = true
+local _velocityFallbackLogged = true
+local _rsFailLogged = true
 
 -- killer role gate
 local _isLocalKiller = false
@@ -282,7 +290,14 @@ local function SaveConfig()
             TriggerMinCharge    = Config.Veil.TriggerMinCharge,
             TriggerMinChargePierce = Config.Veil.TriggerMinChargePierce,
             TriggerDelay        = Config.Veil.TriggerDelay,
-            ColorOk      = c3save(Config.Veil.ColorOk),
+            ChargeBar     = Config.Veil.ChargeBar,
+            ChargeMode    = Config.Veil.ChargeMode,
+            ChargeAttrMax = Config.Veil.ChargeAttrMax,
+            ChargeFullTime = Config.Veil.ChargeFullTime,
+            ChargeBarW    = Config.Veil.ChargeBarW,
+            ChargeBarH    = Config.Veil.ChargeBarH,
+            ChargeBarOffY = Config.Veil.ChargeBarOffY,
+            ColorOk       = c3save(Config.Veil.ColorOk),
             ColorPierce  = c3save(Config.Veil.ColorPierce),
             ColorHit     = c3save(Config.Veil.ColorHit),
             ColorApprox  = c3save(Config.Veil.ColorApprox),
@@ -491,6 +506,23 @@ end
 local veilLockLine = Drawing_new("Line")
 veilLockLine.Thickness = 1
 veilLockLine.Visible = false
+
+local chargeBg    = Drawing_new("Square")
+chargeBg.Filled   = true
+chargeBg.Color    = Color3.fromRGB(20, 20, 20)
+chargeBg.Transparency = 0.4
+chargeBg.Visible  = false
+
+local chargeFill  = Drawing_new("Square")
+chargeFill.Filled = true
+chargeFill.Transparency = 1
+chargeFill.Visible = false
+
+local chargeTxt   = Drawing_new("Text")
+chargeTxt.Size    = 13
+chargeTxt.Center  = true
+chargeTxt.Outline = true
+chargeTxt.Visible = false
 
 local veilObjs = {}
 local function getVeilObj(i)
@@ -1007,6 +1039,7 @@ vVis:Slider("Cross Size", Config.Veil.CrossSize, 1, 2, 30, "px", function(v) Con
 vVis:Slider("Thickness", Config.Veil.Thickness, 1, 1, 5, "px", function(v) Config.Veil.Thickness = v; configDirty = true end)
 vVis:Toggle("Sticky Aim", Config.Veil.StickyAim, function(v) Config.Veil.StickyAim = v; configDirty = true end)
 vVis:Slider("Sticky Threshold", Config.Veil.StickyThresh, 10, 50, 500, "px", function(v) Config.Veil.StickyThresh = v; configDirty = true end)
+vVis:Slider("Hit Threshold", Config.Veil.HitThresh, 1, 2, 25, "px", function(v) Config.Veil.HitThresh = v; configDirty = true end)
 
 local cOk = vVis:Toggle("Color Normal", true, function() end)
 cOk:AddColorpicker("Ok", Config.Veil.ColorOk, true, function(c) Config.Veil.ColorOk = c; configDirty = true end)
@@ -1022,6 +1055,15 @@ vTrigger:Toggle("Triggerbot Active", Config.Veil.TriggerActive, function(v) Conf
 vTrigger:Slider("Min Charge Normal", Config.Veil.TriggerMinCharge, 0.1, 0.3, 3.0, "s", function(v) Config.Veil.TriggerMinCharge = v; configDirty = true end)
 vTrigger:Slider("Min Charge Pierce", Config.Veil.TriggerMinChargePierce, 0.1, 0.3, 3.0, "s", function(v) Config.Veil.TriggerMinChargePierce = v; configDirty = true end)
 vTrigger:Slider("Trigger Delay", Config.Veil.TriggerDelay, 0.01, 0.0, 0.5, "s", function(v) Config.Veil.TriggerDelay = v; configDirty = true end)
+
+local vCharge = VeilTab:Section("Charge Indicator")
+vCharge:Toggle("Show Indicator", Config.Veil.ChargeBar, function(v) Config.Veil.ChargeBar = v; configDirty = true end)
+vCharge:Dropdown("Display Mode", {Config.Veil.ChargeMode}, {"Bar", "Percent"}, false, function(v) Config.Veil.ChargeMode = v[1]; configDirty = true end)
+vCharge:Slider("Charge Max (calibrar)", Config.Veil.ChargeAttrMax, 1, 10, 100, "", function(v) Config.Veil.ChargeAttrMax = v; configDirty = true end)
+vCharge:Slider("Full Charge Time", Config.Veil.ChargeFullTime, 1, 0.5, 10, "s", function(v) Config.Veil.ChargeFullTime = v; configDirty = true end)
+vCharge:Slider("Bar Width",   Config.Veil.ChargeBarW,    5,  50, 300, "px", function(v) Config.Veil.ChargeBarW    = v; configDirty = true end)
+vCharge:Slider("Bar Height",  Config.Veil.ChargeBarH,    1,   4,  20, "px", function(v) Config.Veil.ChargeBarH    = v; configDirty = true end)
+vCharge:Slider("Y Offset",    Config.Veil.ChargeBarOffY, 1,  10, 150, "px", function(v) Config.Veil.ChargeBarOffY = v; configDirty = true end)
 
 -- survivor tab
 local AbyssSec = MainTab:Section("Abysswalker - Dark Severance")
@@ -1074,13 +1116,21 @@ local triggerLockTime = nil
 local aimTargets = {}
 local aimTargetCount = 0
 
+local function hasSpearEquipped()
+    local char = Player.Character
+    if not char then return false end
+    return char:FindFirstChild("Spear1") ~= nil
+end
+
 -- veil logic
 local function HandleVeilInputs()
     local m1Held = UILib:_IsKeyHeld('m1')
 
     -- triggerbot charge tracking
     if m1Held and not m1WasHeld then
-        triggerChargeStart = os_clock()
+        if hasSpearEquipped() then
+            triggerChargeStart = os_clock()
+        end
     end
     if not m1Held then
         triggerChargeStart = nil
@@ -1091,8 +1141,7 @@ local function HandleVeilInputs()
     if Config.Veil.PierceActive then
         if m1Held and not m1WasHeld then pierceStartTime = os_clock() end
         if m1WasHeld and not m1Held then
-            VeilPierceTog:Set(false)
-            pierceStartTime = nil
+            pierceStartTime = nil   -- solo resetea timer, NO desactiva pierce
         end
         -- 7s max hold timeout
         if pierceStartTime and (os_clock() - pierceStartTime) >= 7 then
@@ -1225,7 +1274,8 @@ local function RenderVeilAimbot(pls)
         for i=idx+1, #veilObjs do hideVeilObj(veilObjs[i]) end
     end
 
-    if Config.Veil.AimActive and aimTargetCount > 0 then
+    local needsScan = Config.Veil.AimActive or Config.Veil.TriggerActive
+    if needsScan and aimTargetCount > 0 then
 
         local best, bd = nil, 1/0
 
@@ -1255,48 +1305,41 @@ local function RenderVeilAimbot(pls)
         if best then
             local sm = Config.Veil.Smooth
             local now = os_clock()
-            if sm <= 1 then
-                _aimWx, _aimWy, _aimWz = best.wx, best.wy, best.wz
-            else
-                local dt = _lastAimTime and (now - _lastAimTime) or (1/60)
-                local t = dt * 60 / sm
-                if t > 1 then t = 1 end
-                if _aimWx then
-                    _aimWx = _aimWx + (best.wx - _aimWx) * t
-                    _aimWy = _aimWy + (best.wy - _aimWy) * t
-                    _aimWz = _aimWz + (best.wz - _aimWz) * t
-                else
+            
+            if Config.Veil.AimActive then
+                if sm <= 1 then
                     _aimWx, _aimWy, _aimWz = best.wx, best.wy, best.wz
-                end
-            end
-            _lastAimTime = now
-            cam.lookAt(cam.Position, Vector3_new(_aimWx, _aimWy, _aimWz))
-
-            -- triggerbot, only fires during spear charge
-            if Config.Veil.TriggerActive and triggerChargeStart then
-                local minCharge = Config.Veil.PierceActive
-                    and Config.Veil.TriggerMinChargePierce
-                    or Config.Veil.TriggerMinCharge
-                local chargeTime = now - triggerChargeStart
-                if chargeTime >= minCharge then
-                    -- dynamic threshold: 10px at <=50m, scales down to 5px at max range
-                    local thresh
-                    if best.dist <= 50 then
-                        thresh = 10
+                else
+                    local dt = _lastAimTime and (now - _lastAimTime) or (1/60)
+                    local t = dt * 60 / sm
+                    if t > 1 then t = 1 end
+                    if _aimWx then
+                        _aimWx = _aimWx + (best.wx - _aimWx) * t
+                        _aimWy = _aimWy + (best.wy - _aimWy) * t
+                        _aimWz = _aimWz + (best.wz - _aimWz) * t
                     else
-                        local t = (best.dist - 50) / (Config.Veil.MaxDist - 50)
-                        if t > 1 then t = 1 end
-                        thresh = 10 - 5 * t
+                        _aimWx, _aimWy, _aimWz = best.wx, best.wy, best.wz
                     end
-                    if best.dScr <= thresh then
-                        if not triggerLockTime then triggerLockTime = now end
-                        if now - triggerLockTime >= Config.Veil.TriggerDelay then
+                end
+                _lastAimTime = now
+                cam.lookAt(cam.Position, Vector3_new(_aimWx, _aimWy, _aimWz))
+            else
+                _lastAimTime = nil
+            end
+
+            -- triggerbot: m1 presionado + carga lista + cross en hitbox = suelto
+            if Config.Veil.TriggerActive and hasSpearEquipped() then
+                local m1Held = UILib:_IsKeyHeld("m1")
+                if m1Held and triggerChargeStart then
+                    local minCharge = Config.Veil.PierceActive
+                        and Config.Veil.TriggerMinChargePierce
+                        or  Config.Veil.TriggerMinCharge
+                    if (now - triggerChargeStart) >= minCharge then
+                        if best and best.dScr <= Config.Veil.HitThresh then
                             mouse1release()
                             triggerChargeStart = nil
-                            triggerLockTime = nil
+                            triggerLockTime    = nil
                         end
-                    else
-                        triggerLockTime = nil
                     end
                 end
             end
@@ -1338,7 +1381,10 @@ local function CleanupVeilState()
     veilLockLine.Visible = false
 end
 
-UILib:Notification("Not finished yet, so early beta.", 10)
+UILib:Notification("ANY BUGS > @nonzvia ", 10)
+UILib:Notification("ANY BUGS > @nonzvia ", 10)
+UILib:Notification("ANY BUGS > @nonzvia ", 10)
+
 
 -- auto dodge dark severance
 task_spawn(function()
@@ -1561,6 +1607,63 @@ while true do
         RenderPlayers(pls)
         if _isLocalKiller then
             RenderVeilAimbot(pls)
+        end
+        -- ── charge bar ──
+        do
+            local m1NowHeld = UILib:_IsKeyHeld("m1")
+            local showCharge = Config.Veil.ChargeBar and _isLocalKiller and m1NowHeld and triggerChargeStart ~= nil and hasSpearEquipped()
+            if showCharge then
+                local cam = workspace.CurrentCamera
+                local cX  = cam and cam.ViewportSize.X / 2 or 960
+                local cY  = cam and cam.ViewportSize.Y / 2 or 540
+                local char = Player.Character
+                local weapon = char and char:FindFirstChild("Weapon")
+                local chargeAttr = weapon and weapon:GetAttribute("charge")
+                local spear1 = char and char:FindFirstChild("Spear1")
+                local chargeAttr2 = spear1 and spear1:GetAttribute("charge")
+                local rawCharge = chargeAttr or chargeAttr2
+
+                local charge
+                if type(rawCharge) == "number" and rawCharge > 0 then
+                    charge = math_clamp(rawCharge / Config.Veil.ChargeAttrMax, 0, 1)
+                else
+                    charge = math_clamp((os_clock() - triggerChargeStart) / Config.Veil.ChargeFullTime, 0, 1)
+                end
+                local ready  = charge >= 1
+                local fillCol = ready
+                    and Color3.fromRGB(80, 255, 80)
+                    or  Config.Veil.ColorOk
+
+                if Config.Veil.ChargeMode == "Bar" then
+                    local W  = Config.Veil.ChargeBarW
+                    local H  = Config.Veil.ChargeBarH
+                    local bx = cX - W / 2
+                    local by = cY + Config.Veil.ChargeBarOffY
+
+                    chargeBg.Position = Vector2_new(bx - 1, by - 1)
+                    chargeBg.Size     = Vector2_new(W + 2, H + 2)
+                    chargeBg.Visible  = true
+
+                    local fw = math_floor(W * charge)
+                    if fw < 2 then fw = 2 end
+                    chargeFill.Position = Vector2_new(bx, by)
+                    chargeFill.Size     = Vector2_new(fw, H)
+                    if chargeFill.Color ~= fillCol then chargeFill.Color = fillCol end
+                    chargeFill.Visible = true
+                    chargeTxt.Visible  = false
+                else  -- "Percent"
+                    chargeBg.Visible   = false
+                    chargeFill.Visible = false
+                    chargeTxt.Text     = math_floor(charge * 100) .. "%"
+                    chargeTxt.Position = Vector2_new(cX, cY + Config.Veil.ChargeBarOffY)
+                    if chargeTxt.Color ~= fillCol then chargeTxt.Color = fillCol end
+                    chargeTxt.Visible = true
+                end
+            else
+                chargeBg.Visible   = false
+                chargeFill.Visible = false
+                chargeTxt.Visible  = false
+            end
         end
         RenderWaveEsp()
         if configDirty then
