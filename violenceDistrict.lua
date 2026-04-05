@@ -3,7 +3,6 @@
 local Config = {
     AutoSkillCheck = {
         Activate = true, -- auto skillcheck
-        Ratio = "Perfect", -- perfect hit
         Delay = 0.0, -- delay before hit
     },
     Esp = {
@@ -378,57 +377,62 @@ end
 local hasClicked = false
 local clickPending = false
 
--- auto skill
+-- auto skill optimized without ratio checks
 local function Autogen()
     local CheckPrompt = PlayerGui:FindFirstChild("SkillCheckPromptGui")
-    if CheckPrompt then
-        local check = CheckPrompt:FindFirstChild("Check")
-        if not check then return end
+    if not CheckPrompt then 
+        hasClicked = false
+        clickPending = false
+        return 
+    end
 
-        local lineObj = check:FindFirstChild("Line")
-        local goalObj = check:FindFirstChild("Goal")
-        if not lineObj or not goalObj then return end
+    local check = CheckPrompt:FindFirstChild("Check")
+    local lineObj = check and check:FindFirstChild("Line")
+    local goalObj = check and check:FindFirstChild("Goal")
+    
+    if not lineObj or not goalObj then return end
 
-        local Rotation = MemoryManager.GetGuiObjectRotation(lineObj.Address)
-        local GoalRotation = MemoryManager.GetGuiObjectRotation(goalObj.Address)
+    local Rotation = MemoryManager.GetGuiObjectRotation(lineObj.Address)
+    local GoalRotation = MemoryManager.GetGuiObjectRotation(goalObj.Address)
 
-        if not Rotation or not GoalRotation then return end
+    if not Rotation or not GoalRotation then return end
 
-        Rotation = normalizeAngle(Rotation)
-        GoalRotation = normalizeAngle(GoalRotation)
+    Rotation = normalizeAngle(Rotation)
+    GoalRotation = normalizeAngle(GoalRotation)
 
-        local lowerSuccess = normalizeAngle(104 + GoalRotation)
-        local upperSuccess = normalizeAngle(114 + GoalRotation)
+    -- perfect zone offset: 104-114
+    local lowerSuccess = normalizeAngle(104 + GoalRotation)
+    local upperSuccess = normalizeAngle(114 + GoalRotation)
 
-        local isPerfect = false
-        if lowerSuccess < upperSuccess then
-            isPerfect = (Rotation >= lowerSuccess and Rotation <= upperSuccess)
-        else
-            isPerfect = (Rotation >= lowerSuccess or Rotation <= upperSuccess)
-        end
+    local isPerfect = false
+    if lowerSuccess < upperSuccess then
+        isPerfect = (Rotation >= lowerSuccess and Rotation <= upperSuccess)
+    else
+        isPerfect = (Rotation >= lowerSuccess or Rotation <= upperSuccess)
+    end
 
-        if isPerfect and Config.AutoSkillCheck.Ratio == "Perfect" then
-            if not hasClicked and not clickPending then
-                hasClicked = true
-                clickPending = true
-                task_spawn(function()
-                    if Config.AutoSkillCheck.Delay > 0 then
-                        task_wait(Config.AutoSkillCheck.Delay)
-                    end
+    if isPerfect then
+        if not hasClicked and not clickPending then
+            hasClicked = true
+            clickPending = true
+            task_spawn(function()
+                if Config.AutoSkillCheck.Delay > 0 then
+                    task_wait(Config.AutoSkillCheck.Delay)
+                end
+                
+                -- active check to prevent clicking out of window
+                if isrbxactive() then
                     local ok2 = pcall(function()
                         keypress(32)
                         task_wait(0.02)
                         keyrelease(32)
                     end)
-                    clickPending = false
-                end)
-            end
-        else
-            hasClicked = false
+                end
+                clickPending = false
+            end)
         end
     else
         hasClicked = false
-        clickPending = false
     end
 end
 
