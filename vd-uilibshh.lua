@@ -5,6 +5,7 @@ https://github.com/catowice/p
 i had to change sum things
 -> Fixed Section rendering order issue 
 -> Added SubTab Architecture for Sub-Menus
+-> Fixed SubTab ghosting issue on tab switch
 ]]
 
 UILib = {
@@ -1086,40 +1087,38 @@ do
                 local hasSubtabs = #tabContent._subtabs > 0
                 local subtabOffset = hasSubtabs and 24 or 0
 
-                if isOpen then
-                    if hasSubtabs then
-                        local subTabIter = 0
-                        local subTabCount = #tabContent._subtabs
-                        for _, stName in ipairs(tabContent._subtabs) do
-                            local stDrawId = 'menu_subtab_' .. tostring(tabIter) .. '_' .. tostring(subTabIter)
-                            local stSize = Vector2.new(bodyContentSize.x / subTabCount, 24)
-                            local stPosition = Vector2.new(bodyContentPos.x + stSize.x * subTabIter, bodyContentPos.y + self._tab_h)
-                            local isSubOpen = tabContent._active_subtab == stName
+                if isOpen and hasSubtabs then
+                    local subTabIter = 0
+                    local subTabCount = #tabContent._subtabs
+                    for _, stName in ipairs(tabContent._subtabs) do
+                        local stDrawId = 'menu_subtab_' .. tostring(tabIter) .. '_' .. tostring(subTabIter)
+                        local stSize = Vector2.new(bodyContentSize.x / subTabCount, 24)
+                        local stPosition = Vector2.new(bodyContentPos.x + stSize.x * subTabIter, bodyContentPos.y + self._tab_h)
+                        local isSubOpen = tabContent._active_subtab == stName
 
-                            if not isSubOpen then
-                                self:_Draw(stDrawId .. '_backdrop', 'rect', self._theming.surface1, 12, stPosition, stSize, true)
-                                self:_Draw(stDrawId .. '_border_b', 'rect', self._theming.border1, 13, stPosition + Vector2.new(0, stSize.y), Vector2.new(stSize.x, 1), true)
-                            else
-                                self:_UndrawStartsWith(stDrawId .. '_backdrop')
-                                self:_Draw(stDrawId .. '_backdrop_active', 'rect', self._theming.body, 12, stPosition, stSize + Vector2.new(0,1), true)
-                                self:_Undraw(stDrawId .. '_border_b')
-                            end
-
-                            self:_Draw(stDrawId .. '_text', 'text', isSubOpen and self._theming.accent or self._theming.subtext, 14, stPosition + Vector2.new(stSize.x/2, stSize.y/2), stName, true, 'center')
-                            if subTabIter ~= subTabCount-1 then self:_Draw(stDrawId .. '_border_r', 'rect', self._theming.border1, 13, stPosition + Vector2.new(stSize.x, 0), Vector2.new(1, stSize.y), true) end
-
-                            if not isSubOpen and clickFrame and self:_IsMouseWithinBounds(stPosition, stSize) then
-                                tabContent._active_subtab = stName
-                                self._tab_change_at = os.clock()
-                                self._section_fade_done = false
-                                self._input_ctx = nil
-                                clickFrame = false
-                            end
-                            subTabIter = subTabIter + 1
+                        if not isSubOpen then
+                            self:_Draw(stDrawId .. '_backdrop', 'rect', self._theming.surface1, 12, stPosition, stSize, true)
+                            self:_Draw(stDrawId .. '_border_b', 'rect', self._theming.border1, 13, stPosition + Vector2.new(0, stSize.y), Vector2.new(stSize.x, 1), true)
+                        else
+                            self:_UndrawStartsWith(stDrawId .. '_backdrop')
+                            self:_Draw(stDrawId .. '_backdrop_active', 'rect', self._theming.body, 12, stPosition, stSize + Vector2.new(0,1), true)
+                            self:_Undraw(stDrawId .. '_border_b')
                         end
-                    else
-                        self:_UndrawStartsWith('menu_subtab_' .. tostring(tabIter))
+
+                        self:_Draw(stDrawId .. '_text', 'text', isSubOpen and self._theming.accent or self._theming.subtext, 14, stPosition + Vector2.new(stSize.x/2, stSize.y/2), stName, true, 'center')
+                        if subTabIter ~= subTabCount-1 then self:_Draw(stDrawId .. '_border_r', 'rect', self._theming.border1, 13, stPosition + Vector2.new(stSize.x, 0), Vector2.new(1, stSize.y), true) end
+
+                        if not isSubOpen and clickFrame and self:_IsMouseWithinBounds(stPosition, stSize) then
+                            tabContent._active_subtab = stName
+                            self._tab_change_at = os.clock()
+                            self._section_fade_done = false
+                            self._input_ctx = nil
+                            clickFrame = false
+                        end
+                        subTabIter = subTabIter + 1
                     end
+                else
+                    self:_UndrawStartsWith('menu_subtab_' .. tostring(tabIter))
                 end
 
                 local activeSectionCount = 0
