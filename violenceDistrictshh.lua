@@ -142,7 +142,7 @@ until Players
 
 -- matcha paths
 local WorkspacePath = "C:/matcha/workspace/"
-local LibPath = WorkspacePath .. "vd-uilibshh.lua" -- Değiştirildi: Cache sorunu olmaması için yeni isim
+local LibPath = WorkspacePath .. "vd-uilib-v3.lua" -- YENİ ALT SEKME KÜTÜPHANESİ
 local FolderPath = WorkspacePath .. "ViolenceDistrict/"
 local ModuleFolder = FolderPath .. "Modules/"
 
@@ -151,7 +151,7 @@ if not isfolder(WorkspacePath) then makefolder(WorkspacePath) end
 if not isfolder(FolderPath) then makefolder(FolderPath) end
 if not isfolder(ModuleFolder) then makefolder(ModuleFolder) end
 
--- load ui lib (Değiştirildi: Raw github linkine güncellendi)
+-- load ui lib
 if not isfile(LibPath) then
     local src = game:HttpGet("https://raw.githubusercontent.com/nonzINC/luavm/main/vd-uilibshh.lua")
     if src and type(src) == "string" and #src > 100 then writefile(LibPath, src) end
@@ -338,7 +338,7 @@ local function LoadConfig()
     merge(Config.Veil,           data.Veil)
     merge(Config.Survi,          data.Survi)
 
-    -- restore Color3 values (merge skips these bc type mismatch: userdata vs table)
+    -- restore Color3 values
     if type(data.Esp) == "table" then
         Config.Esp.TextColor     = c3load(data.Esp.TextColor)     or Config.Esp.TextColor
         Config.Esp.BoxColor      = c3load(data.Esp.BoxColor)      or Config.Esp.BoxColor
@@ -894,7 +894,7 @@ local function RenderGens()
                         cache.Text.Text = cache._lastText or "Generator"
                         cache.Text.Position = roundVec2(cp)
 
-                        -- color dinamico
+                        -- dynamic color
                         if regressing then
                             cache.Text.Color = Color_Regressing
                         elseif repairing > 0 then
@@ -1002,9 +1002,15 @@ local sNameTog = SurvSec:Toggle("Name", Config.Esp.SurvivorName, function(v) Con
 sNameTog:AddColorpicker("Color", Config.Esp.SurvivorColor, false, function(c) Config.Esp.SurvivorColor = c; configDirty = true end)
 SurvSec:Toggle("3D Circle", Config.Esp.SurvivorCircle, function(v) Config.Esp.SurvivorCircle = v; configDirty = true end)
 
+-- ==============================================================
+-- YENİ ALT SEKME SİSTEMİ İLE VEILBOT 
+-- ==============================================================
 local VeilTab = UILib:Tab("VeilBOT")
 
-local vCombat = VeilTab:Section("Combat & Pierce")
+-- 1. ALT SEKME: COMBAT
+local VeilCombatSub = VeilTab:SubTab("Combat")
+
+local vCombat = VeilCombatSub:Section("Combat & Pierce")
 local VeilAimTog = vCombat:Toggle("Aimbot Active", Config.Veil.AimActive, function(v) Config.Veil.AimActive = v; configDirty = true end)
 VeilAimTog:AddKeybind(Config.Veil.AimKey, Config.Veil.AimMode, true, function(keyId, mode)
     local kName = UILib:_KeyIDToName(keyId)
@@ -1031,7 +1037,17 @@ vCombat:Dropdown("Aim Target", {Config.Veil.Target}, {"HumanoidRootPart", "Head"
 vCombat:Slider("Smoothness", Config.Veil.Smooth, 0.1, 1.0, 20.0, "", function(v) Config.Veil.Smooth = v; configDirty = true end)
 vCombat:Slider("Max Distance", Config.Veil.MaxDist, 50, 50, 3000, " studs", function(v) Config.Veil.MaxDist = v; configDirty = true end)
 
-local vVis = VeilTab:Section("Cross & Line")
+local vTrigger = VeilCombatSub:Section("Triggerbot")
+vTrigger:Toggle("Triggerbot Active", Config.Veil.TriggerActive, function(v) Config.Veil.TriggerActive = v; configDirty = true end)
+vTrigger:Slider("Min Charge Normal", Config.Veil.TriggerMinCharge, 0.1, 0.3, 3.0, "s", function(v) Config.Veil.TriggerMinCharge = v; configDirty = true end)
+vTrigger:Slider("Min Charge Pierce", Config.Veil.TriggerMinChargePierce, 0.1, 0.3, 3.0, "s", function(v) Config.Veil.TriggerMinChargePierce = v; configDirty = true end)
+vTrigger:Slider("Trigger Delay", Config.Veil.TriggerDelay, 0.01, 0.0, 0.5, "s", function(v) Config.Veil.TriggerDelay = v; configDirty = true end)
+
+
+-- 2. ALT SEKME: VISUALS
+local VeilVisualsSub = VeilTab:SubTab("Visuals")
+
+local vVis = VeilVisualsSub:Section("Cross & Line")
 vVis:Toggle("Lock Line", Config.Veil.LockLine, function(v) Config.Veil.LockLine = v; configDirty = true end)
 vVis:Toggle("Show Crosses", Config.Veil.EspCross, function(v) Config.Veil.EspCross = v; configDirty = true end)
 vVis:Slider("Cross Size", Config.Veil.CrossSize, 1, 2, 30, "px", function(v) Config.Veil.CrossSize = v; configDirty = true end)
@@ -1049,20 +1065,16 @@ cHit:AddColorpicker("Hit", Config.Veil.ColorHit, true, function(c) Config.Veil.C
 local cApprox = vVis:Toggle("Color Approx", true, function() end)
 cApprox:AddColorpicker("Approx", Config.Veil.ColorApprox, true, function(c) Config.Veil.ColorApprox = c; configDirty = true end)
 
-local vTrigger = VeilTab:Section("Triggerbot")
-vTrigger:Toggle("Triggerbot Active", Config.Veil.TriggerActive, function(v) Config.Veil.TriggerActive = v; configDirty = true end)
-vTrigger:Slider("Min Charge Normal", Config.Veil.TriggerMinCharge, 0.1, 0.3, 3.0, "s", function(v) Config.Veil.TriggerMinCharge = v; configDirty = true end)
-vTrigger:Slider("Min Charge Pierce", Config.Veil.TriggerMinChargePierce, 0.1, 0.3, 3.0, "s", function(v) Config.Veil.TriggerMinChargePierce = v; configDirty = true end)
-vTrigger:Slider("Trigger Delay", Config.Veil.TriggerDelay, 0.01, 0.0, 0.5, "s", function(v) Config.Veil.TriggerDelay = v; configDirty = true end)
-
-local vCharge = VeilTab:Section("Charge Indicator")
+local vCharge = VeilVisualsSub:Section("Charge Indicator")
 vCharge:Toggle("Show Indicator", Config.Veil.ChargeBar, function(v) Config.Veil.ChargeBar = v; configDirty = true end)
 vCharge:Dropdown("Display Mode", {Config.Veil.ChargeMode}, {"Bar", "Percent"}, false, function(v) Config.Veil.ChargeMode = v[1]; configDirty = true end)
-vCharge:Slider("Charge Max (calibrar)", Config.Veil.ChargeAttrMax, 1, 10, 100, "", function(v) Config.Veil.ChargeAttrMax = v; configDirty = true end)
+vCharge:Slider("Charge Max (calibrate)", Config.Veil.ChargeAttrMax, 1, 10, 100, "", function(v) Config.Veil.ChargeAttrMax = v; configDirty = true end)
 vCharge:Slider("Full Charge Time", Config.Veil.ChargeFullTime, 1, 0.5, 10, "s", function(v) Config.Veil.ChargeFullTime = v; configDirty = true end)
 vCharge:Slider("Bar Width",   Config.Veil.ChargeBarW,    5,  50, 300, "px", function(v) Config.Veil.ChargeBarW    = v; configDirty = true end)
 vCharge:Slider("Bar Height",  Config.Veil.ChargeBarH,    1,   4,  20, "px", function(v) Config.Veil.ChargeBarH    = v; configDirty = true end)
 vCharge:Slider("Y Offset",    Config.Veil.ChargeBarOffY, 1,  10, 150, "px", function(v) Config.Veil.ChargeBarOffY = v; configDirty = true end)
+
+-- ==============================================================
 
 -- survivor tab
 local AbyssSec = MainTab:Section("Abysswalker - Dark Severance")
