@@ -1087,6 +1087,7 @@ do
                 local hasSubtabs = #tabContent._subtabs > 0
                 local subtabOffset = hasSubtabs and 24 or 0
 
+                -- SUBTAB ÇİZİM MANTIĞI DÜZELTİLDİ (EKSİK ELSE EKLENDİ)
                 if isOpen and hasSubtabs then
                     local subTabIter = 0
                     local subTabCount = #tabContent._subtabs
