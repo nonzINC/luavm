@@ -1065,14 +1065,24 @@ cHit:AddColorpicker("Hit", Config.Veil.ColorHit, true, function(c) Config.Veil.C
 local cApprox = vVis:Toggle("Color Approx", true, function() end)
 cApprox:AddColorpicker("Approx", Config.Veil.ColorApprox, true, function(c) Config.Veil.ColorApprox = c; configDirty = true end)
 
+-- Charge Indicator section
 local vCharge = VeilVisualsSub:Section("Charge Indicator")
+
+-- Main toggle
 vCharge:Toggle("Show Indicator", Config.Veil.ChargeBar, function(v) Config.Veil.ChargeBar = v; configDirty = true end)
+
+-- Display mode
 vCharge:Dropdown("Display Mode", {Config.Veil.ChargeMode}, {"Bar", "Percent"}, false, function(v) Config.Veil.ChargeMode = v[1]; configDirty = true end)
-vCharge:Slider("Charge Max (calibrate)", Config.Veil.ChargeAttrMax, 1, 10, 100, "", function(v) Config.Veil.ChargeAttrMax = v; configDirty = true end)
-vCharge:Slider("Full Charge Time", Config.Veil.ChargeFullTime, 1, 0.5, 10, "s", function(v) Config.Veil.ChargeFullTime = v; configDirty = true end)
+
+-- Visual sizing & position (only relevant for Bar mode, still shown for Percent Y offset)
 vCharge:Slider("Bar Width",   Config.Veil.ChargeBarW,    5,  50, 300, "px", function(v) Config.Veil.ChargeBarW    = v; configDirty = true end)
 vCharge:Slider("Bar Height",  Config.Veil.ChargeBarH,    1,   4,  20, "px", function(v) Config.Veil.ChargeBarH    = v; configDirty = true end)
 vCharge:Slider("Y Offset",    Config.Veil.ChargeBarOffY, 1,  10, 150, "px", function(v) Config.Veil.ChargeBarOffY = v; configDirty = true end)
+
+-- Advanced calibration (forced to right column via column=2)
+local vChargeAdv = VeilVisualsSub:Section("Charge Indicator - Advanced", 2)
+vChargeAdv:Slider("Charge Max (calibrate)", Config.Veil.ChargeAttrMax,  1,  10, 100, "",  function(v) Config.Veil.ChargeAttrMax  = v; configDirty = true end)
+vChargeAdv:Slider("Full Charge Time",       Config.Veil.ChargeFullTime, 1, 0.5,  10, "s", function(v) Config.Veil.ChargeFullTime = v; configDirty = true end)
 
 -- ==============================================================
 
