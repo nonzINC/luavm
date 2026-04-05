@@ -1153,7 +1153,12 @@ do
 
                         local isLastSection = activeSectionIter >= activeSectionCount-2
                         local _col = sectionContent._column
-                        local isSectionMirror = _col ~= nil and (_col == 2) or (_col == nil and activeSectionIter % 2 == 1)
+                        local isSectionMirror
+                        if _col ~= nil then
+                            isSectionMirror = (_col == 2)
+                        else
+                            isSectionMirror = (activeSectionIter % 2 == 1)
+                        end
 
                         local sectionTitleSize = self:_GetTextBounds(sectionName)
                         local sectionPos = Vector2.new(bodyContentPos.x + self._padding, bodyContentPos.y + tabSize.y)
@@ -1563,9 +1568,9 @@ do
                         self:_Draw(sectionDrawId .. '_border', 'rect', self._theming.border0, 12, sectionPos, Vector2.new(sectionWidth, sectionHeight), false)
 
                         if isSectionMirror then
-                            totalSectionHeightR = totalSectionHeightR + self._padding
+                            totalSectionHeightR = totalSectionHeightR + self._padding * 2
                         else
-                            totalSectionHeightL = totalSectionHeightL + self._padding
+                            totalSectionHeightL = totalSectionHeightL + self._padding * 2
                         end
 
                         activeSectionIter = activeSectionIter + 1
