@@ -1,5 +1,4 @@
 -- v2
---
 -- config setup
 local Config = {
     AutoSkillCheck = {
@@ -143,7 +142,7 @@ until Players
 
 -- matcha paths
 local WorkspacePath = "C:/matcha/workspace/"
-local LibPath = WorkspacePath .. "vd-uilib.lua"
+local LibPath = WorkspacePath .. "vd-uilibshh.lua" -- Değiştirildi: Cache sorunu olmaması için yeni isim
 local FolderPath = WorkspacePath .. "ViolenceDistrict/"
 local ModuleFolder = FolderPath .. "Modules/"
 
@@ -152,9 +151,9 @@ if not isfolder(WorkspacePath) then makefolder(WorkspacePath) end
 if not isfolder(FolderPath) then makefolder(FolderPath) end
 if not isfolder(ModuleFolder) then makefolder(ModuleFolder) end
 
--- load ui lib
+-- load ui lib (Değiştirildi: Raw github linkine güncellendi)
 if not isfile(LibPath) then
-    local src = game:HttpGet("https://raw.githubusercontent.com/nonzINC/luavm/refs/heads/main/vd-uilib.lua")
+    local src = game:HttpGet("https://raw.githubusercontent.com/nonzINC/luavm/main/vd-uilibshh.lua")
     if src and type(src) == "string" and #src > 100 then writefile(LibPath, src) end
 end
 local UILib = require(LibPath)
