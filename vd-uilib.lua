@@ -1,7 +1,11 @@
 --[[
 original repo
 https://github.com/catowice/p
+
 i had to change sum things
+-> Fixed Section rendering order issue 
+-> Added SubTab Architecture for Sub-Menus
+-> Fixed SubTab Ghosting/Desync Issue
 ]]
 
 UILib = {
