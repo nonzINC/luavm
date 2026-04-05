@@ -141,7 +141,8 @@ until Players
 
 -- matcha paths
 local WorkspacePath = "C:/matcha/workspace/"
-local LibPath = WorkspacePath .. "vd-uilib.lua"
+-- versioned library path without dots to prevent require() directory parsing errors
+local LibPath = WorkspacePath .. "vd-uilib-v25.lua"
 local FolderPath = WorkspacePath .. "ViolenceDistrict/"
 local ModuleFolder = FolderPath .. "Modules/"
 
