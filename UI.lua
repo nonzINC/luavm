@@ -1,5 +1,8 @@
 -- UILib v2 (glassmorphism sidebar)
 -- rewrite of https://github.com/catowice/p -- api compatible drop-in
+-- mause 4 ,5 bulunamıyor
+-- textler missaligned
+-- ui'ı biraz daha genişletip 2 column yapalım.
 UILib = {
     _font_face = Drawing.Fonts.UI,
     _font_size = 13,
