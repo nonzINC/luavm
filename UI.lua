@@ -3,6 +3,9 @@
 -- mause 4 ,5 bulunamıyor
 -- textler missaligned
 -- ui'ı biraz daha genişletip 2 column yapalım.
+-- shadow radius biraz daha fazla olsun, 2-3 pixel daha küçük olsunlar taşıyor.
+-- fade in out durumlarında saydamlık sıfırlanıyor
+-- UI'a ufak çember çerçeve 
 UILib = {
     _font_face = Drawing.Fonts.UI,
     _font_size = 13,
