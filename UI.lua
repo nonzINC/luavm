@@ -840,8 +840,10 @@ do
 
     function UILib:Tab(tabName, options)
         local sidebarGroup = nil
+        local sidebarGroupTitle = nil
         if type(options) == 'table' then
             sidebarGroup = options.sidebarGroup or options.group
+            sidebarGroupTitle = options.sidebarGroupTitle or options.groupTitle
         elseif options ~= nil then
             sidebarGroup = tostring(options)
         end
@@ -853,10 +855,14 @@ do
                 _section_count = 0,
                 _next_column = 1,
                 _sidebar_group = sidebarGroup,
+                _sidebar_group_title = sidebarGroupTitle,
             }
             table.insert(self._tab_order, tabName)
         elseif options ~= nil then
             self._tree[tabName]._sidebar_group = sidebarGroup
+            if type(options) == 'table' then
+                self._tree[tabName]._sidebar_group_title = sidebarGroupTitle
+            end
         end
         if not self._open_tab then self._open_tab = tabName end
 
@@ -874,16 +880,36 @@ do
                     end
                 }
             end,
-            SetSidebarGroup = function(_, newGroup)
+            SetSidebarGroup = function(_, newGroup, newTitle)
                 local tabRef = parentLib._tree[tabName]
                 if tabRef then
-                    tabRef._sidebar_group = newGroup and tostring(newGroup) or nil
+                    local parsedGroup = newGroup
+                    local parsedTitle = newTitle
+                    if type(newGroup) == 'table' then
+                        parsedGroup = newGroup.sidebarGroup or newGroup.group
+                        parsedTitle = newGroup.sidebarGroupTitle or newGroup.groupTitle
+                    end
+                    tabRef._sidebar_group = parsedGroup and tostring(parsedGroup) or nil
+                    if parsedTitle ~= nil then
+                        tabRef._sidebar_group_title = parsedTitle and tostring(parsedTitle) or nil
+                    end
                 end
                 return tabObj
             end,
             GetSidebarGroup = function(_)
                 local tabRef = parentLib._tree[tabName]
                 return tabRef and tabRef._sidebar_group or nil
+            end,
+            SetSidebarGroupTitle = function(_, newTitle)
+                local tabRef = parentLib._tree[tabName]
+                if tabRef then
+                    tabRef._sidebar_group_title = newTitle and tostring(newTitle) or nil
+                end
+                return tabObj
+            end,
+            GetSidebarGroupTitle = function(_)
+                local tabRef = parentLib._tree[tabName]
+                return tabRef and tabRef._sidebar_group_title or nil
             end
         }
         return tabObj
@@ -1537,15 +1563,13 @@ do
             local tabAreaEndY = sidebarPos.y + sidebarSize.y - 12
             local tabBtnH = self._tab_btn_h
             local tabBtnGap = 4
-            local maxVisibleTabs = math.max(1, math.floor((tabAreaEndY - tabAreaStartY + tabBtnGap) / (tabBtnH + tabBtnGap)))
-            local visibleTabCount = math.min(tabCount, maxVisibleTabs)
-            for i = 1, visibleTabCount do
+            local tabGroupHeaderH = 16
+            local visibleTabs = {}
+            local tabCursorY = tabAreaStartY
+
+            for i = 1, tabCount do
                 local tabName = self._tab_order[i]
                 local tabData = self._tree[tabName]
-                local isOpen = self._open_tab == tabName
-                local tabDrawId = 'menu_tab_' .. tostring(i)
-                local btnPos = Vector2.new(sidebarPos.x + 8, tabAreaStartY + (i-1) * (tabBtnH + tabBtnGap))
-                local btnSize = Vector2.new(sidebarW - 17, tabBtnH)
                 local sidebarGroup = tabData and tabData._sidebar_group or nil
                 local prevGrouped = false
                 local nextGrouped = false
@@ -1555,13 +1579,76 @@ do
                         local prevTabData = self._tree[prevTabName]
                         prevGrouped = prevTabData and prevTabData._sidebar_group == sidebarGroup or false
                     end
-                    if i < visibleTabCount then
+                    if i < tabCount then
                         local nextTabName = self._tab_order[i + 1]
                         local nextTabData = self._tree[nextTabName]
                         nextGrouped = nextTabData and nextTabData._sidebar_group == sidebarGroup or false
                     end
                 end
-                local showGroupBracket = sidebarGroup and (prevGrouped or nextGrouped)
+
+                local groupTitle = nil
+                local isFirstGrouped = sidebarGroup and not prevGrouped
+                if isFirstGrouped then
+                    for groupIndex = i, tabCount do
+                        local groupTabName = self._tab_order[groupIndex]
+                        local groupTabData = self._tree[groupTabName]
+                        if not groupTabData or groupTabData._sidebar_group ~= sidebarGroup then
+                            break
+                        end
+                        if groupTabData._sidebar_group_title and groupTabData._sidebar_group_title ~= '' then
+                            groupTitle = tostring(groupTabData._sidebar_group_title)
+                            break
+                        end
+                    end
+                end
+
+                local groupTitleText = nil
+                local groupHeaderHeight = 0
+                if groupTitle then
+                    groupTitleText = self:_TruncateText(groupTitle, sidebarW - 38, nil, 10)
+                    if groupTitleText and groupTitleText ~= '' then
+                        groupHeaderHeight = tabGroupHeaderH
+                    else
+                        groupTitleText = nil
+                    end
+                end
+
+                local btnPos = Vector2.new(sidebarPos.x + 8, tabCursorY + groupHeaderHeight)
+                local btnSize = Vector2.new(sidebarW - 17, tabBtnH)
+                if btnPos.y + btnSize.y > tabAreaEndY then
+                    break
+                end
+
+                table.insert(visibleTabs, {
+                    drawId = 'menu_tab_' .. tostring(#visibleTabs + 1),
+                    name = tabName,
+                    data = tabData,
+                    index = i,
+                    sidebarGroup = sidebarGroup,
+                    btnPos = btnPos,
+                    btnSize = btnSize,
+                    headerY = tabCursorY,
+                    headerText = groupTitleText,
+                })
+
+                tabCursorY = btnPos.y + btnSize.y + tabBtnGap
+            end
+
+            local visibleTabCount = #visibleTabs
+            for visibleIndex = 1, visibleTabCount do
+                local layout = visibleTabs[visibleIndex]
+                local tabName = layout.name
+                local tabData = layout.data
+                local isOpen = self._open_tab == tabName
+                local tabDrawId = layout.drawId
+                local btnPos = layout.btnPos
+                local btnSize = layout.btnSize
+                local sidebarGroup = layout.sidebarGroup
+                local prevLayout = visibleIndex > 1 and visibleTabs[visibleIndex - 1] or nil
+                local nextLayout = visibleIndex < visibleTabCount and visibleTabs[visibleIndex + 1] or nil
+                local prevGrouped = prevLayout and prevLayout.sidebarGroup == sidebarGroup or false
+                local nextGrouped = nextLayout and nextLayout.sidebarGroup == sidebarGroup or false
+                local showGroupBracket = sidebarGroup and (prevGrouped or nextGrouped or layout.headerText ~= nil)
 
                 local isHoveringTab = self:_IsMouseWithinBounds(btnPos, btnSize)
                 if isOpen then
@@ -1588,17 +1675,40 @@ do
                     labelColor = self._theming.subtext
                 end
                 if showGroupBracket then
-                    local bracketColor = isOpen and self._theming.text or (isHoveringTab and self._theming.border1 or self._theming.border1)
+                    local openTabData = self._open_tab and self._tree[self._open_tab] or nil
+                    local groupActive = openTabData and openTabData._sidebar_group == sidebarGroup or false
+                    local bracketColor = isOpen and self._theming.text or (groupActive and self._theming.text or self._theming.border1)
                     local bracketX = btnPos.x + 8
-                    local bracketTopY = btnPos.y + 6
+                    local bracketTopY = layout.headerText and (layout.headerY + 7) or (btnPos.y + 6)
                     local bracketBottomY = btnPos.y + btnSize.y - 6
                     local verticalFromY = prevGrouped and (btnPos.y - math.floor(tabBtnGap / 2)) or bracketTopY
                     local verticalToY = nextGrouped and (btnPos.y + btnSize.y + math.floor(tabBtnGap / 2)) or bracketBottomY
                     self:_Draw(tabDrawId .. '_group_vert', 'line', bracketColor, 11, Vector2.new(bracketX, verticalFromY), Vector2.new(bracketX, verticalToY), 1)
-                    if not prevGrouped then
-                        self:_Draw(tabDrawId .. '_group_top', 'line', bracketColor, 11, Vector2.new(bracketX, bracketTopY), Vector2.new(bracketX + 5, bracketTopY), 1)
-                    else
+
+                    if layout.headerText then
+                        local headerTextColor = groupActive and self._theming.text or self._theming.subtext
+                        local headerTextSize = self:_GetTextBounds(layout.headerText, nil, 10)
+                        local headerTextX = bracketX + 10
+                        local headerLineLeftToX = headerTextX - 4
+                        local headerLineRightFromX = headerTextX + headerTextSize.x + 6
+                        local headerLineRightToX = btnPos.x + btnSize.x - 6
+                        self:_Draw(tabDrawId .. '_group_header_l', 'line', bracketColor, 11, Vector2.new(bracketX, bracketTopY), Vector2.new(headerLineLeftToX, bracketTopY), 1)
+                        if headerLineRightToX > headerLineRightFromX then
+                            self:_Draw(tabDrawId .. '_group_header_r', 'line', bracketColor, 11, Vector2.new(headerLineRightFromX, bracketTopY), Vector2.new(headerLineRightToX, bracketTopY), 1)
+                        else
+                            self:_Undraw(tabDrawId .. '_group_header_r')
+                        end
+                        self:_Draw(tabDrawId .. '_group_title', 'text', headerTextColor, 11, Vector2.new(headerTextX, bracketTopY - 7), layout.headerText, true, 'left', 10)
                         self:_Undraw(tabDrawId .. '_group_top')
+                    else
+                        self:_Undraw(tabDrawId .. '_group_header_l')
+                        self:_Undraw(tabDrawId .. '_group_header_r')
+                        self:_Undraw(tabDrawId .. '_group_title')
+                        if not prevGrouped then
+                            self:_Draw(tabDrawId .. '_group_top', 'line', bracketColor, 11, Vector2.new(bracketX, bracketTopY), Vector2.new(bracketX + 5, bracketTopY), 1)
+                        else
+                            self:_Undraw(tabDrawId .. '_group_top')
+                        end
                     end
                     if not nextGrouped then
                         self:_Draw(tabDrawId .. '_group_bottom', 'line', bracketColor, 11, Vector2.new(bracketX, bracketBottomY), Vector2.new(bracketX + 5, bracketBottomY), 1)
@@ -1609,6 +1719,9 @@ do
                     self:_Undraw(tabDrawId .. '_group_vert')
                     self:_Undraw(tabDrawId .. '_group_top')
                     self:_Undraw(tabDrawId .. '_group_bottom')
+                    self:_Undraw(tabDrawId .. '_group_header_l')
+                    self:_Undraw(tabDrawId .. '_group_header_r')
+                    self:_Undraw(tabDrawId .. '_group_title')
                 end
                 local labelOffsetX = showGroupBracket and 22 or 14
                 local truncTabName = self:_TruncateText(tabName, btnSize.x - labelOffsetX - 8)
