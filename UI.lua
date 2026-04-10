@@ -838,15 +838,25 @@ do
         self._notifications_spawned = self._notifications_spawned + 1
     end
 
-    function UILib:Tab(tabName)
+    function UILib:Tab(tabName, options)
+        local sidebarGroup = nil
+        if type(options) == 'table' then
+            sidebarGroup = options.sidebarGroup or options.group
+        elseif options ~= nil then
+            sidebarGroup = tostring(options)
+        end
+
         if not self._tree[tabName] then
             self._tree[tabName] = {
                 _items = {},
                 _section_order = {},
                 _section_count = 0,
                 _next_column = 1,
+                _sidebar_group = sidebarGroup,
             }
             table.insert(self._tab_order, tabName)
+        elseif options ~= nil then
+            self._tree[tabName]._sidebar_group = sidebarGroup
         end
         if not self._open_tab then self._open_tab = tabName end
 
@@ -863,6 +873,17 @@ do
                         return parentLib:_Section(tabName, sectionName, nil, column)
                     end
                 }
+            end,
+            SetSidebarGroup = function(_, newGroup)
+                local tabRef = parentLib._tree[tabName]
+                if tabRef then
+                    tabRef._sidebar_group = newGroup and tostring(newGroup) or nil
+                end
+                return tabObj
+            end,
+            GetSidebarGroup = function(_)
+                local tabRef = parentLib._tree[tabName]
+                return tabRef and tabRef._sidebar_group or nil
             end
         }
         return tabObj
@@ -889,8 +910,9 @@ do
         end)
         settingsRefs.menuKey = menuKey
         menuKey:AddKeybind(self._menu_key, 'Hold', false, function(newValue)
-            local name = self:_KeyIDToName(newValue)
-            if name then self._menu_key = name end
+            if newValue and self._inputs[newValue] then
+                self._menu_key = newValue
+            end
         end)
         if showWatermark then
             settingsRefs.watermark = menuSection:Toggle('Watermark', self._watermark_enabled, function(newValue)
@@ -1519,10 +1541,27 @@ do
             local visibleTabCount = math.min(tabCount, maxVisibleTabs)
             for i = 1, visibleTabCount do
                 local tabName = self._tab_order[i]
+                local tabData = self._tree[tabName]
                 local isOpen = self._open_tab == tabName
                 local tabDrawId = 'menu_tab_' .. tostring(i)
                 local btnPos = Vector2.new(sidebarPos.x + 8, tabAreaStartY + (i-1) * (tabBtnH + tabBtnGap))
                 local btnSize = Vector2.new(sidebarW - 17, tabBtnH)
+                local sidebarGroup = tabData and tabData._sidebar_group or nil
+                local prevGrouped = false
+                local nextGrouped = false
+                if sidebarGroup then
+                    if i > 1 then
+                        local prevTabName = self._tab_order[i - 1]
+                        local prevTabData = self._tree[prevTabName]
+                        prevGrouped = prevTabData and prevTabData._sidebar_group == sidebarGroup or false
+                    end
+                    if i < visibleTabCount then
+                        local nextTabName = self._tab_order[i + 1]
+                        local nextTabData = self._tree[nextTabName]
+                        nextGrouped = nextTabData and nextTabData._sidebar_group == sidebarGroup or false
+                    end
+                end
+                local showGroupBracket = sidebarGroup and (prevGrouped or nextGrouped)
 
                 local isHoveringTab = self:_IsMouseWithinBounds(btnPos, btnSize)
                 if isOpen then
@@ -1548,8 +1587,32 @@ do
                 else
                     labelColor = self._theming.subtext
                 end
-                local truncTabName = self:_TruncateText(tabName, btnSize.x - 22)
-                self:_Draw(tabDrawId .. '_text', 'text', labelColor, 11, btnPos + Vector2.new(14, btnSize.y/2 - 7), truncTabName, true)
+                if showGroupBracket then
+                    local bracketColor = isOpen and self._theming.text or (isHoveringTab and self._theming.border1 or self._theming.border1)
+                    local bracketX = btnPos.x + 8
+                    local bracketTopY = btnPos.y + 6
+                    local bracketBottomY = btnPos.y + btnSize.y - 6
+                    local verticalFromY = prevGrouped and (btnPos.y - math.floor(tabBtnGap / 2)) or bracketTopY
+                    local verticalToY = nextGrouped and (btnPos.y + btnSize.y + math.floor(tabBtnGap / 2)) or bracketBottomY
+                    self:_Draw(tabDrawId .. '_group_vert', 'line', bracketColor, 11, Vector2.new(bracketX, verticalFromY), Vector2.new(bracketX, verticalToY), 1)
+                    if not prevGrouped then
+                        self:_Draw(tabDrawId .. '_group_top', 'line', bracketColor, 11, Vector2.new(bracketX, bracketTopY), Vector2.new(bracketX + 5, bracketTopY), 1)
+                    else
+                        self:_Undraw(tabDrawId .. '_group_top')
+                    end
+                    if not nextGrouped then
+                        self:_Draw(tabDrawId .. '_group_bottom', 'line', bracketColor, 11, Vector2.new(bracketX, bracketBottomY), Vector2.new(bracketX + 5, bracketBottomY), 1)
+                    else
+                        self:_Undraw(tabDrawId .. '_group_bottom')
+                    end
+                else
+                    self:_Undraw(tabDrawId .. '_group_vert')
+                    self:_Undraw(tabDrawId .. '_group_top')
+                    self:_Undraw(tabDrawId .. '_group_bottom')
+                end
+                local labelOffsetX = showGroupBracket and 22 or 14
+                local truncTabName = self:_TruncateText(tabName, btnSize.x - labelOffsetX - 8)
+                self:_Draw(tabDrawId .. '_text', 'text', labelColor, 11, btnPos + Vector2.new(labelOffsetX, btnSize.y/2 - 7), truncTabName, true)
 
                 if clickFrame and isHoveringTab then
                     if not isOpen then
