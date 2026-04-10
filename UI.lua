@@ -24,6 +24,9 @@ UILib = {
     _copied_color = nil,
     _menu_fade_done = false,
     _section_fade_done = false,
+    _anim_state = {},
+    _last_step_at = 0,
+    _frame_dt = 16/1000,
 
     title = 'UILib v2',
     _custom_title_enabled = false,
@@ -180,6 +183,34 @@ do
 
     function UILib:_Lerp(a, b, t)
         return a + (b - a) * t
+    end
+
+    function UILib:_LerpColor(a, b, t)
+        return Color3.new(
+            self:_Lerp(a.R, b.R, t),
+            self:_Lerp(a.G, b.G, t),
+            self:_Lerp(a.B, b.B, t)
+        )
+    end
+
+    function UILib:_StepAnim(key, target, speed)
+        local current = self._anim_state[key]
+        if current == nil then
+            current = target
+        else
+            local alpha = clamp((self._frame_dt or (16/1000)) * (speed or 16), 0, 1)
+            current = current + (target - current) * alpha
+            if math.abs(target - current) < 0.001 then
+                current = target
+            end
+        end
+        self._anim_state[key] = current
+        return current
+    end
+
+    function UILib:_SetAnim(key, value)
+        self._anim_state[key] = value
+        return value
     end
 
     function UILib:_ResolveMenuFadeOpacity()
@@ -1177,11 +1208,21 @@ do
         self._settings_menu_section_ref = nil
         self._settings_theming_section_ref = nil
         self._settings_item_refs = nil
+        self._anim_state = {}
+        self._last_step_at = 0
+        self._frame_dt = 16/1000
         setrobloxinput(true)
     end
 
     function UILib:Step()
         local menuTitle = tostring(self._custom_title_enabled and self._custom_title or self.title or 'UILib')
+        local stepNow = os.clock()
+        if self._last_step_at == 0 then
+            self._frame_dt = 16/1000
+        else
+            self._frame_dt = clamp(stepNow - self._last_step_at, 0, 0.05)
+        end
+        self._last_step_at = stepNow
 
         -- input processing
         local inputMenuOpacity = self:_ResolveMenuFadeOpacity()
@@ -1691,29 +1732,28 @@ do
                 local showGroupBracket = sidebarGroup and (prevGrouped or nextGrouped or layout.headerText ~= nil)
 
                 local isHoveringTab = self:_IsMouseWithinBounds(btnPos, btnSize)
-                if isOpen then
-                    -- active: surface1 bg + accent strip on left
-                    self:_Draw(tabDrawId .. '_bg', 'rect', self._theming.surface1, 8, btnPos, btnSize, true)
-                    self:_Draw(tabDrawId .. '_strip', 'rect', self._theming.accent, 10, btnPos, Vector2.new(3, btnSize.y), true)
-                    self:_Draw(tabDrawId .. '_border', 'rect', self._theming.border1, 9, btnPos, btnSize, false)
-                elseif isHoveringTab then
-                    self:_Draw(tabDrawId .. '_bg', 'rect', self._theming.border0, 8, btnPos, btnSize, true)
-                    self:_Undraw(tabDrawId .. '_strip')
-                    self:_Undraw(tabDrawId .. '_border')
+                local tabOpenAnim = self:_StepAnim(tabDrawId .. '_open_anim', isOpen and 1 or 0, 18)
+                local tabHoverAnim = self:_StepAnim(tabDrawId .. '_hover_anim', (isHoveringTab and not isOpen) and 1 or 0, 18)
+                local tabBgAlpha = math.max(tabOpenAnim, tabHoverAnim * 0.9)
+                if tabBgAlpha > 0.01 then
+                    local tabBgColor = self:_LerpColor(self._theming.border0, self._theming.surface1, tabOpenAnim)
+                    self:_Draw(tabDrawId .. '_bg', 'rect', tabBgColor, 8, btnPos, btnSize, true)
+                    self:_SetOpacity(tabDrawId .. '_bg', tabBgAlpha)
                 else
                     self:_Undraw(tabDrawId .. '_bg')
+                end
+                if tabOpenAnim > 0.01 then
+                    local stripW = math.max(1, math.floor(3 * tabOpenAnim + 0.5))
+                    self:_Draw(tabDrawId .. '_strip', 'rect', self._theming.accent, 10, btnPos, Vector2.new(stripW, btnSize.y), true)
+                    self:_SetOpacity(tabDrawId .. '_strip', tabOpenAnim)
+                    self:_Draw(tabDrawId .. '_border', 'rect', self._theming.border1, 9, btnPos, btnSize, false)
+                    self:_SetOpacity(tabDrawId .. '_border', tabOpenAnim)
+                else
                     self:_Undraw(tabDrawId .. '_strip')
                     self:_Undraw(tabDrawId .. '_border')
                 end
 
-                local labelColor
-                if isOpen then
-                    labelColor = self._theming.text
-                elseif isHoveringTab then
-                    labelColor = self._theming.text
-                else
-                    labelColor = self._theming.subtext
-                end
+                local labelColor = self:_LerpColor(self._theming.subtext, self._theming.text, clamp(tabOpenAnim + tabHoverAnim * 0.85, 0, 1))
                 if showGroupBracket then
                     local openTabData = self._open_tab and self._tree[self._open_tab] or nil
                     local groupActive = openTabData and openTabData._sidebar_group == sidebarGroup or false
@@ -2026,20 +2066,17 @@ do
                                 local hitPos = Vector2.new(pillX - 10, rowPos.y)
                                 local hitSize = Vector2.new(pillW + 14, rowH)
                                 local isHoveringToggle = self:_IsMouseWithinBounds(hitPos, hitSize)
+                                local toggleAnim = self:_StepAnim(sectionItemId .. '_toggle_anim', itemValue and 1 or 0, 18)
+                                local toggleHoverAnim = self:_StepAnim(sectionItemId .. '_toggle_hover_anim', isHoveringToggle and 1 or 0, 18)
 
-                                local pillColor
-                                if itemValue then
-                                    pillColor = self._theming.accent
-                                elseif isHoveringToggle then
-                                    pillColor = self._theming.border1
-                                else
-                                    pillColor = self._theming.surface1
-                                end
+                                local pillBaseColor = self:_LerpColor(self._theming.surface1, self._theming.border1, toggleHoverAnim * 0.75)
+                                local pillColor = self:_LerpColor(pillBaseColor, self._theming.accent, toggleAnim)
                                 self:_Draw(sectionItemId .. '_pill_bg', 'rect', pillColor, 12, Vector2.new(pillX, pillY), Vector2.new(pillW, pillH), true)
                                 self:_Draw(sectionItemId .. '_pill_border', 'rect', self._theming.crust, 13, Vector2.new(pillX, pillY), Vector2.new(pillW, pillH), false)
                                 -- knob
                                 local knobSize = pillH - 4
-                                local knobX = itemValue and (pillX + pillW - knobSize - 2) or (pillX + 2)
+                                local knobTravel = pillW - knobSize - 4
+                                local knobX = pillX + 2 + knobTravel * toggleAnim
                                 local knobY = pillY + 2
                                 self:_Draw(sectionItemId .. '_pill_knob', 'rect', self._theming.text, 14, Vector2.new(knobX, knobY), Vector2.new(knobSize, knobSize), true)
 
@@ -2048,6 +2085,9 @@ do
                                     sectionItem.value = newValue
                                     if itemCallback then itemCallback(newValue) end
                                     clickFrame = false
+                                end
+                                if not sectionItem.unsafe then
+                                    labelColor = self:_LerpColor(self._theming.subtext, self._theming.text, clamp(toggleAnim + toggleHoverAnim * 0.35, 0, 1))
                                 end
                             else
                                 labelColor = self._theming.text
@@ -2133,19 +2173,25 @@ do
                                 fillPercent = (itemValue - (sectionItem.min or 0)) / sliderRange
                             end
                             fillPercent = clamp(fillPercent, 0, 1)
+                            local animatedFillPercent
+                            if self._slider_drag == sectionItemId then
+                                animatedFillPercent = self:_SetAnim(sectionItemId .. '_slider_fill_anim', fillPercent)
+                            else
+                                animatedFillPercent = self:_StepAnim(sectionItemId .. '_slider_fill_anim', fillPercent, 22)
+                            end
 
                             -- track bg
                             self:_Draw(sectionItemId .. '_track_bg', 'rect', self._theming.surface1, 12, trackPos, trackSize, true)
                             -- track fill
-                            if fillPercent > 0 then
-                                self:_Draw(sectionItemId .. '_track_fill', 'rect', self._theming.accent, 13, trackPos, Vector2.new(trackSize.x * fillPercent, trackH), true)
+                            if animatedFillPercent > 0.002 then
+                                self:_Draw(sectionItemId .. '_track_fill', 'rect', self._theming.accent, 13, trackPos, Vector2.new(trackSize.x * animatedFillPercent, trackH), true)
                             else
                                 self:_Undraw(sectionItemId .. '_track_fill')
                             end
                             -- track border
                             self:_Draw(sectionItemId .. '_track_border', 'rect', self._theming.crust, 14, trackPos, trackSize, false)
                             -- knob (accent when dragging), clamped so it doesnt overshoot track at extremes
-                            local knobX = trackPos.x + trackSize.x * fillPercent - 3
+                            local knobX = trackPos.x + trackSize.x * animatedFillPercent - 3
                             if knobX < trackPos.x then knobX = trackPos.x end
                             if knobX > trackPos.x + trackSize.x - 6 then knobX = trackPos.x + trackSize.x - 6 end
                             local knobY = trackPos.y - 3
@@ -2228,10 +2274,14 @@ do
                             end
 
                             local isPressed = self._button_held == sectionItemId
-                            local bgColor = isPressed and self._theming.accent or (isHovering and self._theming.surface1 or self._theming.surface0)
-                            local textColor = isPressed and self._theming.body or self._theming.text
+                            local buttonHoverAnim = self:_StepAnim(sectionItemId .. '_button_hover_anim', (isHovering and not isPressed) and 1 or 0, 18)
+                            local buttonPressAnim = self:_StepAnim(sectionItemId .. '_button_press_anim', isPressed and 1 or 0, 24)
+                            local bgBaseColor = self:_LerpColor(self._theming.surface0, self._theming.surface1, buttonHoverAnim)
+                            local bgColor = self:_LerpColor(bgBaseColor, self._theming.accent, buttonPressAnim)
+                            local textColor = self:_LerpColor(self._theming.text, self._theming.body, buttonPressAnim)
+                            local borderColor = self:_LerpColor(self._theming.border1, self._theming.accent, clamp(buttonHoverAnim * 0.45 + buttonPressAnim, 0, 1))
                             self:_Draw(sectionItemId .. '_bg', 'rect', bgColor, 12, btnPos, btnSize, true)
-                            self:_Draw(sectionItemId .. '_border', 'rect', self._theming.accent, 13, btnPos, btnSize, false)
+                            self:_Draw(sectionItemId .. '_border', 'rect', borderColor, 13, btnPos, btnSize, false)
                             self:_Draw(sectionItemId .. '_border_in', 'rect', self._theming.crust, 14, btnPos + Vector2.new(1, 1), btnSize - Vector2.new(2, 2), false)
                             local btnLabel = self:_TruncateText(sectionItem.label, btnSize.x - 16)
                             self:_Draw(sectionItemId .. '_text', 'text', textColor, 14, self:_GetCenteredTextPos(btnPos, btnSize, btnLabel), btnLabel, true, 'center')
