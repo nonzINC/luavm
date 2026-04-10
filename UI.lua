@@ -868,178 +868,197 @@ do
         return tabObj
     end
 
-    function UILib:CreateSettingsTab(customName)
+    function UILib:CreateSettingsTab(customName, options)
         -- guard against double init which would duplicate all widgets
         if self._settings_tab_created then
-            return self._settings_tab_ref, self._settings_menu_section_ref, self._settings_theming_section_ref
+            return self._settings_tab_ref, self._settings_menu_section_ref, self._settings_theming_section_ref, self._settings_item_refs
         end
         self._settings_tab_created = true
+        options = options or {}
+        local showWatermark = options.watermark ~= false
+        local showBackgroundAlpha = options.backgroundAlpha ~= false
+        local showCustomTitle = options.customTitle ~= false
+        local showTheming = options.theming ~= false
+        local menuKeyLabel = options.menuKeyLabel or 'Ov. menu key'
         local settingsTab = self:Tab(customName or 'Menu')
+        local settingsRefs = {}
 
         local menuSection = settingsTab:Section('Menu')
-        local menuKey = menuSection:Toggle('Ov. menu key', self._overwrite_menu_key, function(newValue)
+        local menuKey = menuSection:Toggle(menuKeyLabel, self._overwrite_menu_key, function(newValue)
             self._overwrite_menu_key = newValue
         end)
+        settingsRefs.menuKey = menuKey
         menuKey:AddKeybind(self._menu_key, 'Hold', false, function(newValue)
             local name = self:_KeyIDToName(newValue)
             if name then self._menu_key = name end
         end)
-        menuSection:Toggle('Watermark', self._watermark_enabled, function(newValue)
-            self:SetWatermarkEnabled(newValue)
-        end)
-        menuSection:Slider('Background alpha', math.floor(self._background_alpha * 100 + 0.5), 1, 5, 100, '%', function(newValue)
-            self._background_alpha = clamp((tonumber(newValue) or 100) / 100, 5/100, 1)
-        end)
-        menuSection:Toggle('Custom menu title', self._custom_title_enabled, function(newValue)
-            self._custom_title_enabled = newValue
-        end)
-        self._custom_title = self.title
-        menuSection:Textbox('Menu title', self.title, function(newValue)
-            self._custom_title = newValue
-        end)
+        if showWatermark then
+            settingsRefs.watermark = menuSection:Toggle('Watermark', self._watermark_enabled, function(newValue)
+                self:SetWatermarkEnabled(newValue)
+            end)
+        end
+        if showBackgroundAlpha then
+            settingsRefs.backgroundAlpha = menuSection:Slider('Background alpha', math.floor(self._background_alpha * 100 + 0.5), 1, 5, 100, '%', function(newValue)
+                self._background_alpha = clamp((tonumber(newValue) or 100) / 100, 5/100, 1)
+            end)
+        end
+        if showCustomTitle then
+            settingsRefs.customTitleEnabled = menuSection:Toggle('Custom menu title', self._custom_title_enabled, function(newValue)
+                self._custom_title_enabled = newValue
+            end)
+            self._custom_title = self.title
+            settingsRefs.menuTitle = menuSection:Textbox('Menu title', self.title, function(newValue)
+                self._custom_title = newValue
+            end)
+        end
 
-        local themingSection = settingsTab:Section('Theming')
-        local themes = {'Default', 'Gamesense', 'nlcc', 'Bitchbot', 'Catppuccin', 'Tokyo Night', 'Nord', 'Dracula', 'Femboy'}
-        local themingTextColor, themingBodyColor, themingAccentColor, themingSubtextColor, themingBorder0Color, themingBorder1Color, themingSurface0Color, themingSurface1Color, themingCrustColor
-        local themingTheme = themingSection:Dropdown('Theme', themes[1], themes, false, function(newValue)
-            if not newValue then return end
-            local theme = newValue[1]
-            if theme == themes[1] then
-                themingAccentColor:Set(Color3.fromRGB(255, 105, 180))
-                themingBodyColor:Set(Color3.fromRGB(14, 14, 18))
-                themingTextColor:Set(Color3.fromRGB(238, 238, 244))
-                themingSubtextColor:Set(Color3.fromRGB(128, 130, 140))
-                themingBorder1Color:Set(Color3.fromRGB(50, 52, 62))
-                themingBorder0Color:Set(Color3.fromRGB(34, 36, 44))
-                themingSurface1Color:Set(Color3.fromRGB(38, 40, 50))
-                themingSurface0Color:Set(Color3.fromRGB(22, 24, 32))
-                themingCrustColor:Set(Color3.fromRGB(4, 5, 8))
-            elseif theme == themes[2] then
-                themingAccentColor:Set(Color3.fromRGB(114, 178, 21))
-                themingBodyColor:Set(Color3.fromRGB(6, 6, 6))
-                themingTextColor:Set(Color3.fromRGB(180, 180, 180))
-                themingSubtextColor:Set(Color3.fromRGB(80, 80, 80))
-                themingBorder1Color:Set(Color3.fromRGB(60, 60, 60))
-                themingBorder0Color:Set(Color3.fromRGB(40, 40, 40))
-                themingSurface1Color:Set(Color3.fromRGB(30, 30, 30))
-                themingSurface0Color:Set(Color3.fromRGB(18, 18, 18))
-                themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
-            elseif theme == themes[3] then
-                themingAccentColor:Set(Color3.fromRGB(93, 135, 255))
-                themingBodyColor:Set(Color3.fromRGB(18, 21, 30))
-                themingTextColor:Set(Color3.fromRGB(232, 236, 248))
-                themingSubtextColor:Set(Color3.fromRGB(108, 120, 144))
-                themingBorder1Color:Set(Color3.fromRGB(38, 44, 60))
-                themingBorder0Color:Set(Color3.fromRGB(26, 30, 44))
-                themingSurface1Color:Set(Color3.fromRGB(30, 36, 52))
-                themingSurface0Color:Set(Color3.fromRGB(22, 26, 38))
-                themingCrustColor:Set(Color3.fromRGB(6, 8, 14))
-            elseif theme == themes[4] then
-                themingAccentColor:Set(Color3.fromRGB(148, 108, 178))
-                themingBodyColor:Set(Color3.fromRGB(22, 22, 26))
-                themingTextColor:Set(Color3.fromRGB(210, 210, 212))
-                themingSubtextColor:Set(Color3.fromRGB(110, 110, 118))
-                themingBorder1Color:Set(Color3.fromRGB(60, 58, 68))
-                themingBorder0Color:Set(Color3.fromRGB(42, 42, 48))
-                themingSurface1Color:Set(Color3.fromRGB(46, 44, 54))
-                themingSurface0Color:Set(Color3.fromRGB(28, 28, 34))
-                themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
-            elseif theme == themes[5] then
-                themingAccentColor:Set(Color3.fromRGB(203, 166, 247))
-                themingBodyColor:Set(Color3.fromRGB(17, 17, 27))
-                themingTextColor:Set(Color3.fromRGB(205, 214, 244))
-                themingSubtextColor:Set(Color3.fromRGB(127, 132, 156))
-                themingBorder1Color:Set(Color3.fromRGB(69, 71, 90))
-                themingBorder0Color:Set(Color3.fromRGB(49, 50, 68))
-                themingSurface1Color:Set(Color3.fromRGB(49, 50, 68))
-                themingSurface0Color:Set(Color3.fromRGB(30, 30, 46))
-                themingCrustColor:Set(Color3.fromRGB(11, 11, 18))
-            elseif theme == themes[6] then
-                themingAccentColor:Set(Color3.fromRGB(122, 162, 247))
-                themingBodyColor:Set(Color3.fromRGB(26, 27, 38))
-                themingTextColor:Set(Color3.fromRGB(192, 202, 245))
-                themingSubtextColor:Set(Color3.fromRGB(86, 95, 137))
-                themingBorder1Color:Set(Color3.fromRGB(65, 72, 104))
-                themingBorder0Color:Set(Color3.fromRGB(41, 46, 66))
-                themingSurface1Color:Set(Color3.fromRGB(52, 59, 88))
-                themingSurface0Color:Set(Color3.fromRGB(36, 40, 59))
-                themingCrustColor:Set(Color3.fromRGB(15, 17, 26))
-            elseif theme == themes[7] then
-                themingAccentColor:Set(Color3.fromRGB(136, 192, 208))
-                themingBodyColor:Set(Color3.fromRGB(46, 52, 64))
-                themingTextColor:Set(Color3.fromRGB(229, 233, 240))
-                themingSubtextColor:Set(Color3.fromRGB(129, 161, 193))
-                themingBorder1Color:Set(Color3.fromRGB(76, 86, 106))
-                themingBorder0Color:Set(Color3.fromRGB(59, 66, 82))
-                themingSurface1Color:Set(Color3.fromRGB(67, 76, 94))
-                themingSurface0Color:Set(Color3.fromRGB(59, 66, 82))
-                themingCrustColor:Set(Color3.fromRGB(30, 34, 42))
-            elseif theme == themes[8] then
-                themingAccentColor:Set(Color3.fromRGB(189, 147, 249))
-                themingBodyColor:Set(Color3.fromRGB(40, 42, 54))
-                themingTextColor:Set(Color3.fromRGB(248, 248, 242))
-                themingSubtextColor:Set(Color3.fromRGB(98, 114, 164))
-                themingBorder1Color:Set(Color3.fromRGB(68, 71, 90))
-                themingBorder0Color:Set(Color3.fromRGB(52, 54, 71))
-                themingSurface1Color:Set(Color3.fromRGB(68, 71, 90))
-                themingSurface0Color:Set(Color3.fromRGB(44, 47, 61))
-                themingCrustColor:Set(Color3.fromRGB(20, 21, 28))
-            elseif theme == themes[9] then
-                themingAccentColor:Set(Color3.fromRGB(255, 140, 190))
-                themingBodyColor:Set(Color3.fromRGB(254, 247, 252))
-                themingTextColor:Set(Color3.fromRGB(85, 60, 110))
-                themingSubtextColor:Set(Color3.fromRGB(175, 155, 195))
-                themingBorder1Color:Set(Color3.fromRGB(230, 205, 230))
-                themingBorder0Color:Set(Color3.fromRGB(200, 215, 240))
-                themingSurface1Color:Set(Color3.fromRGB(210, 230, 250))
-                themingSurface0Color:Set(Color3.fromRGB(248, 228, 240))
-                themingCrustColor:Set(Color3.fromRGB(195, 170, 215))
-            end
-        end)
+        local themingSection = nil
+        if showTheming then
+            themingSection = settingsTab:Section('Theming')
+            local themes = {'Default', 'Gamesense', 'nlcc', 'Bitchbot', 'Catppuccin', 'Tokyo Night', 'Nord', 'Dracula', 'Femboy'}
+            local themingTextColor, themingBodyColor, themingAccentColor, themingSubtextColor, themingBorder0Color, themingBorder1Color, themingSurface0Color, themingSurface1Color, themingCrustColor
+            local themingTheme = themingSection:Dropdown('Theme', themes[1], themes, false, function(newValue)
+                if not newValue then return end
+                local theme = newValue[1]
+                if theme == themes[1] then
+                    themingAccentColor:Set(Color3.fromRGB(255, 105, 180))
+                    themingBodyColor:Set(Color3.fromRGB(14, 14, 18))
+                    themingTextColor:Set(Color3.fromRGB(238, 238, 244))
+                    themingSubtextColor:Set(Color3.fromRGB(128, 130, 140))
+                    themingBorder1Color:Set(Color3.fromRGB(50, 52, 62))
+                    themingBorder0Color:Set(Color3.fromRGB(34, 36, 44))
+                    themingSurface1Color:Set(Color3.fromRGB(38, 40, 50))
+                    themingSurface0Color:Set(Color3.fromRGB(22, 24, 32))
+                    themingCrustColor:Set(Color3.fromRGB(4, 5, 8))
+                elseif theme == themes[2] then
+                    themingAccentColor:Set(Color3.fromRGB(114, 178, 21))
+                    themingBodyColor:Set(Color3.fromRGB(6, 6, 6))
+                    themingTextColor:Set(Color3.fromRGB(180, 180, 180))
+                    themingSubtextColor:Set(Color3.fromRGB(80, 80, 80))
+                    themingBorder1Color:Set(Color3.fromRGB(60, 60, 60))
+                    themingBorder0Color:Set(Color3.fromRGB(40, 40, 40))
+                    themingSurface1Color:Set(Color3.fromRGB(30, 30, 30))
+                    themingSurface0Color:Set(Color3.fromRGB(18, 18, 18))
+                    themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
+                elseif theme == themes[3] then
+                    themingAccentColor:Set(Color3.fromRGB(93, 135, 255))
+                    themingBodyColor:Set(Color3.fromRGB(18, 21, 30))
+                    themingTextColor:Set(Color3.fromRGB(232, 236, 248))
+                    themingSubtextColor:Set(Color3.fromRGB(108, 120, 144))
+                    themingBorder1Color:Set(Color3.fromRGB(38, 44, 60))
+                    themingBorder0Color:Set(Color3.fromRGB(26, 30, 44))
+                    themingSurface1Color:Set(Color3.fromRGB(30, 36, 52))
+                    themingSurface0Color:Set(Color3.fromRGB(22, 26, 38))
+                    themingCrustColor:Set(Color3.fromRGB(6, 8, 14))
+                elseif theme == themes[4] then
+                    themingAccentColor:Set(Color3.fromRGB(148, 108, 178))
+                    themingBodyColor:Set(Color3.fromRGB(22, 22, 26))
+                    themingTextColor:Set(Color3.fromRGB(210, 210, 212))
+                    themingSubtextColor:Set(Color3.fromRGB(110, 110, 118))
+                    themingBorder1Color:Set(Color3.fromRGB(60, 58, 68))
+                    themingBorder0Color:Set(Color3.fromRGB(42, 42, 48))
+                    themingSurface1Color:Set(Color3.fromRGB(46, 44, 54))
+                    themingSurface0Color:Set(Color3.fromRGB(28, 28, 34))
+                    themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
+                elseif theme == themes[5] then
+                    themingAccentColor:Set(Color3.fromRGB(203, 166, 247))
+                    themingBodyColor:Set(Color3.fromRGB(17, 17, 27))
+                    themingTextColor:Set(Color3.fromRGB(205, 214, 244))
+                    themingSubtextColor:Set(Color3.fromRGB(127, 132, 156))
+                    themingBorder1Color:Set(Color3.fromRGB(69, 71, 90))
+                    themingBorder0Color:Set(Color3.fromRGB(49, 50, 68))
+                    themingSurface1Color:Set(Color3.fromRGB(49, 50, 68))
+                    themingSurface0Color:Set(Color3.fromRGB(30, 30, 46))
+                    themingCrustColor:Set(Color3.fromRGB(11, 11, 18))
+                elseif theme == themes[6] then
+                    themingAccentColor:Set(Color3.fromRGB(122, 162, 247))
+                    themingBodyColor:Set(Color3.fromRGB(26, 27, 38))
+                    themingTextColor:Set(Color3.fromRGB(192, 202, 245))
+                    themingSubtextColor:Set(Color3.fromRGB(86, 95, 137))
+                    themingBorder1Color:Set(Color3.fromRGB(65, 72, 104))
+                    themingBorder0Color:Set(Color3.fromRGB(41, 46, 66))
+                    themingSurface1Color:Set(Color3.fromRGB(52, 59, 88))
+                    themingSurface0Color:Set(Color3.fromRGB(36, 40, 59))
+                    themingCrustColor:Set(Color3.fromRGB(15, 17, 26))
+                elseif theme == themes[7] then
+                    themingAccentColor:Set(Color3.fromRGB(136, 192, 208))
+                    themingBodyColor:Set(Color3.fromRGB(46, 52, 64))
+                    themingTextColor:Set(Color3.fromRGB(229, 233, 240))
+                    themingSubtextColor:Set(Color3.fromRGB(129, 161, 193))
+                    themingBorder1Color:Set(Color3.fromRGB(76, 86, 106))
+                    themingBorder0Color:Set(Color3.fromRGB(59, 66, 82))
+                    themingSurface1Color:Set(Color3.fromRGB(67, 76, 94))
+                    themingSurface0Color:Set(Color3.fromRGB(59, 66, 82))
+                    themingCrustColor:Set(Color3.fromRGB(30, 34, 42))
+                elseif theme == themes[8] then
+                    themingAccentColor:Set(Color3.fromRGB(189, 147, 249))
+                    themingBodyColor:Set(Color3.fromRGB(40, 42, 54))
+                    themingTextColor:Set(Color3.fromRGB(248, 248, 242))
+                    themingSubtextColor:Set(Color3.fromRGB(98, 114, 164))
+                    themingBorder1Color:Set(Color3.fromRGB(68, 71, 90))
+                    themingBorder0Color:Set(Color3.fromRGB(52, 54, 71))
+                    themingSurface1Color:Set(Color3.fromRGB(68, 71, 90))
+                    themingSurface0Color:Set(Color3.fromRGB(44, 47, 61))
+                    themingCrustColor:Set(Color3.fromRGB(20, 21, 28))
+                elseif theme == themes[9] then
+                    themingAccentColor:Set(Color3.fromRGB(255, 140, 190))
+                    themingBodyColor:Set(Color3.fromRGB(254, 247, 252))
+                    themingTextColor:Set(Color3.fromRGB(85, 60, 110))
+                    themingSubtextColor:Set(Color3.fromRGB(175, 155, 195))
+                    themingBorder1Color:Set(Color3.fromRGB(230, 205, 230))
+                    themingBorder0Color:Set(Color3.fromRGB(200, 215, 240))
+                    themingSurface1Color:Set(Color3.fromRGB(210, 230, 250))
+                    themingSurface0Color:Set(Color3.fromRGB(248, 228, 240))
+                    themingCrustColor:Set(Color3.fromRGB(195, 170, 215))
+                end
+            end)
 
-        local themingText = themingSection:Toggle('Text color')
-        themingTextColor = themingText:AddColorpicker('Text color', self._theming.text, true, function(newValue)
-            self._theming.text = newValue
-        end)
-        local themingBody = themingSection:Toggle('Body color')
-        themingBodyColor = themingBody:AddColorpicker('Body color', self._theming.body, true, function(newValue)
-            self._theming.body = newValue
-        end)
-        local themingAccent = themingSection:Toggle('Accent color')
-        themingAccentColor = themingAccent:AddColorpicker('Accent color', self._theming.accent, true, function(newValue)
-            self._theming.accent = newValue
-        end)
-        local themingSubtext = themingSection:Toggle('Subtext color')
-        themingSubtextColor = themingSubtext:AddColorpicker('Subtext color', self._theming.subtext, true, function(newValue)
-            self._theming.subtext = newValue
-        end)
-        local themingBorder0 = themingSection:Toggle('Border 0 color')
-        themingBorder0Color = themingBorder0:AddColorpicker('Border 0 color', self._theming.border0, true, function(newValue)
-            self._theming.border0 = newValue
-        end)
-        local themingBorder1 = themingSection:Toggle('Border 1 color')
-        themingBorder1Color = themingBorder1:AddColorpicker('Border 1 color', self._theming.border1, true, function(newValue)
-            self._theming.border1 = newValue
-        end)
-        local themingSurface0 = themingSection:Toggle('Surface 0 color')
-        themingSurface0Color = themingSurface0:AddColorpicker('Surface 0 color', self._theming.surface0, true, function(newValue)
-            self._theming.surface0 = newValue
-        end)
-        local themingSurface1 = themingSection:Toggle('Surface 1 color')
-        themingSurface1Color = themingSurface1:AddColorpicker('Surface 1 color', self._theming.surface1, true, function(newValue)
-            self._theming.surface1 = newValue
-        end)
-        local themingCrust = themingSection:Toggle('Crust color')
-        themingCrustColor = themingCrust:AddColorpicker('Crust color', self._theming.crust, true, function(newValue)
-            self._theming.crust = newValue
-        end)
+            local themingText = themingSection:Toggle('Text color')
+            themingTextColor = themingText:AddColorpicker('Text color', self._theming.text, true, function(newValue)
+                self._theming.text = newValue
+            end)
+            local themingBody = themingSection:Toggle('Body color')
+            themingBodyColor = themingBody:AddColorpicker('Body color', self._theming.body, true, function(newValue)
+                self._theming.body = newValue
+            end)
+            local themingAccent = themingSection:Toggle('Accent color')
+            themingAccentColor = themingAccent:AddColorpicker('Accent color', self._theming.accent, true, function(newValue)
+                self._theming.accent = newValue
+            end)
+            local themingSubtext = themingSection:Toggle('Subtext color')
+            themingSubtextColor = themingSubtext:AddColorpicker('Subtext color', self._theming.subtext, true, function(newValue)
+                self._theming.subtext = newValue
+            end)
+            local themingBorder0 = themingSection:Toggle('Border 0 color')
+            themingBorder0Color = themingBorder0:AddColorpicker('Border 0 color', self._theming.border0, true, function(newValue)
+                self._theming.border0 = newValue
+            end)
+            local themingBorder1 = themingSection:Toggle('Border 1 color')
+            themingBorder1Color = themingBorder1:AddColorpicker('Border 1 color', self._theming.border1, true, function(newValue)
+                self._theming.border1 = newValue
+            end)
+            local themingSurface0 = themingSection:Toggle('Surface 0 color')
+            themingSurface0Color = themingSurface0:AddColorpicker('Surface 0 color', self._theming.surface0, true, function(newValue)
+                self._theming.surface0 = newValue
+            end)
+            local themingSurface1 = themingSection:Toggle('Surface 1 color')
+            themingSurface1Color = themingSurface1:AddColorpicker('Surface 1 color', self._theming.surface1, true, function(newValue)
+                self._theming.surface1 = newValue
+            end)
+            local themingCrust = themingSection:Toggle('Crust color')
+            themingCrustColor = themingCrust:AddColorpicker('Crust color', self._theming.crust, true, function(newValue)
+                self._theming.crust = newValue
+            end)
 
-        themingTheme:Set({'Default'})
+            settingsRefs.theme = themingTheme
+            themingTheme:Set({'Default'})
+        end
         -- cache refs so CreateSettingsTab re-entry returns the same objects
         self._settings_tab_ref = settingsTab
         self._settings_menu_section_ref = menuSection
         self._settings_theming_section_ref = themingSection
-        return settingsTab, menuSection, themingSection
+        self._settings_item_refs = settingsRefs
+        return settingsTab, menuSection, themingSection, settingsRefs
     end
 
     -- stub: activity registry dropped in v2, preserved for api compat
@@ -1067,6 +1086,7 @@ do
         self._settings_tab_ref = nil
         self._settings_menu_section_ref = nil
         self._settings_theming_section_ref = nil
+        self._settings_item_refs = nil
         setrobloxinput(true)
     end
 
