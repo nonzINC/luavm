@@ -1312,9 +1312,6 @@ do
             local dropdown = self._active_dropdown
             if dropdown then
                 local dropdownFade = 1 - (dropdown._spawned_at - (os.clock() - 0.25)) / 0.25
-                if dropdownFade < 1.1 then
-                    self:_SetOpacityStartsWith('dropdown_', clamp(dropdownFade, 0, 1))
-                end
 
                 -- cap visible items to keep popup reasonable
                 local maxVisible = 10
@@ -1389,13 +1386,15 @@ do
                 local popSize = Vector2.new(dropdown.width + self._padding * 2, totalHeight)
                 -- shadow
                 self:_Draw('dropdown_sh0', 'rect', self._theming.crust, 898, dropdownOrigin + Vector2.new(2, 3), popSize, true)
-                self:_SetOpacity('dropdown_sh0', 0.35 * clamp(dropdownFade, 0, 1))
                 -- body
                 self:_Draw('dropdown_body', 'rect', self._theming.body, 900, dropdownOrigin, popSize, true)
-                self:_SetOpacity('dropdown_body', clamp(self._background_alpha + 0.03, 5/100, 1) * clamp(dropdownFade, 0, 1))
                 -- crust and border
                 self:_Draw('dropdown_crust', 'rect', self._theming.crust, 901, dropdownOrigin, popSize, false)
                 self:_Draw('dropdown_border', 'rect', self._theming.border1, 901, dropdownOrigin + Vector2.new(1, 1), popSize - Vector2.new(2, 2), false)
+                local dropdownFadeAlpha = clamp(dropdownFade, 0, 1)
+                self:_SetOpacityStartsWith('dropdown_', dropdownFadeAlpha)
+                self:_SetOpacity('dropdown_sh0', 0.35 * dropdownFadeAlpha)
+                self:_SetOpacity('dropdown_body', clamp(self._background_alpha + 0.03, 5/100, 1) * dropdownFadeAlpha)
 
                 if clickFrame and shouldCancel then
                     self:_RemoveDropdown()
@@ -1407,9 +1406,6 @@ do
             local colorpicker = self._active_colorpicker
             if colorpicker then
                 local colorpickerFade = 1 - (colorpicker._spawned_at - (os.clock() - 0.25)) / 0.25
-                if colorpickerFade < 1.1 then
-                    self:_SetOpacityStartsWith('colorpicker_', clamp(colorpickerFade, 0, 1))
-                end
 
                 -- clamp popup to screen
                 local cpScreenSize = self:_GetScreenSize()
@@ -1428,10 +1424,8 @@ do
 
                 -- shadow
                 self:_Draw('colorpicker_sh0', 'rect', self._theming.crust, 898, colorpickerOrigin + Vector2.new(2, 3), colorpickerSize, true)
-                self:_SetOpacity('colorpicker_sh0', 0.35 * clamp(colorpickerFade, 0, 1))
                 -- body glass
                 self:_Draw('colorpicker_body', 'rect', self._theming.body, 900, colorpickerOrigin, colorpickerSize, true)
-                self:_SetOpacity('colorpicker_body', clamp(self._background_alpha + 0.03, 5/100, 1) * clamp(colorpickerFade, 0, 1))
                 self:_Draw('colorpicker_crust', 'rect', self._theming.crust, 901, colorpickerOrigin, colorpickerSize, false)
                 self:_Draw('colorpicker_border', 'rect', self._theming.border1, 901, colorpickerOrigin + Vector2.new(1, 1), colorpickerSize - Vector2.new(2, 2), false)
                 self:_Draw('colorpicker_title', 'text', self._theming.text, 902, colorpickerOrigin + Vector2.new(self._padding, self._padding/2 + 2), colorpickerTitle, true)
@@ -1521,6 +1515,10 @@ do
                 local hex = string.format('#%02X%02X%02X', math.floor(newColor.R * 255 + 0.5), math.floor(newColor.G * 255 + 0.5), math.floor(newColor.B * 255 + 0.5))
                 local hexSize = self:_GetTextBounds(hex, nil, 11)
                 self:_Draw('colorpicker_hex', 'text', self._theming.subtext, 905, Vector2.new(previewPos.x + previewSize.x - hexSize.x, previewPos.y + previewSize.y + 4), hex, true, 'left', 11)
+                local colorpickerFadeAlpha = clamp(colorpickerFade, 0, 1)
+                self:_SetOpacityStartsWith('colorpicker_', colorpickerFadeAlpha)
+                self:_SetOpacity('colorpicker_sh0', 0.35 * colorpickerFadeAlpha)
+                self:_SetOpacity('colorpicker_body', clamp(self._background_alpha + 0.03, 5/100, 1) * colorpickerFadeAlpha)
 
                 if clickFrame and shouldCancel then
                     self:_RemoveColorpicker()
@@ -1775,6 +1773,8 @@ do
                         self._tab_change_at = os.clock()
                         self._section_fade_done = false
                         self._input_ctx = nil
+                        self:_RemoveDropdown()
+                        self:_RemoveColorpicker()
                     end
                     clickFrame = false
                 end
