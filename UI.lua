@@ -1,11 +1,4 @@
 -- UILib v2 (glassmorphism sidebar)
--- rewrite of https://github.com/catowice/p -- api compatible drop-in
--- mause 4 ,5 bulunamıyor
--- buton üzerindeki textler missaligned
--- ui'ı biraz daha genişletip 2 column yapalım.
--- shadow radius biraz daha fazla olsun, 2-3 pixel daha küçük olsunlar taşıyor.
--- fade in out durumlarında saydamlık sıfırlanıyor
--- UI'a ufak çember çerçeve 
 UILib = {
     _font_face = Drawing.Fonts.UI,
     _font_size = 13,
@@ -35,17 +28,18 @@ UILib = {
     title = 'UILib v2',
     _custom_title_enabled = false,
     _custom_title = '',
-    -- new default layout: sidebar + content wider
-    w = 580,
-    h = 420,
+    w = 720,
+    h = 440,
     x = 120,
     y = 120,
-    -- geometry constants
     _padding = 10,
     _sidebar_w = 140,
     _topbar_h = 36,
     _tab_btn_h = 32,
     _row_h = 22,
+    _columns = 2,
+    _column_gap = 18,
+    _background_alpha = 92/100,
     _theming = {
         accent = Color3.fromRGB(255, 105, 180),
         unsafe = Color3.fromRGB(255, 215, 64),
@@ -132,6 +126,9 @@ local _charMap = {
 }
 local _shiftMap = {['1']='!',['2']='@',['3']='#',['4']='$',['5']='%',['6']='^',['7']='&',['8']='*',['9']='(',['0']=')',['-']='_',['=']='+',['[']='{',[']']='}',[';']=':',['\'']='"',[',']='<',['.']='>',['/']='?',['\\']='|'}
 
+UILib._inputs['m4'] = {id=0x05, held=false, click=false}
+UILib._inputs['m5'] = {id=0x06, held=false, click=false}
+
 do
     function UILib:_KeyIDToName(keyId)
         for keyName, key in pairs(self._inputs) do
@@ -183,6 +180,25 @@ do
 
     function UILib:_Lerp(a, b, t)
         return a + (b - a) * t
+    end
+
+    function UILib:_ResolveMenuFadeOpacity()
+        if self._menu_fade_done then
+            return self._menu_open and 1 or 0, 1
+        end
+        local t = clamp((os.clock() - self._menu_toggled_at) / 0.3, 0, 1)
+        local eased = t * t * (3 - 2 * t)
+        local target = self._menu_open and 1 or 0
+        local startOp = self._menu_fade_start_opacity
+        if startOp == nil then
+            startOp = self._menu_open and 0 or 1
+        end
+        return startOp + (target - startOp) * eased, t
+    end
+
+    function UILib:_GetCenteredTextPos(origin, size, text, fontFace, fontSize)
+        local textSize = self:_GetTextBounds(text or '', fontFace, fontSize)
+        return Vector2.new(origin.x + size.x / 2, origin.y + math.floor((size.y - textSize.y) / 2) - 1)
     end
 
     -- truncate string with ellipsis so it fits within maxWidth pixels
@@ -248,6 +264,19 @@ do
             draw.PointA = trianglePointA
             draw.PointB = trianglePointB
             draw.PointC = trianglePointC
+        elseif drawType == 'circle' then
+            if not draw then
+                self._drawings[drawId] = Drawing.new('Circle')
+                return self:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
+            end
+            local circlePosition, circleRadius, circleFilled, circleThickness, circleSides = ...
+            draw.Position = circlePosition
+            if draw.Radius ~= circleRadius then draw.Radius = circleRadius end
+            if draw.Filled ~= circleFilled then draw.Filled = circleFilled end
+            local resolvedThickness = circleThickness or 1
+            local resolvedSides = circleSides or 18
+            if draw.Thickness ~= resolvedThickness then draw.Thickness = resolvedThickness end
+            if draw.NumSides ~= resolvedSides then draw.NumSides = resolvedSides end
         elseif drawType == 'gradient' then
             local args = {...}
             if #args == 4 then
@@ -402,6 +431,96 @@ do
         self:_UndrawStartsWith('dropdown_')
     end
 
+    function UILib:_ResolveColumnValue(column, fallback)
+        local resolved = nil
+        if type(column) == 'string' then
+            local lowered = string.lower(column)
+            if lowered == 'left' or lowered == 'l' then
+                resolved = 1
+            elseif lowered == 'right' or lowered == 'r' then
+                resolved = 2
+            end
+        else
+            resolved = tonumber(column)
+            if resolved then
+                resolved = math.floor(resolved + 0.5)
+            end
+        end
+
+        if resolved then
+            if resolved < 1 then resolved = 1 end
+            if resolved > self._columns then resolved = self._columns end
+            return resolved
+        end
+
+        return fallback
+    end
+
+    function UILib:_GetSectionRef(tabName, sectionName)
+        local tabData = self._tree[tabName]
+        return tabData and tabData._items[sectionName] or nil
+    end
+
+    function UILib:_GetItemRef(tabName, sectionName, itemId)
+        local sectionRef = self:_GetSectionRef(tabName, sectionName)
+        return sectionRef and sectionRef._items[itemId] or nil
+    end
+
+    function UILib:_MakeItemHandle(tabName, sectionName, itemId, handle)
+        handle = handle or {}
+
+        local function getItem()
+            return self:_GetItemRef(tabName, sectionName, itemId)
+        end
+
+        local function getDefaultColumn()
+            local sectionRef = self:_GetSectionRef(tabName, sectionName)
+            return (sectionRef and sectionRef._column) or 1
+        end
+
+        handle.SetColumn = function(_, newColumn)
+            local itemRef = getItem()
+            if itemRef then
+                itemRef._column = self:_ResolveColumnValue(newColumn, itemRef._column or getDefaultColumn())
+            end
+            return handle
+        end
+        handle.SetSide = handle.SetColumn
+        handle.SetYOffset = function(_, newOffset)
+            local itemRef = getItem()
+            if itemRef then
+                itemRef._y_offset = tonumber(newOffset) or 0
+            end
+            return handle
+        end
+        handle.MoveY = function(_, delta)
+            local itemRef = getItem()
+            if itemRef then
+                itemRef._y_offset = (tonumber(itemRef._y_offset) or 0) + (tonumber(delta) or 0)
+            end
+            return handle
+        end
+        handle.SetLayout = function(_, newColumn, newOffset)
+            if newColumn ~= nil then
+                handle:SetColumn(newColumn)
+            end
+            if newOffset ~= nil then
+                handle:SetYOffset(newOffset)
+            end
+            return handle
+        end
+        handle.GetLayout = function(_)
+            local itemRef = getItem()
+            if not itemRef then return nil end
+            return {
+                column = itemRef._column or getDefaultColumn(),
+                y_offset = itemRef._y_offset or 0,
+            }
+        end
+
+        return handle
+    end
+
     -- widget factories
     function UILib:_Toggle(tabName, sectionName, label, value, callback, unsafe, tooltip)
         local itemId = #self._tree[tabName]._items[sectionName]._items + 1
@@ -412,17 +531,18 @@ do
             callback = callback,
             unsafe = unsafe or false,
             tooltip = tooltip,
+            _y_offset = 0,
         }
         table.insert(self._tree[tabName]._items[sectionName]._items, item)
 
-        return {
-            Set = function(_, newValue)
+        local handle = self:_MakeItemHandle(tabName, sectionName, itemId, {})
+        handle.Set = function(_, newValue)
                 self._tree[tabName]._items[sectionName]._items[itemId].value = newValue
                 if self._tree[tabName]._items[sectionName]._items[itemId].callback then
                     self._tree[tabName]._items[sectionName]._items[itemId].callback(newValue)
                 end
-            end,
-            AddKeybind = function(_, value, mode, canChange, callback)
+            end
+        handle.AddKeybind = function(_, value, mode, canChange, callback)
                 local kb = {
                     value = value,
                     callback = callback,
@@ -442,8 +562,8 @@ do
                         end
                     end
                 }
-            end,
-            AddColorpicker = function(_, label, value, overwrite, callback)
+            end
+        handle.AddColorpicker = function(_, label, value, overwrite, callback)
                 local cp = {
                     label = label,
                     value = value or self._theming.accent,
@@ -463,7 +583,7 @@ do
                     end
                 }
             end
-        }
+        return handle
     end
 
     function UILib:_Slider(tabName, sectionName, label, value, step, min, max, suffix, callback)
@@ -484,11 +604,12 @@ do
             min = min,
             max = max,
             suffix = suffix or '',
-            callback = callback
+            callback = callback,
+            _y_offset = 0,
         }
         table.insert(self._tree[tabName]._items[sectionName]._items, item)
-        return {
-            Set = function(_, newValue)
+        local handle = self:_MakeItemHandle(tabName, sectionName, itemId, {})
+        handle.Set = function(_, newValue)
                 local it = self._tree[tabName]._items[sectionName]._items[itemId]
                 newValue = tonumber(newValue) or it.min
                 -- clamp to valid range
@@ -497,7 +618,7 @@ do
                 it.value = newValue
                 if it.callback then it.callback(newValue) end
             end
-        }
+        return handle
     end
 
     function UILib:_Dropdown(tabName, sectionName, label, value, choices, multi, callback)
@@ -513,19 +634,20 @@ do
             value = value,
             choices = choices,
             multi = multi,
-            callback = callback
+            callback = callback,
+            _y_offset = 0,
         }
         table.insert(self._tree[tabName]._items[sectionName]._items, item)
-        return {
-            Set = function(_, newValue)
+        local handle = self:_MakeItemHandle(tabName, sectionName, itemId, {})
+        handle.Set = function(_, newValue)
                 local it = self._tree[tabName]._items[sectionName]._items[itemId]
                 if type(newValue) ~= 'table' then
                     if newValue ~= nil then newValue = {tostring(newValue)} else newValue = {} end
                 end
                 it.value = newValue
                 if it.callback then it.callback(newValue) end
-            end,
-            UpdateChoices = function(_, newChoices)
+            end
+        handle.UpdateChoices = function(_, newChoices)
                 local it = self._tree[tabName]._items[sectionName]._items[itemId]
                 it.choices = newChoices or {}
                 -- filter stale selections that are no longer in choices list
@@ -539,7 +661,7 @@ do
                     it.value = filtered
                 end
             end
-        }
+        return handle
     end
 
     function UILib:_Button(tabName, sectionName, label, callback)
@@ -547,10 +669,11 @@ do
         local item = {
             type_ = 'button',
             label = label,
-            callback = callback
+            callback = callback,
+            _y_offset = 0,
         }
         table.insert(self._tree[tabName]._items[sectionName]._items, item)
-        return {}
+        return self:_MakeItemHandle(tabName, sectionName, itemId, {})
     end
 
     function UILib:_Textbox(tabName, sectionName, label, value, callback)
@@ -559,35 +682,120 @@ do
             type_ = 'textbox',
             label = label,
             value = value,
-            callback = callback
+            callback = callback,
+            _y_offset = 0,
         }
         table.insert(self._tree[tabName]._items[sectionName]._items, item)
-        return {
-            Set = function(_, newValue)
+        local handle = self:_MakeItemHandle(tabName, sectionName, itemId, {})
+        handle.Set = function(_, newValue)
                 self._tree[tabName]._items[sectionName]._items[itemId].value = newValue
                 if self._tree[tabName]._items[sectionName]._items[itemId].callback then
                     self._tree[tabName]._items[sectionName]._items[itemId].callback(newValue)
                 end
             end
-        }
+        return handle
     end
 
-    -- section factory. column param kept for api compat, ignored in new single-col layout
-    function UILib:_Section(tabName, sectionName, _subTabName, _column)
-        if not self._tree[tabName]._items[sectionName] then
-            self._tree[tabName]._items[sectionName] = {
-                _items = {},
-            }
-            table.insert(self._tree[tabName]._section_order, sectionName)
-            self._tree[tabName]._section_count = self._tree[tabName]._section_count + 1
+    function UILib:_Section(tabName, sectionName, _subTabName, column)
+        local tabData = self._tree[tabName]
+        local sectionData = tabData._items[sectionName]
+        local resolvedColumn = nil
+        if column ~= nil then
+            resolvedColumn = self:_ResolveColumnValue(column, sectionData and sectionData._column or tabData._next_column or 1)
+        elseif sectionData then
+            resolvedColumn = sectionData._column or 1
+        else
+            resolvedColumn = tabData._next_column or 1
+            tabData._next_column = resolvedColumn >= self._columns and 1 or (resolvedColumn + 1)
         end
-        return {
+
+        if not sectionData then
+            sectionData = {
+                _items = {},
+                _column = resolvedColumn,
+                _y_offset = 0,
+            }
+            tabData._items[sectionName] = sectionData
+            table.insert(tabData._section_order, sectionName)
+            tabData._section_count = tabData._section_count + 1
+        elseif column ~= nil then
+            sectionData._column = resolvedColumn
+        end
+        local sectionApi
+        local function makeLane(defaultColumn)
+            return {
+                Toggle = function(_, ...)
+                    local itemHandle = self:_Toggle(tabName, sectionName, ...)
+                    itemHandle:SetColumn(defaultColumn)
+                    return itemHandle
+                end,
+                Slider = function(_, ...)
+                    local itemHandle = self:_Slider(tabName, sectionName, ...)
+                    itemHandle:SetColumn(defaultColumn)
+                    return itemHandle
+                end,
+                Dropdown = function(_, ...)
+                    local itemHandle = self:_Dropdown(tabName, sectionName, ...)
+                    itemHandle:SetColumn(defaultColumn)
+                    return itemHandle
+                end,
+                Button = function(_, ...)
+                    local itemHandle = self:_Button(tabName, sectionName, ...)
+                    itemHandle:SetColumn(defaultColumn)
+                    return itemHandle
+                end,
+                Textbox = function(_, ...)
+                    local itemHandle = self:_Textbox(tabName, sectionName, ...)
+                    itemHandle:SetColumn(defaultColumn)
+                    return itemHandle
+                end,
+            }
+        end
+
+        sectionApi = {
             Toggle = function(_, ...) return self:_Toggle(tabName, sectionName, ...) end,
             Slider = function(_, ...) return self:_Slider(tabName, sectionName, ...) end,
             Dropdown = function(_, ...) return self:_Dropdown(tabName, sectionName, ...) end,
             Button = function(_, ...) return self:_Button(tabName, sectionName, ...) end,
             Textbox = function(_, ...) return self:_Textbox(tabName, sectionName, ...) end,
+            SetColumn = function(_, newColumn)
+                local ref = self:_GetSectionRef(tabName, sectionName)
+                if ref then
+                    ref._column = self:_ResolveColumnValue(newColumn, ref._column or 1)
+                end
+                return sectionApi
+            end,
+            SetYOffset = function(_, newOffset)
+                local ref = self:_GetSectionRef(tabName, sectionName)
+                if ref then
+                    ref._y_offset = tonumber(newOffset) or 0
+                end
+                return sectionApi
+            end,
+            MoveY = function(_, delta)
+                local ref = self:_GetSectionRef(tabName, sectionName)
+                if ref then
+                    ref._y_offset = (tonumber(ref._y_offset) or 0) + (tonumber(delta) or 0)
+                end
+                return sectionApi
+            end,
+            SetLayout = function(_, newColumn, newOffset)
+                if newColumn ~= nil then
+                    sectionApi:SetColumn(newColumn)
+                end
+                if newOffset ~= nil then
+                    sectionApi:SetYOffset(newOffset)
+                end
+                return sectionApi
+            end,
+            Left = function(_)
+                return makeLane(1)
+            end,
+            Right = function(_)
+                return makeLane(2)
+            end,
         }
+        return sectionApi
     end
 
     -- menu api
@@ -636,6 +844,7 @@ do
                 _items = {},
                 _section_order = {},
                 _section_count = 0,
+                _next_column = 1,
             }
             table.insert(self._tab_order, tabName)
         end
@@ -675,8 +884,11 @@ do
             local name = self:_KeyIDToName(newValue)
             if name then self._menu_key = name end
         end)
-        menuSection:Toggle('Watermark', true, function(newValue)
+        menuSection:Toggle('Watermark', self._watermark_enabled, function(newValue)
             self:SetWatermarkEnabled(newValue)
+        end)
+        menuSection:Slider('Background alpha', math.floor(self._background_alpha * 100 + 0.5), 1, 5, 100, '%', function(newValue)
+            self._background_alpha = clamp((tonumber(newValue) or 100) / 100, 5/100, 1)
         end)
         menuSection:Toggle('Custom menu title', self._custom_title_enabled, function(newValue)
             self._custom_title_enabled = newValue
@@ -862,7 +1074,8 @@ do
         local menuTitle = tostring(self._custom_title_enabled and self._custom_title or self.title or 'UILib')
 
         -- input processing
-        setrobloxinput(not self._menu_open)
+        local inputMenuOpacity = self:_ResolveMenuFadeOpacity()
+        setrobloxinput(inputMenuOpacity <= 0.001)
         for keycode, inputData in pairs(self._inputs) do
             local interacted = iskeypressed(inputData.id)
             if isrbxactive() and interacted then
@@ -886,41 +1099,35 @@ do
         local menuKeyPressed = self:_IsKeyPressed(resolvedMenuKey)
 
         if menuKeyPressed then
-            -- capture current fade opacity so a rapid re-toggle continues smoothly instead of popping
-            local currentOpacity
-            if self._menu_fade_done then
-                currentOpacity = self._menu_open and 1 or 0
-            else
-                local tNow = clamp((os.clock() - self._menu_toggled_at) / 0.3, 0, 1)
-                local easedNow = tNow * tNow * (3 - 2 * tNow)
-                currentOpacity = self._menu_open and easedNow or (1 - easedNow)
-            end
+            local currentOpacity = self:_ResolveMenuFadeOpacity()
             self._menu_fade_start_opacity = currentOpacity
             self._menu_open = not self._menu_open
             self._menu_toggled_at = os.clock()
             self._menu_fade_done = false
         end
+        setrobloxinput(self:_ResolveMenuFadeOpacity() <= 0.001)
 
         -- watermark (glass pill)
         local watermarkPos = Vector2.new(20, 20)
         local watermarkContent = menuTitle
         local watermarkTextSize = self:_GetTextBounds(watermarkContent)
-        local watermarkSize = Vector2.new(watermarkTextSize.x + self._padding * 2 + 8, watermarkTextSize.y + self._padding + 2)
+        local watermarkSize = Vector2.new(watermarkTextSize.x + self._padding * 2 + 14, watermarkTextSize.y + self._padding + 2)
         if self._watermark_enabled then
             -- drop shadow
             self:_Draw('watermark_sh0', 'rect', self._theming.crust, 99, watermarkPos + Vector2.new(2, 3), watermarkSize, true)
             self:_SetOpacity('watermark_sh0', 0.35)
             -- body
             self:_Draw('watermark_body', 'rect', self._theming.body, 100, watermarkPos, watermarkSize, true)
-            self:_SetOpacity('watermark_body', 0.9)
+            self:_SetOpacity('watermark_body', clamp(self._background_alpha + 0.02, 5/100, 1))
             -- outer crust
             self:_Draw('watermark_crust', 'rect', self._theming.crust, 101, watermarkPos, watermarkSize, false)
             -- inner border
             self:_Draw('watermark_border', 'rect', self._theming.border1, 101, watermarkPos + Vector2.new(1, 1), watermarkSize - Vector2.new(2, 2), false)
-            -- accent dot on left
-            self:_Draw('watermark_dot', 'rect', self._theming.accent, 102, watermarkPos + Vector2.new(self._padding - 2, watermarkSize.y/2 - 2), Vector2.new(4, 4), true)
+            local watermarkDotCenter = watermarkPos + Vector2.new(self._padding + 1, watermarkSize.y / 2 + 1)
+            self:_Draw('watermark_dot_ring', 'circle', self._theming.border1, 102, watermarkDotCenter, 5, false, 1, 18)
+            self:_Draw('watermark_dot', 'circle', self._theming.accent, 103, watermarkDotCenter, 2, true, 1, 18)
             -- text
-            self:_Draw('watermark_text', 'text', self._theming.text, 103, watermarkPos + Vector2.new(self._padding + 6, self._padding/2), watermarkContent, true)
+            self:_Draw('watermark_text', 'text', self._theming.text, 103, watermarkPos + Vector2.new(self._padding + 12, self._padding/2), watermarkContent, true)
         else
             self:_UndrawStartsWith('watermark_')
         end
@@ -961,7 +1168,7 @@ do
             self:_SetOpacityStartsWith(notificationDrawId, notificationFade)
             -- re-apply glass body alpha on top of fade
             self:_SetOpacity(notificationDrawId .. '_sh0', 0.35 * notificationFade)
-            self:_SetOpacity(notificationDrawId .. '_body', 0.9 * notificationFade)
+            self:_SetOpacity(notificationDrawId .. '_body', clamp(self._background_alpha + 0.03, 5/100, 1) * notificationFade)
 
             totalNotificationsHeight = totalNotificationsHeight + (notificationTextSize.y + self._padding * 2 + 6) * notificationFade
 
@@ -1075,7 +1282,7 @@ do
                 self:_SetOpacity('dropdown_sh0', 0.35 * clamp(dropdownFade, 0, 1))
                 -- body
                 self:_Draw('dropdown_body', 'rect', self._theming.body, 900, dropdownOrigin, popSize, true)
-                self:_SetOpacity('dropdown_body', 0.95 * clamp(dropdownFade, 0, 1))
+                self:_SetOpacity('dropdown_body', clamp(self._background_alpha + 0.03, 5/100, 1) * clamp(dropdownFade, 0, 1))
                 -- crust and border
                 self:_Draw('dropdown_crust', 'rect', self._theming.crust, 901, dropdownOrigin, popSize, false)
                 self:_Draw('dropdown_border', 'rect', self._theming.border1, 901, dropdownOrigin + Vector2.new(1, 1), popSize - Vector2.new(2, 2), false)
@@ -1114,7 +1321,7 @@ do
                 self:_SetOpacity('colorpicker_sh0', 0.35 * clamp(colorpickerFade, 0, 1))
                 -- body glass
                 self:_Draw('colorpicker_body', 'rect', self._theming.body, 900, colorpickerOrigin, colorpickerSize, true)
-                self:_SetOpacity('colorpicker_body', 0.95 * clamp(colorpickerFade, 0, 1))
+                self:_SetOpacity('colorpicker_body', clamp(self._background_alpha + 0.03, 5/100, 1) * clamp(colorpickerFade, 0, 1))
                 self:_Draw('colorpicker_crust', 'rect', self._theming.crust, 901, colorpickerOrigin, colorpickerSize, false)
                 self:_Draw('colorpicker_border', 'rect', self._theming.border1, 901, colorpickerOrigin + Vector2.new(1, 1), colorpickerSize - Vector2.new(2, 2), false)
                 self:_Draw('colorpicker_title', 'text', self._theming.text, 902, colorpickerOrigin + Vector2.new(self._padding, self._padding/2 + 2), colorpickerTitle, true)
@@ -1216,11 +1423,10 @@ do
             local sidebarW = self._sidebar_w
             local topbarH = self._topbar_h
 
-            -- drop shadow (4 layered offset squares)
-            self:_Draw('menu_sh0', 'rect', self._theming.crust, 0, Vector2.new(self.x + 2, self.y + 3), Vector2.new(self.w, self.h), true)
-            self:_Draw('menu_sh1', 'rect', self._theming.crust, 0, Vector2.new(self.x + 4, self.y + 6), Vector2.new(self.w, self.h), true)
-            self:_Draw('menu_sh2', 'rect', self._theming.crust, 0, Vector2.new(self.x + 6, self.y + 9), Vector2.new(self.w, self.h), true)
-            self:_Draw('menu_sh3', 'rect', self._theming.crust, 0, Vector2.new(self.x + 8, self.y + 12), Vector2.new(self.w, self.h), true)
+            self:_Draw('menu_sh0', 'rect', self._theming.crust, 0, Vector2.new(self.x + 2, self.y + 3), Vector2.new(self.w - 2, self.h - 2), true)
+            self:_Draw('menu_sh1', 'rect', self._theming.crust, 0, Vector2.new(self.x + 5, self.y + 7), Vector2.new(self.w - 4, self.h - 4), true)
+            self:_Draw('menu_sh2', 'rect', self._theming.crust, 0, Vector2.new(self.x + 8, self.y + 11), Vector2.new(self.w - 6, self.h - 6), true)
+            self:_Draw('menu_sh3', 'rect', self._theming.crust, 0, Vector2.new(self.x + 11, self.y + 15), Vector2.new(self.w - 8, self.h - 8), true)
 
             -- main body fill (glass)
             self:_Draw('menu_body', 'rect', self._theming.body, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
@@ -1247,9 +1453,10 @@ do
             local topbarSize = Vector2.new(self.w, topbarH)
             self:_Draw('menu_topbar_bg', 'rect', self._theming.surface0, 6, topbarPos + Vector2.new(1, 1), Vector2.new(self.w - 2, topbarH - 1), true)
             self:_Draw('menu_topbar_div', 'rect', self._theming.border1, 7, Vector2.new(self.x, self.y + topbarH), Vector2.new(self.w, 1), true)
-            -- dot badge + title
-            self:_Draw('menu_topbar_dot', 'rect', self._theming.accent, 8, Vector2.new(self.x + self._padding + 2, self.y + topbarH/2 - 3), Vector2.new(6, 6), true)
-            self:_Draw('menu_topbar_title', 'text', self._theming.text, 8, Vector2.new(self.x + self._padding + 14, self.y + topbarH/2 - 7), menuTitle, true)
+            local menuDotCenter = Vector2.new(self.x + self._padding + 7, self.y + topbarH / 2 + 1)
+            self:_Draw('menu_topbar_dot_ring', 'circle', self._theming.border1, 8, menuDotCenter, 5, false, 1, 18)
+            self:_Draw('menu_topbar_dot', 'circle', self._theming.accent, 9, menuDotCenter, 2, true, 1, 18)
+            self:_Draw('menu_topbar_title', 'text', self._theming.text, 8, Vector2.new(self.x + self._padding + 20, self.y + topbarH/2 - 7), menuTitle, true)
 
             -- close button (X) on topbar
             local closeBtnSize = 14
@@ -1260,15 +1467,7 @@ do
             self:_Draw('menu_topbar_close_l1', 'line', closeColor, 8, closeBtnPos + Vector2.new(3, 3), closeBtnPos + Vector2.new(closeBtnSize - 3, closeBtnSize - 3), 1)
             self:_Draw('menu_topbar_close_l2', 'line', closeColor, 8, closeBtnPos + Vector2.new(closeBtnSize - 3, 3), closeBtnPos + Vector2.new(3, closeBtnSize - 3), 1)
             if clickFrame and isHoveringClose then
-                -- capture current opacity so close fade starts smooth
-                local currentOpacity
-                if self._menu_fade_done then
-                    currentOpacity = 1
-                else
-                    local tNow = clamp((os.clock() - self._menu_toggled_at) / 0.3, 0, 1)
-                    local easedNow = tNow * tNow * (3 - 2 * tNow)
-                    currentOpacity = easedNow
-                end
+                local currentOpacity = self:_ResolveMenuFadeOpacity()
                 self._menu_fade_start_opacity = currentOpacity
                 self._menu_open = false
                 self._menu_toggled_at = os.clock()
@@ -1377,27 +1576,63 @@ do
             end
 
             if tabContent then
-                local cursorY = contentY + contentPad
-                local widgetX = contentX + contentPad
-                local widgetW = contentW - contentPad * 2
                 local contentBottom = contentY + contentH - contentPad
+                local columnGap = self._column_gap
+                local totalColumns = self._columns
+                local usableContentW = contentW - contentPad * 2 - columnGap * (totalColumns - 1)
+                local widgetW = math.floor(usableContentW / totalColumns)
+                local columnX = {}
+                local columnCursorY = {}
+                for col = 1, totalColumns do
+                    columnX[col] = contentX + contentPad + (col - 1) * (widgetW + columnGap)
+                    columnCursorY[col] = contentY + contentPad
+                end
+                local furthestCursorY = contentY + contentPad
 
                 for sIdx = 1, #tabContent._section_order do
                     local sectionName = tabContent._section_order[sIdx]
                     local sectionContent = tabContent._items[sectionName]
+                    local sectionColumn = self:_ResolveColumnValue(sectionContent._column, 1) or 1
                     local sectionDrawId = 'menu_section_' .. tostring(openTabIdx) .. '_' .. tostring(sIdx)
+                    local sectionUsedColumns = {}
+                    local sectionVisualBottomY = {}
+                    if #sectionContent._items > 0 then
+                        for _, sectionItem in ipairs(sectionContent._items) do
+                            local itemColumn = self:_ResolveColumnValue(sectionItem._column, sectionColumn) or sectionColumn
+                            sectionUsedColumns[itemColumn] = true
+                        end
+                    else
+                        sectionUsedColumns[sectionColumn] = true
+                    end
 
                     -- section header: upper label + divider line
                     local headerText = string.upper(sectionName)
                     local headerSize = self:_GetTextBounds(headerText, nil, 11)
-                    if cursorY + headerSize.y < contentBottom then
-                        self:_Draw(sectionDrawId .. '_title', 'text', self._theming.subtext, 12, Vector2.new(widgetX, cursorY), headerText, true, 'left', 11)
-                        self:_Draw(sectionDrawId .. '_line', 'line', self._theming.border1, 12, Vector2.new(widgetX + headerSize.x + 8, cursorY + headerSize.y/2 + 1), Vector2.new(widgetX + widgetW, cursorY + headerSize.y/2 + 1), 1)
-                    else
-                        self:_Undraw(sectionDrawId .. '_title')
-                        self:_Undraw(sectionDrawId .. '_line')
+                    for col = 1, totalColumns do
+                        local sectionColumnDrawId = sectionDrawId .. '_c' .. tostring(col)
+                        if sectionUsedColumns[col] then
+                            local widgetX = columnX[col]
+                            local cursorY = columnCursorY[col] + (tonumber(sectionContent._y_offset) or 0)
+                            if cursorY + headerSize.y < contentBottom then
+                                self:_Draw(sectionColumnDrawId .. '_title', 'text', self._theming.subtext, 12, Vector2.new(widgetX, cursorY), headerText, true, 'left', 11)
+                                self:_Draw(sectionColumnDrawId .. '_line', 'line', self._theming.border1, 12, Vector2.new(widgetX + headerSize.x + 8, cursorY + headerSize.y/2 + 1), Vector2.new(widgetX + widgetW, cursorY + headerSize.y/2 + 1), 1)
+                            else
+                                self:_Undraw(sectionColumnDrawId .. '_title')
+                                self:_Undraw(sectionColumnDrawId .. '_line')
+                            end
+                            local headerEndY = cursorY + headerSize.y + 8
+                            if headerEndY > columnCursorY[col] then
+                                columnCursorY[col] = headerEndY
+                            end
+                            sectionVisualBottomY[col] = columnCursorY[col]
+                            if columnCursorY[col] > furthestCursorY then
+                                furthestCursorY = columnCursorY[col]
+                            end
+                        else
+                            self:_Undraw(sectionColumnDrawId .. '_title')
+                            self:_Undraw(sectionColumnDrawId .. '_line')
+                        end
                     end
-                    cursorY = cursorY + headerSize.y + 8
 
                     -- render widgets in this section
                     for sectionItemIter, sectionItem in ipairs(sectionContent._items) do
@@ -1405,21 +1640,28 @@ do
                         local itemType = sectionItem.type_
                         local itemValue = sectionItem.value
                         local itemCallback = sectionItem.callback
+                        local itemColumn = self:_ResolveColumnValue(sectionItem._column, sectionColumn) or sectionColumn
+                        local flowCursorY = columnCursorY[itemColumn]
+                        local widgetX = columnX[itemColumn]
+                        local cursorY = flowCursorY + (tonumber(sectionItem._y_offset) or 0)
+                        sectionUsedColumns[itemColumn] = true
 
                         -- skip rendering if past content bottom.
                         -- per-type heights: toggle/button = 26, slider/dropdown/textbox = 34
                         local overflowCheck
+                        local baseAdvance
                         if itemType == 'toggle' or itemType == 'button' then
                             overflowCheck = 26
+                            baseAdvance = 26
                         else
                             overflowCheck = 34
+                            baseAdvance = 34
                         end
                         if cursorY + overflowCheck > contentBottom then
                             self:_UndrawStartsWith(sectionItemId .. '_')
-                            -- still advance cursor so subsequent widgets also get hidden predictably
-                            if itemType == 'toggle' then cursorY = cursorY + 22 + 4
-                            elseif itemType == 'button' then cursorY = cursorY + 22 + 4
-                            else cursorY = cursorY + 32 + 2 end
+                            if contentBottom + 1 > furthestCursorY then
+                                furthestCursorY = contentBottom + 1
+                            end
                         else
 
                         if itemType == 'toggle' then
@@ -1473,7 +1715,7 @@ do
                                         for keyName, keyInfo in pairs(self._inputs) do
                                             if self:_IsKeyPressed(keyName) then
                                                 -- debounce the initial m1 click that opened the listen, and any mouse button used to initiate
-                                                local isMouseBtn = keyName == 'm1' or keyName == 'm2' or keyName == 'mb'
+                                                local isMouseBtn = keyName == 'm1' or keyName == 'm2' or keyName == 'mb' or keyName == 'm4' or keyName == 'm5'
                                                 if (not isMouseBtn) or os.clock() - itemKeybind._listening_start > 0.2 then
                                                     local newValue = keyName ~= 'unbound' and keyName or nil
                                                     -- always pass key name (string) or nil to callback for consistency
@@ -1492,7 +1734,7 @@ do
                                 self:_Draw(sectionItemId .. '_kb_bg', 'rect', self._theming.surface0, 12, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), true)
                                 self:_Draw(sectionItemId .. '_kb_border', 'rect', self._theming.border0, 13, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), false)
                                 local kbColor = itemKeybind.value and self._theming.text or self._theming.subtext
-                                self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, Vector2.new(kbX + kbW/2, kbY + kbH/2 - 5), keybindText, true, 'center', 10)
+                                self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, self:_GetCenteredTextPos(Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), keybindText, nil, 10), keybindText, true, 'center', 10)
                             end
 
                             -- colorpicker swatch (left of pill, or replacing pill if overwrite)
@@ -1754,7 +1996,7 @@ do
                             self:_Draw(sectionItemId .. '_border', 'rect', self._theming.accent, 13, btnPos, btnSize, false)
                             self:_Draw(sectionItemId .. '_border_in', 'rect', self._theming.crust, 14, btnPos + Vector2.new(1, 1), btnSize - Vector2.new(2, 2), false)
                             local btnLabel = self:_TruncateText(sectionItem.label, btnSize.x - 16)
-                            self:_Draw(sectionItemId .. '_text', 'text', textColor, 14, btnPos + Vector2.new(btnSize.x/2, btnSize.y/2 - self._font_size/2), btnLabel, true, 'center')
+                            self:_Draw(sectionItemId .. '_text', 'text', textColor, 14, self:_GetCenteredTextPos(btnPos, btnSize, btnLabel), btnLabel, true, 'center')
 
                             cursorY = cursorY + rowH + 4
 
@@ -1870,9 +2112,35 @@ do
                             cursorY = cursorY + rowH + 2
                         end
                         end -- overflow guard
+                        local nextFlowY = flowCursorY + baseAdvance
+                        if nextFlowY > columnCursorY[itemColumn] then
+                            columnCursorY[itemColumn] = nextFlowY
+                        end
+                        local visualEndY = cursorY
+                        if cursorY + overflowCheck <= contentBottom and visualEndY > furthestCursorY then
+                            furthestCursorY = visualEndY
+                        end
+                        if cursorY + overflowCheck <= contentBottom then
+                            local currentSectionVisualBottom = sectionVisualBottomY[itemColumn] or columnCursorY[itemColumn]
+                            if visualEndY > currentSectionVisualBottom then
+                                sectionVisualBottomY[itemColumn] = visualEndY
+                            end
+                        end
+                        if columnCursorY[itemColumn] > furthestCursorY then
+                            furthestCursorY = columnCursorY[itemColumn]
+                        end
                     end
 
-                    cursorY = cursorY + 8
+                    for usedColumn, _ in pairs(sectionUsedColumns) do
+                        local sectionVisualBottom = sectionVisualBottomY[usedColumn]
+                        if sectionVisualBottom and sectionVisualBottom > columnCursorY[usedColumn] then
+                            columnCursorY[usedColumn] = sectionVisualBottom
+                        end
+                        columnCursorY[usedColumn] = columnCursorY[usedColumn] + 8
+                        if columnCursorY[usedColumn] > furthestCursorY then
+                            furthestCursorY = columnCursorY[usedColumn]
+                        end
+                    end
                 end
 
                 -- cleanup sections beyond the current list
@@ -1882,7 +2150,7 @@ do
                 end
 
                 -- overflow indicator
-                if cursorY > contentBottom then
+                if furthestCursorY > contentBottom then
                     local hintText = '▼ more'
                     local hintSize = self:_GetTextBounds(hintText, nil, 10)
                     local hintX = contentX + contentW - hintSize.x - 8
@@ -1912,7 +2180,7 @@ do
                 self:_Draw('menu_tooltip_sh', 'rect', self._theming.crust, 998, tooltipOrigin + Vector2.new(2, 3), tooltipBoxSize, true)
                 self:_SetOpacity('menu_tooltip_sh', 0.35)
                 self:_Draw('menu_tooltip_body', 'rect', self._theming.body, 1000, tooltipOrigin, tooltipBoxSize, true)
-                self:_SetOpacity('menu_tooltip_body', 0.95)
+                self:_SetOpacity('menu_tooltip_body', clamp(self._background_alpha + 0.03, 5/100, 1))
                 self:_Draw('menu_tooltip_crust', 'rect', self._theming.crust, 1001, tooltipOrigin, tooltipBoxSize, false)
                 self:_Draw('menu_tooltip_border', 'rect', self._theming.border1, 1002, tooltipOrigin + Vector2.new(1, 1), tooltipBoxSize - Vector2.new(2, 2), false)
                 self:_Draw('menu_tooltip_text', 'text', self._theming.text, 1003, tooltipOrigin + Vector2.new(self._padding, self._padding/2 - 1), tooltipText, true)
@@ -1926,15 +2194,6 @@ do
                 self._menu_drag = Vector2.new(mousePos.x - self.x, mousePos.y - self.y)
             end
 
-            -- re-apply glassmorphism base alphas (after fade is done, these own their opacity)
-            if self._menu_fade_done then
-                self:_SetOpacity('menu_sh0', 0.28)
-                self:_SetOpacity('menu_sh1', 0.20)
-                self:_SetOpacity('menu_sh2', 0.12)
-                self:_SetOpacity('menu_sh3', 0.06)
-                self:_SetOpacity('menu_body', 0.92)
-                self:_SetOpacity('menu_overlay', 0.08)
-            end
         else
             self:_RemoveColorpicker()
             self:_RemoveDropdown()
@@ -1954,26 +2213,35 @@ do
             end
         end
 
-        -- menu fade (smoothstep), lerps from start opacity to target to avoid pops on rapid toggle
+        local menuOpacity, menuFadeProgress = self:_ResolveMenuFadeOpacity()
         if not self._menu_fade_done then
-            local t = clamp((os.clock() - self._menu_toggled_at) / 0.3, 0, 1)
-            local eased = t * t * (3 - 2 * t)
-            local target = self._menu_open and 1 or 0
-            local startOp = self._menu_fade_start_opacity or (self._menu_open and 0 or 1)
-            local opacity = startOp + (target - startOp) * eased
-            self:_SetOpacityStartsWith('menu_', opacity)
-            if t >= 1 then
+            self:_SetOpacityStartsWith('menu_', menuOpacity)
+            if menuFadeProgress >= 1 then
                 self._menu_fade_done = true
-                self._menu_fade_start_opacity = target
+                self._menu_fade_start_opacity = self._menu_open and 1 or 0
                 if not self._menu_open then
                     self:_UndrawStartsWith('menu_')
                 end
             end
         end
+
+        if menuOpacity > 0 then
+            local bgAlpha = clamp(self._background_alpha or 1, 5/100, 1)
+            self:_SetOpacity('menu_sh0', 0.24 * menuOpacity)
+            self:_SetOpacity('menu_sh1', 0.17 * menuOpacity)
+            self:_SetOpacity('menu_sh2', 0.10 * menuOpacity)
+            self:_SetOpacity('menu_sh3', 0.05 * menuOpacity)
+            self:_SetOpacity('menu_body', bgAlpha * menuOpacity)
+            self:_SetOpacity('menu_overlay', bgAlpha * 0.12 * menuOpacity)
+            self:_SetOpacity('menu_topbar_bg', clamp(bgAlpha + 0.04, 0, 1) * menuOpacity)
+            self:_SetOpacity('menu_sidebar_bg', clamp(bgAlpha + 0.03, 0, 1) * menuOpacity)
+            self:_SetOpacity('menu_tooltip_sh', 0.35 * menuOpacity)
+            self:_SetOpacity('menu_tooltip_body', clamp(bgAlpha + 0.03, 0, 1) * menuOpacity)
+        end
     end
 
     function UILib:ShowDemoMenu()
-        self:SetMenuSize(Vector2.new(600, 440))
+        self:SetMenuSize(Vector2.new(720, 460))
         self:CenterMenu()
         self:SetMenuTitle('UILib v2')
 
