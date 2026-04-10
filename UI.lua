@@ -214,6 +214,48 @@ do
         return '...'
     end
 
+    function UILib:_DrawRoundedShadow(drawId, drawColor, drawZIndex, rectPosition, rectSize, cornerSize)
+        cornerSize = math.max(0, math.floor(tonumber(cornerSize) or 0))
+        if cornerSize <= 0 then
+            self:_Draw(drawId, 'rect', drawColor, drawZIndex, rectPosition, rectSize, true)
+            return
+        end
+
+        local safeCorner = math.min(cornerSize, math.floor(rectSize.x / 2), math.floor(rectSize.y / 2))
+        if safeCorner <= 0 then
+            self:_Draw(drawId, 'rect', drawColor, drawZIndex, rectPosition, rectSize, true)
+            return
+        end
+
+        local innerW = math.max(0, rectSize.x - safeCorner * 2)
+        local innerH = math.max(0, rectSize.y - safeCorner * 2)
+
+        self:_Draw(drawId .. '_mid', 'rect', drawColor, drawZIndex, rectPosition + Vector2.new(safeCorner, 0), Vector2.new(innerW, rectSize.y), true)
+        self:_Draw(drawId .. '_left', 'rect', drawColor, drawZIndex, rectPosition + Vector2.new(0, safeCorner), Vector2.new(safeCorner, innerH), true)
+        self:_Draw(drawId .. '_right', 'rect', drawColor, drawZIndex, rectPosition + Vector2.new(rectSize.x - safeCorner, safeCorner), Vector2.new(safeCorner, innerH), true)
+
+        self:_Draw(drawId .. '_tl', 'triangle', drawColor, drawZIndex, true,
+            rectPosition + Vector2.new(safeCorner, 0),
+            rectPosition + Vector2.new(safeCorner, safeCorner),
+            rectPosition + Vector2.new(0, safeCorner)
+        )
+        self:_Draw(drawId .. '_tr', 'triangle', drawColor, drawZIndex, true,
+            rectPosition + Vector2.new(rectSize.x - safeCorner, 0),
+            rectPosition + Vector2.new(rectSize.x, safeCorner),
+            rectPosition + Vector2.new(rectSize.x - safeCorner, safeCorner)
+        )
+        self:_Draw(drawId .. '_bl', 'triangle', drawColor, drawZIndex, true,
+            rectPosition + Vector2.new(0, rectSize.y - safeCorner),
+            rectPosition + Vector2.new(safeCorner, rectSize.y - safeCorner),
+            rectPosition + Vector2.new(safeCorner, rectSize.y)
+        )
+        self:_Draw(drawId .. '_br', 'triangle', drawColor, drawZIndex, true,
+            rectPosition + Vector2.new(rectSize.x - safeCorner, rectSize.y - safeCorner),
+            rectPosition + Vector2.new(rectSize.x, rectSize.y - safeCorner),
+            rectPosition + Vector2.new(rectSize.x - safeCorner, rectSize.y)
+        )
+    end
+
     function UILib:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
         local draw = self._drawings[drawId]
 
@@ -1491,10 +1533,11 @@ do
             local sidebarW = self._sidebar_w
             local topbarH = self._topbar_h
 
-            self:_Draw('menu_sh0', 'rect', self._theming.crust, 0, Vector2.new(self.x + 2, self.y + 3), Vector2.new(self.w - 2, self.h - 2), true)
-            self:_Draw('menu_sh1', 'rect', self._theming.crust, 0, Vector2.new(self.x + 5, self.y + 7), Vector2.new(self.w - 4, self.h - 4), true)
-            self:_Draw('menu_sh2', 'rect', self._theming.crust, 0, Vector2.new(self.x + 8, self.y + 11), Vector2.new(self.w - 6, self.h - 6), true)
-            self:_Draw('menu_sh3', 'rect', self._theming.crust, 0, Vector2.new(self.x + 11, self.y + 15), Vector2.new(self.w - 8, self.h - 8), true)
+            local cs = 2
+            self:_DrawRoundedShadow('menu_sh0', self._theming.crust, 0, Vector2.new(self.x + 2, self.y + 3), Vector2.new(self.w - 2, self.h - 2), cs)
+            self:_DrawRoundedShadow('menu_sh1', self._theming.crust, 0, Vector2.new(self.x + 5, self.y + 7), Vector2.new(self.w - 4, self.h - 4), cs)
+            self:_DrawRoundedShadow('menu_sh2', self._theming.crust, 0, Vector2.new(self.x + 8, self.y + 11), Vector2.new(self.w - 6, self.h - 6), cs)
+            self:_DrawRoundedShadow('menu_sh3', self._theming.crust, 0, Vector2.new(self.x + 11, self.y + 15), Vector2.new(self.w - 8, self.h - 8), cs)
 
             -- main body fill (glass)
             self:_Draw('menu_body', 'rect', self._theming.body, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
@@ -1510,7 +1553,6 @@ do
             self:_Draw('menu_accent_top', 'rect', self._theming.accent, 21, Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, 2), true)
 
             -- fake rounded corners: triangle cuts per corner, drawn in crust color to mask body. high z so they cover topbar/sidebar
-            local cs = 2
             self:_Draw('menu_corner_tl_0', 'triangle', self._theming.crust, 25, true, Vector2.new(self.x, self.y), Vector2.new(self.x + cs, self.y), Vector2.new(self.x, self.y + cs))
             self:_Draw('menu_corner_tr_0', 'triangle', self._theming.crust, 25, true, Vector2.new(self.x + self.w, self.y), Vector2.new(self.x + self.w - cs, self.y), Vector2.new(self.x + self.w, self.y + cs))
             self:_Draw('menu_corner_bl_0', 'triangle', self._theming.crust, 25, true, Vector2.new(self.x, self.y + self.h), Vector2.new(self.x + cs, self.y + self.h), Vector2.new(self.x, self.y + self.h - cs))
@@ -2423,10 +2465,10 @@ do
 
         if menuOpacity > 0 then
             local bgAlpha = clamp(self._background_alpha or 1, 5/100, 1)
-            self:_SetOpacity('menu_sh0', 0.24 * menuOpacity)
-            self:_SetOpacity('menu_sh1', 0.17 * menuOpacity)
-            self:_SetOpacity('menu_sh2', 0.10 * menuOpacity)
-            self:_SetOpacity('menu_sh3', 0.05 * menuOpacity)
+            self:_SetOpacityStartsWith('menu_sh0', 0.24 * menuOpacity)
+            self:_SetOpacityStartsWith('menu_sh1', 0.17 * menuOpacity)
+            self:_SetOpacityStartsWith('menu_sh2', 0.10 * menuOpacity)
+            self:_SetOpacityStartsWith('menu_sh3', 0.05 * menuOpacity)
             self:_SetOpacity('menu_body', bgAlpha * menuOpacity)
             self:_SetOpacity('menu_overlay', bgAlpha * 0.12 * menuOpacity)
             self:_SetOpacity('menu_topbar_bg', clamp(bgAlpha + 0.04, 0, 1) * menuOpacity)
