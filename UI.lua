@@ -401,7 +401,7 @@ do
             return
         end
 
-        draw.Color = drawColor
+        if draw.Color ~= drawColor then draw.Color = drawColor end
         if draw.ZIndex ~= drawZIndex then draw.ZIndex = drawZIndex end
         if not draw.Visible then draw.Visible = true end
     end
@@ -659,7 +659,7 @@ do
         return handle
     end
 
-    function UILib:_Slider(tabName, sectionName, label, value, step, min, max, suffix, callback)
+    function UILib:_Slider(tabName, sectionName, label, value, step, min, max, suffix, callback, tooltip)
         local itemId = #self._tree[tabName]._items[sectionName]._items + 1
         -- guard against invalid step/min/max that would crash rendering
         step = tonumber(step) or 1
@@ -678,6 +678,7 @@ do
             max = max,
             suffix = suffix or '',
             callback = callback,
+            tooltip = tooltip,
             _y_offset = 0,
         }
         table.insert(self._tree[tabName]._items[sectionName]._items, item)
@@ -694,7 +695,7 @@ do
         return handle
     end
 
-    function UILib:_Dropdown(tabName, sectionName, label, value, choices, multi, callback)
+    function UILib:_Dropdown(tabName, sectionName, label, value, choices, multi, callback, tooltip)
         local itemId = #self._tree[tabName]._items[sectionName]._items + 1
         -- normalize value to always be a table of strings (avoids table.find / table.concat crashes)
         if type(value) ~= 'table' then
@@ -708,6 +709,7 @@ do
             choices = choices,
             multi = multi,
             callback = callback,
+            tooltip = tooltip,
             _y_offset = 0,
         }
         table.insert(self._tree[tabName]._items[sectionName]._items, item)
@@ -945,13 +947,28 @@ do
             Section = function(_, sectionName, column)
                 return parentLib:_Section(tabName, sectionName, nil, column)
             end,
-            -- stub: subtabs dropped in v2, calls forward to parent tab
             SubTab = function(_, _subTabName)
-                return {
-                    Section = function(_, sectionName, column)
-                        return parentLib:_Section(tabName, sectionName, nil, column)
+                -- first subtab: pull parent out of sidebar, becomes group header only
+                if not parentLib._tree[tabName]._has_subtabs then
+                    parentLib._tree[tabName]._has_subtabs = true
+                    for i = #parentLib._tab_order, 1, -1 do
+                        if parentLib._tab_order[i] == tabName then
+                            table.remove(parentLib._tab_order, i)
+                            break
+                        end
                     end
-                }
+                end
+                local subKey = tabName .. ">" .. _subTabName
+                local subTab = parentLib:Tab(subKey, {
+                    sidebarGroup = tabName,
+                    sidebarGroupTitle = tabName,
+                })
+                parentLib._tree[subKey]._display_name = _subTabName
+                -- if open tab was parent, switch to first subtab
+                if parentLib._open_tab == tabName then
+                    parentLib._open_tab = subKey
+                end
+                return subTab
             end,
             SetSidebarGroup = function(_, newGroup, newTitle)
                 local tabRef = parentLib._tree[tabName]
@@ -1201,8 +1218,13 @@ do
         self._button_held = nil
         self._active_dropdown = nil
         self._active_colorpicker = nil
+        self._menu_open = true
+        self._menu_toggled_at = 0
         self._menu_fade_done = false
+        self._menu_fade_start_opacity = nil
         self._section_fade_done = false
+        self._custom_title_enabled = false
+        self._custom_title = ''
         self._settings_tab_created = false
         self._settings_tab_ref = nil
         self._settings_menu_section_ref = nil
@@ -1508,6 +1530,12 @@ do
                     shouldCancel = false
                 end
 
+                -- apply fade BEFORE gradient draws so gradients overwrite their own segment alphas correctly
+                local colorpickerFadeAlpha = clamp(colorpickerFade, 0, 1)
+                self:_SetOpacityStartsWith('colorpicker_', colorpickerFadeAlpha)
+                self:_SetOpacity('colorpicker_sh0', 0.35 * colorpickerFadeAlpha)
+                self:_SetOpacity('colorpicker_body', clamp(self._background_alpha + 0.03, 5/100, 1) * colorpickerFadeAlpha)
+
                 local hueColor = Color3.fromHSV(colorpicker._h, 1, 1)
                 self:_Draw('colorpicker_pallete_color', 'gradient', nil, 903, 'horizontal', palletePos, palleteSize, Color3.fromRGB(255, 255, 255), hueColor)
                 self:_Draw('colorpicker_pallete_fade', 'gradient', nil, 904, 'vertical', palletePos, palleteSize, {R=0, G=0, B=0, A=0}, {R=0, G=0, B=0, A=1})
@@ -1556,10 +1584,6 @@ do
                 local hex = string.format('#%02X%02X%02X', math.floor(newColor.R * 255 + 0.5), math.floor(newColor.G * 255 + 0.5), math.floor(newColor.B * 255 + 0.5))
                 local hexSize = self:_GetTextBounds(hex, nil, 11)
                 self:_Draw('colorpicker_hex', 'text', self._theming.subtext, 905, Vector2.new(previewPos.x + previewSize.x - hexSize.x, previewPos.y + previewSize.y + 4), hex, true, 'left', 11)
-                local colorpickerFadeAlpha = clamp(colorpickerFade, 0, 1)
-                self:_SetOpacityStartsWith('colorpicker_', colorpickerFadeAlpha)
-                self:_SetOpacity('colorpicker_sh0', 0.35 * colorpickerFadeAlpha)
-                self:_SetOpacity('colorpicker_body', clamp(self._background_alpha + 0.03, 5/100, 1) * colorpickerFadeAlpha)
 
                 if clickFrame and shouldCancel then
                     self:_RemoveColorpicker()
@@ -1584,18 +1608,37 @@ do
             -- overlay (glass sheen) - thin lighter layer on top of body
             self:_Draw('menu_overlay', 'rect', self._theming.surface1, 2, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
 
-            -- outer crust border
-            self:_Draw('menu_border_out', 'rect', self._theming.crust, 20, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), false)
-            -- inner border
-            self:_Draw('menu_border_in', 'rect', self._theming.border1, 20, Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, self.h - 2), false)
+            -- outer crust border (edge lines, chamfered at corners by cs)
+            local ox, oy, ow, oh = self.x, self.y, self.w, self.h
+            self:_Draw('menu_border_out_t', 'line', self._theming.crust, 20, Vector2.new(ox + cs, oy), Vector2.new(ox + ow - 1 - cs, oy), 1)
+            self:_Draw('menu_border_out_b', 'line', self._theming.crust, 20, Vector2.new(ox + cs, oy + oh - 1), Vector2.new(ox + ow - 1 - cs, oy + oh - 1), 1)
+            self:_Draw('menu_border_out_l', 'line', self._theming.crust, 20, Vector2.new(ox, oy + cs), Vector2.new(ox, oy + oh - 1 - cs), 1)
+            self:_Draw('menu_border_out_r', 'line', self._theming.crust, 20, Vector2.new(ox + ow - 1, oy + cs), Vector2.new(ox + ow - 1, oy + oh - 1 - cs), 1)
+            -- outer corner diagonals
+            self:_Draw('menu_border_out_ctl', 'line', self._theming.crust, 20, Vector2.new(ox, oy + cs), Vector2.new(ox + cs, oy), 1)
+            self:_Draw('menu_border_out_ctr', 'line', self._theming.crust, 20, Vector2.new(ox + ow - 1 - cs, oy), Vector2.new(ox + ow - 1, oy + cs), 1)
+            self:_Draw('menu_border_out_cbl', 'line', self._theming.crust, 20, Vector2.new(ox, oy + oh - 1 - cs), Vector2.new(ox + cs, oy + oh - 1), 1)
+            self:_Draw('menu_border_out_cbr', 'line', self._theming.crust, 20, Vector2.new(ox + ow - 1 - cs, oy + oh - 1), Vector2.new(ox + ow - 1, oy + oh - 1 - cs), 1)
+            -- inner border (edge lines, chamfered)
+            local ix, iy, iw, ih = ox + 1, oy + 1, ow - 2, oh - 2
+            self:_Draw('menu_border_in_t', 'line', self._theming.border1, 20, Vector2.new(ix + cs, iy), Vector2.new(ix + iw - 1 - cs, iy), 1)
+            self:_Draw('menu_border_in_b', 'line', self._theming.border1, 20, Vector2.new(ix + cs, iy + ih - 1), Vector2.new(ix + iw - 1 - cs, iy + ih - 1), 1)
+            self:_Draw('menu_border_in_l', 'line', self._theming.border1, 20, Vector2.new(ix, iy + cs), Vector2.new(ix, iy + ih - 1 - cs), 1)
+            self:_Draw('menu_border_in_r', 'line', self._theming.border1, 20, Vector2.new(ix + iw - 1, iy + cs), Vector2.new(ix + iw - 1, iy + ih - 1 - cs), 1)
+            -- inner corner diagonals
+            self:_Draw('menu_border_in_ctl', 'line', self._theming.border1, 20, Vector2.new(ix, iy + cs), Vector2.new(ix + cs, iy), 1)
+            self:_Draw('menu_border_in_ctr', 'line', self._theming.border1, 20, Vector2.new(ix + iw - 1 - cs, iy), Vector2.new(ix + iw - 1, iy + cs), 1)
+            self:_Draw('menu_border_in_cbl', 'line', self._theming.border1, 20, Vector2.new(ix, iy + ih - 1 - cs), Vector2.new(ix + cs, iy + ih - 1), 1)
+            self:_Draw('menu_border_in_cbr', 'line', self._theming.border1, 20, Vector2.new(ix + iw - 1 - cs, iy + ih - 1), Vector2.new(ix + iw - 1, iy + ih - 1 - cs), 1)
             -- top accent line (2px)
             self:_Draw('menu_accent_top', 'rect', self._theming.accent, 21, Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, 2), true)
 
             -- fake rounded corners: triangle cuts per corner, drawn in crust color to mask body. high z so they cover topbar/sidebar
-            self:_Draw('menu_corner_tl_0', 'triangle', self._theming.crust, 25, true, Vector2.new(self.x, self.y), Vector2.new(self.x + cs, self.y), Vector2.new(self.x, self.y + cs))
-            self:_Draw('menu_corner_tr_0', 'triangle', self._theming.crust, 25, true, Vector2.new(self.x + self.w, self.y), Vector2.new(self.x + self.w - cs, self.y), Vector2.new(self.x + self.w, self.y + cs))
-            self:_Draw('menu_corner_bl_0', 'triangle', self._theming.crust, 25, true, Vector2.new(self.x, self.y + self.h), Vector2.new(self.x + cs, self.y + self.h), Vector2.new(self.x, self.y + self.h - cs))
-            self:_Draw('menu_corner_br_0', 'triangle', self._theming.crust, 25, true, Vector2.new(self.x + self.w, self.y + self.h), Vector2.new(self.x + self.w - cs, self.y + self.h), Vector2.new(self.x + self.w, self.y + self.h - cs))
+            local rx, by = ox + ow - 1, oy + oh - 1
+            self:_Draw('menu_corner_tl_0', 'triangle', self._theming.crust, 25, true, Vector2.new(ox, oy), Vector2.new(ox + cs, oy), Vector2.new(ox, oy + cs))
+            self:_Draw('menu_corner_tr_0', 'triangle', self._theming.crust, 25, true, Vector2.new(rx, oy), Vector2.new(rx - cs, oy), Vector2.new(rx, oy + cs))
+            self:_Draw('menu_corner_bl_0', 'triangle', self._theming.crust, 25, true, Vector2.new(ox, by), Vector2.new(ox + cs, by), Vector2.new(ox, by - cs))
+            self:_Draw('menu_corner_br_0', 'triangle', self._theming.crust, 25, true, Vector2.new(rx, by), Vector2.new(rx - cs, by), Vector2.new(rx, by - cs))
 
             -- topbar
             local topbarPos = Vector2.new(self.x, self.y)
@@ -1804,7 +1847,8 @@ do
                     self:_Undraw(tabDrawId .. '_group_title')
                 end
                 local labelOffsetX = showGroupBracket and 22 or 14
-                local truncTabName = self:_TruncateText(tabName, btnSize.x - labelOffsetX - 8)
+                local displayName = tabData._display_name or tabName
+                local truncTabName = self:_TruncateText(displayName, btnSize.x - labelOffsetX - 8)
                 self:_Draw(tabDrawId .. '_text', 'text', labelColor, 11, btnPos + Vector2.new(labelOffsetX, btnSize.y/2 - 7), truncTabName, true)
 
                 if clickFrame and isHoveringTab then
@@ -1959,10 +2003,10 @@ do
 
                             -- keybind slot to the left of pill (if any)
                             if itemKeybind then
-                                local keybindText = '[' .. (itemKeybind._listening and '...' or (tostring(itemKeybind.value or '-')):upper()) .. ']'
-                                local keybindLabelSize = self:_GetTextBounds(keybindText, nil, 10)
-                                local kbW = keybindLabelSize.x + 2
-                                local kbH = 12
+                                local keybindText = itemKeybind._listening and '...' or (tostring(itemKeybind.value or '-')):upper()
+                                local keybindLabelSize = self:_GetTextBounds(keybindText, nil, 11)
+                                local kbW = keybindLabelSize.x + 8
+                                local kbH = 14
                                 local kbX = pillX - kbW - 8
                                 local kbY = rowPos.y + (rowH - kbH) / 2
 
@@ -2012,7 +2056,7 @@ do
                                 self:_Draw(sectionItemId .. '_kb_bg', 'rect', self._theming.surface0, 12, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), true)
                                 self:_Draw(sectionItemId .. '_kb_border', 'rect', self._theming.border0, 13, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), false)
                                 local kbColor = itemKeybind.value and self._theming.text or self._theming.subtext
-                                self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, self:_GetCenteredTextPos(Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), keybindText, nil, 10), keybindText, true, 'center', 10)
+                                self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, self:_GetCenteredTextPos(Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), keybindText, nil, 11), keybindText, true, 'left', 11)
                             end
 
                             -- colorpicker swatch (left of pill, or replacing pill if overwrite)
@@ -2025,7 +2069,7 @@ do
                                     swatchX = rightEdge - swatchW
                                     swatchY = rowPos.y + (rowH - swatchH) / 2
                                 else
-                                    swatchX = (itemKeybind and (pillX - 26 - ((self:_GetTextBounds('[' .. (itemKeybind._listening and '...' or (tostring(itemKeybind.value or '-')):upper()) .. ']', nil, 10)).x + 2) - 4) or (pillX - swatchW - 8))
+                                    swatchX = (itemKeybind and (pillX - 26 - ((self:_GetTextBounds(itemKeybind._listening and '...' or (tostring(itemKeybind.value or '-')):upper(), nil, 11)).x + 8) - 4) or (pillX - swatchW - 8))
                                     swatchY = rowPos.y + (rowH - swatchH) / 2
                                 end
 
@@ -2096,7 +2140,7 @@ do
                             -- compute label available width and truncate if necessary
                             local labelAvailW = (pillX - 10) - widgetX
                             if itemKeybind then
-                                local kbW = self:_GetTextBounds('[' .. (itemKeybind._listening and '...' or (tostring(itemKeybind.value or '-')):upper()) .. ']', nil, 10).x + 2
+                                local kbW = self:_GetTextBounds(itemKeybind._listening and '...' or (tostring(itemKeybind.value or '-')):upper(), nil, 11).x + 8
                                 labelAvailW = labelAvailW - kbW - 10
                             end
                             if itemColorpicker and not itemColorpicker.overwrite then
@@ -2284,7 +2328,7 @@ do
                             self:_Draw(sectionItemId .. '_border', 'rect', borderColor, 13, btnPos, btnSize, false)
                             self:_Draw(sectionItemId .. '_border_in', 'rect', self._theming.crust, 14, btnPos + Vector2.new(1, 1), btnSize - Vector2.new(2, 2), false)
                             local btnLabel = self:_TruncateText(sectionItem.label, btnSize.x - 16)
-                            self:_Draw(sectionItemId .. '_text', 'text', textColor, 14, self:_GetCenteredTextPos(btnPos, btnSize, btnLabel), btnLabel, true, 'center')
+                            self:_Draw(sectionItemId .. '_text', 'text', textColor, 14, self:_GetCenteredTextPos(btnPos, btnSize, btnLabel), btnLabel, true, 'left')
 
                             cursorY = cursorY + rowH + 4
 
