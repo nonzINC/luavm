@@ -2,6 +2,17 @@
 UILib = {
     _font_face = Drawing.Fonts.UI,
     _font_size = 13,
+    _font_name = 'UI',
+    _font_list = {'UI', 'System', 'SystemBold', 'Monospace', 'Minecraft', 'Pixel', 'Fortnite'},
+    _font_face_by_name = {
+        UI         = Drawing.Fonts.UI,
+        System     = Drawing.Fonts.System,
+        SystemBold = Drawing.Fonts.SystemBold,
+        Monospace  = Drawing.Fonts.Monospace,
+        Minecraft  = Drawing.Fonts.Minecraft,
+        Pixel      = Drawing.Fonts.Pixel,
+        Fortnite   = Drawing.Fonts.Fortnite,
+    },
     _drawings = {},
     _tree = {},
     _tab_order = {},
@@ -44,16 +55,16 @@ UILib = {
     _column_gap = 18,
     _background_alpha = 92/100,
     _theming = {
-        accent = Color3.fromRGB(255, 105, 180),
+        accent = Color3.fromRGB(203, 166, 247),
         unsafe = Color3.fromRGB(255, 215, 64),
-        body = Color3.fromRGB(14, 14, 18),
-        text = Color3.fromRGB(238, 238, 244),
-        subtext = Color3.fromRGB(128, 130, 140),
-        border1 = Color3.fromRGB(50, 52, 62),
-        border0 = Color3.fromRGB(34, 36, 44),
-        surface1 = Color3.fromRGB(38, 40, 50),
-        surface0 = Color3.fromRGB(22, 24, 32),
-        crust = Color3.fromRGB(4, 5, 8),
+        body = Color3.fromRGB(17, 17, 27),
+        text = Color3.fromRGB(205, 214, 244),
+        subtext = Color3.fromRGB(127, 132, 156),
+        border1 = Color3.fromRGB(69, 71, 90),
+        border0 = Color3.fromRGB(49, 50, 68),
+        surface1 = Color3.fromRGB(49, 50, 68),
+        surface0 = Color3.fromRGB(30, 30, 46),
+        crust = Color3.fromRGB(11, 11, 18),
     },
 }
 
@@ -172,13 +183,23 @@ do
 end
 
 do
+    function UILib:_GetFontRatio(fontFace)
+        fontFace = fontFace or self._font_face
+        -- rough per-font avg char-width ratios, err on the wide side to avoid clipping
+        if fontFace == Drawing.Fonts.UI then return 0.53846 end
+        if fontFace == Drawing.Fonts.System then return 0.55 end
+        if fontFace == Drawing.Fonts.SystemBold then return 0.58 end
+        if fontFace == Drawing.Fonts.Monospace then return 0.60 end
+        if fontFace == Drawing.Fonts.Minecraft then return 0.60 end
+        if fontFace == Drawing.Fonts.Pixel then return 0.55 end
+        if fontFace == Drawing.Fonts.Fortnite then return 0.58 end
+        return 0.58
+    end
+
     function UILib:_GetTextBounds(text, fontFace, fontSize)
         fontFace = fontFace or self._font_face
         fontSize = fontSize or self._font_size
-        if fontFace == Drawing.Fonts.UI then
-            return Vector2.new(#text * fontSize * 0.53846, fontSize)
-        end
-        return Vector2.new(#text * fontSize, fontSize)
+        return Vector2.new(#text * fontSize * self:_GetFontRatio(fontFace), fontSize)
     end
 
     function UILib:_Lerp(a, b, t)
@@ -480,7 +501,7 @@ do
         self:_UndrawStartsWith('colorpicker_')
     end
 
-    function UILib:_SpawnDropdown(position, width, value, choices, multi, callback)
+    function UILib:_SpawnDropdown(position, width, value, choices, multi, callback, previewFonts, previewColors)
         self:_RemoveDropdown()
         -- normalize value to always be a table (avoids table.find/concat crash)
         if type(value) ~= 'table' then
@@ -494,6 +515,8 @@ do
             choices = choices,
             multi = multi,
             callback = callback,
+            previewFonts = previewFonts,
+            previewColors = previewColors,
             _spawned_at = os.clock()
         }
         self._active_dropdown = item
@@ -695,7 +718,7 @@ do
         return handle
     end
 
-    function UILib:_Dropdown(tabName, sectionName, label, value, choices, multi, callback, tooltip)
+    function UILib:_Dropdown(tabName, sectionName, label, value, choices, multi, callback, tooltip, previewFonts, previewColors)
         local itemId = #self._tree[tabName]._items[sectionName]._items + 1
         -- normalize value to always be a table of strings (avoids table.find / table.concat crashes)
         if type(value) ~= 'table' then
@@ -710,6 +733,8 @@ do
             multi = multi,
             callback = callback,
             tooltip = tooltip,
+            previewFonts = previewFonts,
+            previewColors = previewColors,
             _y_offset = 0,
         }
         table.insert(self._tree[tabName]._items[sectionName]._items, item)
@@ -1054,52 +1079,23 @@ do
                     if options.onAlphaChange then options.onAlphaChange(self._background_alpha) end
                 end)
             end
-            local themes = {'Default', 'Gamesense', 'nlcc', 'Bitchbot', 'Catppuccin', 'Tokyo Night', 'Nord', 'Dracula', 'Femboy'}
+            local themes = {'Catppuccin', 'Gamesense', 'nlcc', 'Bitchbot', 'Tokyo Night', 'Nord', 'Dracula', 'Femboy'}
+            -- per-theme bg+fg color preview so each dropdown row looks like that theme
+            local themePreviewColors = {
+                ['Catppuccin']  = {bg = Color3.fromRGB(17, 17, 27),    fg = Color3.fromRGB(205, 214, 244)},
+                ['Gamesense']   = {bg = Color3.fromRGB(6, 6, 6),       fg = Color3.fromRGB(180, 180, 180)},
+                ['nlcc']        = {bg = Color3.fromRGB(18, 21, 30),    fg = Color3.fromRGB(232, 236, 248)},
+                ['Bitchbot']    = {bg = Color3.fromRGB(22, 22, 26),    fg = Color3.fromRGB(210, 210, 212)},
+                ['Tokyo Night'] = {bg = Color3.fromRGB(26, 27, 38),    fg = Color3.fromRGB(192, 202, 245)},
+                ['Nord']        = {bg = Color3.fromRGB(46, 52, 64),    fg = Color3.fromRGB(229, 233, 240)},
+                ['Dracula']     = {bg = Color3.fromRGB(40, 42, 54),    fg = Color3.fromRGB(248, 248, 242)},
+                ['Femboy']      = {bg = Color3.fromRGB(254, 247, 252), fg = Color3.fromRGB(60, 35, 85)},
+            }
             local themingTextColor, themingBodyColor, themingAccentColor, themingSubtextColor, themingBorder0Color, themingBorder1Color, themingSurface0Color, themingSurface1Color, themingCrustColor
-            local themingTheme = themingSection:Dropdown('Theme', themes[1], themes, false, function(newValue)
+            local themingTheme = themingSection:Dropdown('Theme', {themes[1]}, themes, false, function(newValue)
                 if not newValue then return end
                 local theme = newValue[1]
-                if theme == themes[1] then
-                    themingAccentColor:Set(Color3.fromRGB(255, 105, 180))
-                    themingBodyColor:Set(Color3.fromRGB(14, 14, 18))
-                    themingTextColor:Set(Color3.fromRGB(238, 238, 244))
-                    themingSubtextColor:Set(Color3.fromRGB(128, 130, 140))
-                    themingBorder1Color:Set(Color3.fromRGB(50, 52, 62))
-                    themingBorder0Color:Set(Color3.fromRGB(34, 36, 44))
-                    themingSurface1Color:Set(Color3.fromRGB(38, 40, 50))
-                    themingSurface0Color:Set(Color3.fromRGB(22, 24, 32))
-                    themingCrustColor:Set(Color3.fromRGB(4, 5, 8))
-                elseif theme == themes[2] then
-                    themingAccentColor:Set(Color3.fromRGB(114, 178, 21))
-                    themingBodyColor:Set(Color3.fromRGB(6, 6, 6))
-                    themingTextColor:Set(Color3.fromRGB(180, 180, 180))
-                    themingSubtextColor:Set(Color3.fromRGB(80, 80, 80))
-                    themingBorder1Color:Set(Color3.fromRGB(60, 60, 60))
-                    themingBorder0Color:Set(Color3.fromRGB(40, 40, 40))
-                    themingSurface1Color:Set(Color3.fromRGB(30, 30, 30))
-                    themingSurface0Color:Set(Color3.fromRGB(18, 18, 18))
-                    themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
-                elseif theme == themes[3] then
-                    themingAccentColor:Set(Color3.fromRGB(93, 135, 255))
-                    themingBodyColor:Set(Color3.fromRGB(18, 21, 30))
-                    themingTextColor:Set(Color3.fromRGB(232, 236, 248))
-                    themingSubtextColor:Set(Color3.fromRGB(108, 120, 144))
-                    themingBorder1Color:Set(Color3.fromRGB(38, 44, 60))
-                    themingBorder0Color:Set(Color3.fromRGB(26, 30, 44))
-                    themingSurface1Color:Set(Color3.fromRGB(30, 36, 52))
-                    themingSurface0Color:Set(Color3.fromRGB(22, 26, 38))
-                    themingCrustColor:Set(Color3.fromRGB(6, 8, 14))
-                elseif theme == themes[4] then
-                    themingAccentColor:Set(Color3.fromRGB(148, 108, 178))
-                    themingBodyColor:Set(Color3.fromRGB(22, 22, 26))
-                    themingTextColor:Set(Color3.fromRGB(210, 210, 212))
-                    themingSubtextColor:Set(Color3.fromRGB(110, 110, 118))
-                    themingBorder1Color:Set(Color3.fromRGB(60, 58, 68))
-                    themingBorder0Color:Set(Color3.fromRGB(42, 42, 48))
-                    themingSurface1Color:Set(Color3.fromRGB(46, 44, 54))
-                    themingSurface0Color:Set(Color3.fromRGB(28, 28, 34))
-                    themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
-                elseif theme == themes[5] then
+                if theme == 'Catppuccin' then
                     themingAccentColor:Set(Color3.fromRGB(203, 166, 247))
                     themingBodyColor:Set(Color3.fromRGB(17, 17, 27))
                     themingTextColor:Set(Color3.fromRGB(205, 214, 244))
@@ -1109,7 +1105,37 @@ do
                     themingSurface1Color:Set(Color3.fromRGB(49, 50, 68))
                     themingSurface0Color:Set(Color3.fromRGB(30, 30, 46))
                     themingCrustColor:Set(Color3.fromRGB(11, 11, 18))
-                elseif theme == themes[6] then
+                elseif theme == 'Gamesense' then
+                    themingAccentColor:Set(Color3.fromRGB(114, 178, 21))
+                    themingBodyColor:Set(Color3.fromRGB(6, 6, 6))
+                    themingTextColor:Set(Color3.fromRGB(180, 180, 180))
+                    themingSubtextColor:Set(Color3.fromRGB(80, 80, 80))
+                    themingBorder1Color:Set(Color3.fromRGB(60, 60, 60))
+                    themingBorder0Color:Set(Color3.fromRGB(40, 40, 40))
+                    themingSurface1Color:Set(Color3.fromRGB(30, 30, 30))
+                    themingSurface0Color:Set(Color3.fromRGB(18, 18, 18))
+                    themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
+                elseif theme == 'nlcc' then
+                    themingAccentColor:Set(Color3.fromRGB(93, 135, 255))
+                    themingBodyColor:Set(Color3.fromRGB(18, 21, 30))
+                    themingTextColor:Set(Color3.fromRGB(232, 236, 248))
+                    themingSubtextColor:Set(Color3.fromRGB(108, 120, 144))
+                    themingBorder1Color:Set(Color3.fromRGB(38, 44, 60))
+                    themingBorder0Color:Set(Color3.fromRGB(26, 30, 44))
+                    themingSurface1Color:Set(Color3.fromRGB(30, 36, 52))
+                    themingSurface0Color:Set(Color3.fromRGB(22, 26, 38))
+                    themingCrustColor:Set(Color3.fromRGB(6, 8, 14))
+                elseif theme == 'Bitchbot' then
+                    themingAccentColor:Set(Color3.fromRGB(148, 108, 178))
+                    themingBodyColor:Set(Color3.fromRGB(22, 22, 26))
+                    themingTextColor:Set(Color3.fromRGB(210, 210, 212))
+                    themingSubtextColor:Set(Color3.fromRGB(110, 110, 118))
+                    themingBorder1Color:Set(Color3.fromRGB(60, 58, 68))
+                    themingBorder0Color:Set(Color3.fromRGB(42, 42, 48))
+                    themingSurface1Color:Set(Color3.fromRGB(46, 44, 54))
+                    themingSurface0Color:Set(Color3.fromRGB(28, 28, 34))
+                    themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
+                elseif theme == 'Tokyo Night' then
                     themingAccentColor:Set(Color3.fromRGB(122, 162, 247))
                     themingBodyColor:Set(Color3.fromRGB(26, 27, 38))
                     themingTextColor:Set(Color3.fromRGB(192, 202, 245))
@@ -1119,7 +1145,7 @@ do
                     themingSurface1Color:Set(Color3.fromRGB(52, 59, 88))
                     themingSurface0Color:Set(Color3.fromRGB(36, 40, 59))
                     themingCrustColor:Set(Color3.fromRGB(15, 17, 26))
-                elseif theme == themes[7] then
+                elseif theme == 'Nord' then
                     themingAccentColor:Set(Color3.fromRGB(136, 192, 208))
                     themingBodyColor:Set(Color3.fromRGB(46, 52, 64))
                     themingTextColor:Set(Color3.fromRGB(229, 233, 240))
@@ -1129,7 +1155,7 @@ do
                     themingSurface1Color:Set(Color3.fromRGB(67, 76, 94))
                     themingSurface0Color:Set(Color3.fromRGB(59, 66, 82))
                     themingCrustColor:Set(Color3.fromRGB(30, 34, 42))
-                elseif theme == themes[8] then
+                elseif theme == 'Dracula' then
                     themingAccentColor:Set(Color3.fromRGB(189, 147, 249))
                     themingBodyColor:Set(Color3.fromRGB(40, 42, 54))
                     themingTextColor:Set(Color3.fromRGB(248, 248, 242))
@@ -1139,7 +1165,7 @@ do
                     themingSurface1Color:Set(Color3.fromRGB(68, 71, 90))
                     themingSurface0Color:Set(Color3.fromRGB(44, 47, 61))
                     themingCrustColor:Set(Color3.fromRGB(20, 21, 28))
-                elseif theme == themes[9] then
+                elseif theme == 'Femboy' then
                     themingAccentColor:Set(Color3.fromRGB(200, 50, 120))
                     themingBodyColor:Set(Color3.fromRGB(254, 247, 252))
                     themingTextColor:Set(Color3.fromRGB(60, 35, 85))
@@ -1151,7 +1177,7 @@ do
                     themingCrustColor:Set(Color3.fromRGB(140, 100, 160))
                 end
                 if options.onPresetChange then options.onPresetChange(theme) end
-            end)
+            end, nil, nil, themePreviewColors)
 
             local themingText = themingSection:Toggle('Text color')
             themingTextColor = themingText:AddColorpicker('Text color', self._theming.text, true, function(newValue)
@@ -1199,6 +1225,23 @@ do
                 if options.onColorChange then options.onColorChange('crust', newValue) end
             end)
 
+            -- font family picker, previews each choice in its own font
+            local fontPreviewMap = {}
+            for _, fontName in ipairs(self._font_list) do
+                fontPreviewMap[fontName] = self._font_face_by_name[fontName]
+            end
+            local themingFont = themingSection:Dropdown('Font', {self._font_name}, self._font_list, false, function(newValue)
+                if type(newValue) ~= 'table' or not newValue[1] then return end
+                local faceName = newValue[1]
+                local face = self._font_face_by_name[faceName]
+                if face then
+                    self._font_face = face
+                    self._font_name = faceName
+                end
+                if options.onFontChange then options.onFontChange(faceName) end
+            end, 'font family used across the ui', fontPreviewMap)
+
+            settingsRefs.font = themingFont
             settingsRefs.theme = themingTheme
             settingsRefs.themingColors = {
                 text     = themingTextColor,
@@ -1211,7 +1254,7 @@ do
                 surface1 = themingSurface1Color,
                 crust    = themingCrustColor,
             }
-            themingTheme:Set({'Default'})
+            themingTheme:Set({'Catppuccin'})
         end
         -- cache refs so CreateSettingsTab re-entry returns the same objects
         self._settings_tab_ref = settingsTab
@@ -1420,7 +1463,9 @@ do
                 for i = 1, visibleChoices do
                     local choice = dropdown.choices[i]
                     local choiceFoundIndex = table.find(dropdown.value, choice)
-                    local labelSize = self:_GetTextBounds(choice)
+                    local choiceFont = dropdown.previewFonts and dropdown.previewFonts[choice] or nil
+                    local choicePreview = dropdown.previewColors and dropdown.previewColors[choice] or nil
+                    local labelSize = self:_GetTextBounds(choice, choiceFont)
                     local choiceOrigin = Vector2.new(dropdownOrigin.x + self._padding, dropdownOrigin.y + totalHeight)
                     local choiceSize = Vector2.new(dropdown.width, labelSize.y)
                     -- expand hit area to include the padding gap for easier clicking
@@ -1443,15 +1488,28 @@ do
                     end
 
                     local choiceColor
-                    if choiceFoundIndex then
-                        choiceColor = self._theming.accent
-                    elseif isHoveringChoice then
-                        choiceColor = self._theming.text
+                    if choicePreview then
+                        -- preview mode: paint row with theme's own bg and use theme's text color
+                        self:_Draw('dropdown_preview_' .. tostring(i), 'rect', choicePreview.bg, 901, choiceHitOrigin, choiceHitSize, true)
+                        if isHoveringChoice or choiceFoundIndex then
+                            self:_Draw('dropdown_preview_brd_' .. tostring(i), 'rect', self._theming.accent, 902, choiceHitOrigin, choiceHitSize, false)
+                        else
+                            self:_Undraw('dropdown_preview_brd_' .. tostring(i))
+                        end
+                        choiceColor = choicePreview.fg
                     else
-                        choiceColor = self._theming.subtext
+                        self:_Undraw('dropdown_preview_' .. tostring(i))
+                        self:_Undraw('dropdown_preview_brd_' .. tostring(i))
+                        if choiceFoundIndex then
+                            choiceColor = self._theming.accent
+                        elseif isHoveringChoice then
+                            choiceColor = self._theming.text
+                        else
+                            choiceColor = self._theming.subtext
+                        end
                     end
-                    local truncChoice = self:_TruncateText(choice, dropdown.width - 4)
-                    self:_Draw('dropdown_choice_' .. tostring(i), 'text', choiceColor, 902, choiceOrigin, truncChoice, true)
+                    local truncChoice = self:_TruncateText(choice, dropdown.width - 4, choiceFont)
+                    self:_Draw('dropdown_choice_' .. tostring(i), 'text', choiceColor, 903, choiceOrigin, truncChoice, true, 'left', nil, choiceFont)
                     totalHeight = totalHeight + labelSize.y + self._padding
                 end
 
@@ -1466,6 +1524,8 @@ do
                 -- cleanup stale choice drawings from larger previous lists
                 for i = visibleChoices + 1, visibleChoices + 30 do
                     self:_Undraw('dropdown_choice_' .. tostring(i))
+                    self:_Undraw('dropdown_preview_' .. tostring(i))
+                    self:_Undraw('dropdown_preview_brd_' .. tostring(i))
                 end
 
                 local popSize = Vector2.new(dropdown.width + self._padding * 2, totalHeight)
@@ -2284,7 +2344,7 @@ do
                                 self:_SpawnDropdown(Vector2.new(boxPos.x, boxPos.y + boxSize.y + 2), boxSize.x - self._padding * 2 - 4, itemValue, sectionItem.choices, sectionItem.multi, function(newValue)
                                     sectionItem.value = newValue
                                     if itemCallback then itemCallback(newValue) end
-                                end)
+                                end, sectionItem.previewFonts, sectionItem.previewColors)
                                 clickFrame = false
                             end
 
