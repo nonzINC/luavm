@@ -304,7 +304,7 @@ do
                 self._drawings[drawId] = Drawing.new('Text')
                 return self:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
             end
-            local textPosition, textContent, textOutline, textAlign, textSize, textFontFace = ...
+            local textPosition, textContent, _, textAlign, textSize, textFontFace = ...
             if textAlign == 'center' then
                 if not draw.Center then draw.Center = true end
             else
@@ -312,7 +312,7 @@ do
             end
             draw.Position = textPosition
             if draw.Text ~= textContent then draw.Text = textContent end
-            if draw.Outline ~= textOutline then draw.Outline = textOutline end
+            if draw.Outline ~= false then draw.Outline = false end
             local resolvedFont = textFontFace or self._font_face
             if draw.Font ~= resolvedFont then draw.Font = resolvedFont end
             local resolvedSize = textSize or self._font_size
@@ -1035,11 +1035,6 @@ do
                 self:SetWatermarkEnabled(newValue)
             end)
         end
-        if showBackgroundAlpha then
-            settingsRefs.backgroundAlpha = menuSection:Slider('Background alpha', math.floor(self._background_alpha * 100 + 0.5), 1, 5, 100, '%', function(newValue)
-                self._background_alpha = clamp((tonumber(newValue) or 100) / 100, 5/100, 1)
-            end)
-        end
         if showCustomTitle then
             settingsRefs.customTitleEnabled = menuSection:Toggle('Custom menu title', self._custom_title_enabled, function(newValue)
                 self._custom_title_enabled = newValue
@@ -1053,6 +1048,12 @@ do
         local themingSection = nil
         if showTheming then
             themingSection = settingsTab:Section('Theming')
+            if showBackgroundAlpha then
+                settingsRefs.backgroundAlpha = themingSection:Slider('Background opacity', math.floor(self._background_alpha * 100 + 0.5), 1, 5, 100, '%', function(newValue)
+                    self._background_alpha = clamp((tonumber(newValue) or 100) / 100, 5/100, 1)
+                    if options.onAlphaChange then options.onAlphaChange(self._background_alpha) end
+                end)
+            end
             local themes = {'Default', 'Gamesense', 'nlcc', 'Bitchbot', 'Catppuccin', 'Tokyo Night', 'Nord', 'Dracula', 'Femboy'}
             local themingTextColor, themingBodyColor, themingAccentColor, themingSubtextColor, themingBorder0Color, themingBorder1Color, themingSurface0Color, themingSurface1Color, themingCrustColor
             local themingTheme = themingSection:Dropdown('Theme', themes[1], themes, false, function(newValue)
@@ -1139,56 +1140,77 @@ do
                     themingSurface0Color:Set(Color3.fromRGB(44, 47, 61))
                     themingCrustColor:Set(Color3.fromRGB(20, 21, 28))
                 elseif theme == themes[9] then
-                    themingAccentColor:Set(Color3.fromRGB(255, 140, 190))
+                    themingAccentColor:Set(Color3.fromRGB(200, 50, 120))
                     themingBodyColor:Set(Color3.fromRGB(254, 247, 252))
-                    themingTextColor:Set(Color3.fromRGB(85, 60, 110))
-                    themingSubtextColor:Set(Color3.fromRGB(175, 155, 195))
-                    themingBorder1Color:Set(Color3.fromRGB(230, 205, 230))
-                    themingBorder0Color:Set(Color3.fromRGB(200, 215, 240))
-                    themingSurface1Color:Set(Color3.fromRGB(210, 230, 250))
-                    themingSurface0Color:Set(Color3.fromRGB(248, 228, 240))
-                    themingCrustColor:Set(Color3.fromRGB(195, 170, 215))
+                    themingTextColor:Set(Color3.fromRGB(60, 35, 85))
+                    themingSubtextColor:Set(Color3.fromRGB(125, 95, 155))
+                    themingBorder1Color:Set(Color3.fromRGB(220, 180, 215))
+                    themingBorder0Color:Set(Color3.fromRGB(235, 200, 225))
+                    themingSurface1Color:Set(Color3.fromRGB(245, 215, 235))
+                    themingSurface0Color:Set(Color3.fromRGB(250, 230, 240))
+                    themingCrustColor:Set(Color3.fromRGB(140, 100, 160))
                 end
+                if options.onPresetChange then options.onPresetChange(theme) end
             end)
 
             local themingText = themingSection:Toggle('Text color')
             themingTextColor = themingText:AddColorpicker('Text color', self._theming.text, true, function(newValue)
                 self._theming.text = newValue
+                if options.onColorChange then options.onColorChange('text', newValue) end
             end)
             local themingBody = themingSection:Toggle('Body color')
             themingBodyColor = themingBody:AddColorpicker('Body color', self._theming.body, true, function(newValue)
                 self._theming.body = newValue
+                if options.onColorChange then options.onColorChange('body', newValue) end
             end)
             local themingAccent = themingSection:Toggle('Accent color')
             themingAccentColor = themingAccent:AddColorpicker('Accent color', self._theming.accent, true, function(newValue)
                 self._theming.accent = newValue
+                if options.onColorChange then options.onColorChange('accent', newValue) end
             end)
             local themingSubtext = themingSection:Toggle('Subtext color')
             themingSubtextColor = themingSubtext:AddColorpicker('Subtext color', self._theming.subtext, true, function(newValue)
                 self._theming.subtext = newValue
+                if options.onColorChange then options.onColorChange('subtext', newValue) end
             end)
             local themingBorder0 = themingSection:Toggle('Border 0 color')
             themingBorder0Color = themingBorder0:AddColorpicker('Border 0 color', self._theming.border0, true, function(newValue)
                 self._theming.border0 = newValue
+                if options.onColorChange then options.onColorChange('border0', newValue) end
             end)
             local themingBorder1 = themingSection:Toggle('Border 1 color')
             themingBorder1Color = themingBorder1:AddColorpicker('Border 1 color', self._theming.border1, true, function(newValue)
                 self._theming.border1 = newValue
+                if options.onColorChange then options.onColorChange('border1', newValue) end
             end)
             local themingSurface0 = themingSection:Toggle('Surface 0 color')
             themingSurface0Color = themingSurface0:AddColorpicker('Surface 0 color', self._theming.surface0, true, function(newValue)
                 self._theming.surface0 = newValue
+                if options.onColorChange then options.onColorChange('surface0', newValue) end
             end)
             local themingSurface1 = themingSection:Toggle('Surface 1 color')
             themingSurface1Color = themingSurface1:AddColorpicker('Surface 1 color', self._theming.surface1, true, function(newValue)
                 self._theming.surface1 = newValue
+                if options.onColorChange then options.onColorChange('surface1', newValue) end
             end)
             local themingCrust = themingSection:Toggle('Crust color')
             themingCrustColor = themingCrust:AddColorpicker('Crust color', self._theming.crust, true, function(newValue)
                 self._theming.crust = newValue
+                if options.onColorChange then options.onColorChange('crust', newValue) end
             end)
 
             settingsRefs.theme = themingTheme
+            settingsRefs.themingColors = {
+                text     = themingTextColor,
+                body     = themingBodyColor,
+                accent   = themingAccentColor,
+                subtext  = themingSubtextColor,
+                border0  = themingBorder0Color,
+                border1  = themingBorder1Color,
+                surface0 = themingSurface0Color,
+                surface1 = themingSurface1Color,
+                crust    = themingCrustColor,
+            }
             themingTheme:Set({'Default'})
         end
         -- cache refs so CreateSettingsTab re-entry returns the same objects
@@ -1596,17 +1618,17 @@ do
             local sidebarW = self._sidebar_w
             local topbarH = self._topbar_h
 
-            local cs = 2
+            local cs = 8
             self:_DrawRoundedShadow('menu_sh0', self._theming.crust, 0, Vector2.new(self.x + 2, self.y + 3), Vector2.new(self.w - 2, self.h - 2), cs)
             self:_DrawRoundedShadow('menu_sh1', self._theming.crust, 0, Vector2.new(self.x + 5, self.y + 7), Vector2.new(self.w - 4, self.h - 4), cs)
             self:_DrawRoundedShadow('menu_sh2', self._theming.crust, 0, Vector2.new(self.x + 8, self.y + 11), Vector2.new(self.w - 6, self.h - 6), cs)
             self:_DrawRoundedShadow('menu_sh3', self._theming.crust, 0, Vector2.new(self.x + 11, self.y + 15), Vector2.new(self.w - 8, self.h - 8), cs)
 
-            -- main body fill (glass)
-            self:_Draw('menu_body', 'rect', self._theming.body, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
+            -- main body fill (glass) - rounded
+            self:_DrawRoundedShadow('menu_body', self._theming.body, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), cs)
 
             -- overlay (glass sheen) - thin lighter layer on top of body
-            self:_Draw('menu_overlay', 'rect', self._theming.surface1, 2, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
+            self:_DrawRoundedShadow('menu_overlay', self._theming.surface1, 2, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), cs)
 
             -- outer crust border (edge lines, chamfered at corners by cs)
             local ox, oy, ow, oh = self.x, self.y, self.w, self.h
@@ -1630,20 +1652,18 @@ do
             self:_Draw('menu_border_in_ctr', 'line', self._theming.border1, 20, Vector2.new(ix + iw - 1 - cs, iy), Vector2.new(ix + iw - 1, iy + cs), 1)
             self:_Draw('menu_border_in_cbl', 'line', self._theming.border1, 20, Vector2.new(ix, iy + ih - 1 - cs), Vector2.new(ix + cs, iy + ih - 1), 1)
             self:_Draw('menu_border_in_cbr', 'line', self._theming.border1, 20, Vector2.new(ix + iw - 1 - cs, iy + ih - 1), Vector2.new(ix + iw - 1, iy + ih - 1 - cs), 1)
-            -- top accent line (2px)
-            self:_Draw('menu_accent_top', 'rect', self._theming.accent, 21, Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, 2), true)
+            -- top accent line (2px) - inset by cs so it doesn't cross rounded corners
+            self:_Draw('menu_accent_top', 'rect', self._theming.accent, 21, Vector2.new(self.x + cs, self.y + 1), Vector2.new(self.w - 2*cs, 2), true)
 
-            -- fake rounded corners: triangle cuts per corner, drawn in crust color to mask body. high z so they cover topbar/sidebar
-            local rx, by = ox + ow - 1, oy + oh - 1
-            self:_Draw('menu_corner_tl_0', 'triangle', self._theming.crust, 25, true, Vector2.new(ox, oy), Vector2.new(ox + cs, oy), Vector2.new(ox, oy + cs))
-            self:_Draw('menu_corner_tr_0', 'triangle', self._theming.crust, 25, true, Vector2.new(rx, oy), Vector2.new(rx - cs, oy), Vector2.new(rx, oy + cs))
-            self:_Draw('menu_corner_bl_0', 'triangle', self._theming.crust, 25, true, Vector2.new(ox, by), Vector2.new(ox + cs, by), Vector2.new(ox, by - cs))
-            self:_Draw('menu_corner_br_0', 'triangle', self._theming.crust, 25, true, Vector2.new(rx, by), Vector2.new(rx - cs, by), Vector2.new(rx, by - cs))
+            self:_Undraw('menu_corner_tl_0')
+            self:_Undraw('menu_corner_tr_0')
+            self:_Undraw('menu_corner_bl_0')
+            self:_Undraw('menu_corner_br_0')
 
             -- topbar
             local topbarPos = Vector2.new(self.x, self.y)
             local topbarSize = Vector2.new(self.w, topbarH)
-            self:_Draw('menu_topbar_bg', 'rect', self._theming.surface0, 6, topbarPos + Vector2.new(1, 1), Vector2.new(self.w - 2, topbarH - 1), true)
+            self:_Draw('menu_topbar_bg', 'rect', self._theming.surface0, 6, topbarPos + Vector2.new(cs, 1), Vector2.new(self.w - 2*cs, topbarH - 1), true)
             self:_Draw('menu_topbar_div', 'rect', self._theming.border1, 7, Vector2.new(self.x, self.y + topbarH), Vector2.new(self.w, 1), true)
             local menuDotCenter = Vector2.new(self.x + self._padding + 7, self.y + topbarH / 2 + 1)
             self:_Draw('menu_topbar_dot_ring', 'circle', self._theming.border1, 8, menuDotCenter, 5, false, 1, 18)
@@ -2056,7 +2076,7 @@ do
                                 self:_Draw(sectionItemId .. '_kb_bg', 'rect', self._theming.surface0, 12, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), true)
                                 self:_Draw(sectionItemId .. '_kb_border', 'rect', self._theming.border0, 13, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), false)
                                 local kbColor = itemKeybind.value and self._theming.text or self._theming.subtext
-                                self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, self:_GetCenteredTextPos(Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), keybindText, nil, 11), keybindText, true, 'left', 11)
+                                self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, self:_GetCenteredTextPos(Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), keybindText, nil, 11), keybindText, true, 'center', 11)
                             end
 
                             -- colorpicker swatch (left of pill, or replacing pill if overwrite)
