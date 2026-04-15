@@ -1225,16 +1225,16 @@
                         if options.onShadowSpreadChange then options.onShadowSpreadChange(self._shadow_spread) end
                     end)
                 end
-                local themes = {'Catppuccin', 'Gamesense', 'nlcc', 'Bitchbot', 'Tokyo Night', 'Nord', 'Dracula', 'Femboy'}
+                local themes = {'Catppuccin', 'Gamesense', 'Bloodmoon', 'Seaside', 'Ember', 'Synthwave', 'Matcha', 'Femboy'}
                 -- per-theme bg+fg color preview so each dropdown row looks like that theme
                 local themePreviewColors = {
                     ['Catppuccin']  = {bg = Color3.fromRGB(17, 17, 27),    fg = Color3.fromRGB(205, 214, 244)},
                     ['Gamesense']   = {bg = Color3.fromRGB(6, 6, 6),       fg = Color3.fromRGB(180, 180, 180)},
-                    ['nlcc']        = {bg = Color3.fromRGB(18, 21, 30),    fg = Color3.fromRGB(232, 236, 248)},
-                    ['Bitchbot']    = {bg = Color3.fromRGB(22, 22, 26),    fg = Color3.fromRGB(210, 210, 212)},
-                    ['Tokyo Night'] = {bg = Color3.fromRGB(26, 27, 38),    fg = Color3.fromRGB(192, 202, 245)},
-                    ['Nord']        = {bg = Color3.fromRGB(46, 52, 64),    fg = Color3.fromRGB(229, 233, 240)},
-                    ['Dracula']     = {bg = Color3.fromRGB(40, 42, 54),    fg = Color3.fromRGB(248, 248, 242)},
+                    ['Bloodmoon']   = {bg = Color3.fromRGB(22, 10, 12),    fg = Color3.fromRGB(250, 200, 205)},
+                    ['Seaside']     = {bg = Color3.fromRGB(12, 32, 55),    fg = Color3.fromRGB(225, 240, 248)},
+                    ['Ember']       = {bg = Color3.fromRGB(22, 14, 10),    fg = Color3.fromRGB(245, 215, 180)},
+                    ['Synthwave']   = {bg = Color3.fromRGB(30, 20, 50),    fg = Color3.fromRGB(245, 235, 255)},
+                    ['Matcha']      = {bg = Color3.fromRGB(240, 248, 232), fg = Color3.fromRGB(45, 80, 50)},
                     ['Femboy']      = {bg = Color3.fromRGB(254, 247, 252), fg = Color3.fromRGB(60, 35, 85)},
                 }
                 local themingTextColor, themingBodyColor, themingAccentColor, themingSubtextColor, themingBorder0Color, themingBorder1Color, themingSurface0Color, themingSurface1Color, themingCrustColor
@@ -1285,56 +1285,56 @@
                         themingSurface1Color:Set(Color3.fromRGB(30, 30, 30))
                         themingSurface0Color:Set(Color3.fromRGB(18, 18, 18))
                         themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
-                    elseif theme == 'nlcc' then
-                        themingAccentColor:Set(Color3.fromRGB(93, 135, 255))
-                        themingBodyColor:Set(Color3.fromRGB(18, 21, 30))
-                        themingTextColor:Set(Color3.fromRGB(232, 236, 248))
-                        themingSubtextColor:Set(Color3.fromRGB(108, 120, 144))
-                        themingBorder1Color:Set(Color3.fromRGB(38, 44, 60))
-                        themingBorder0Color:Set(Color3.fromRGB(26, 30, 44))
-                        themingSurface1Color:Set(Color3.fromRGB(30, 36, 52))
-                        themingSurface0Color:Set(Color3.fromRGB(22, 26, 38))
-                        themingCrustColor:Set(Color3.fromRGB(6, 8, 14))
-                    elseif theme == 'Bitchbot' then
-                        themingAccentColor:Set(Color3.fromRGB(148, 108, 178))
-                        themingBodyColor:Set(Color3.fromRGB(22, 22, 26))
-                        themingTextColor:Set(Color3.fromRGB(210, 210, 212))
-                        themingSubtextColor:Set(Color3.fromRGB(110, 110, 118))
-                        themingBorder1Color:Set(Color3.fromRGB(60, 58, 68))
-                        themingBorder0Color:Set(Color3.fromRGB(42, 42, 48))
-                        themingSurface1Color:Set(Color3.fromRGB(46, 44, 54))
-                        themingSurface0Color:Set(Color3.fromRGB(28, 28, 34))
-                        themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
-                    elseif theme == 'Tokyo Night' then
-                        themingAccentColor:Set(Color3.fromRGB(122, 162, 247))
-                        themingBodyColor:Set(Color3.fromRGB(26, 27, 38))
-                        themingTextColor:Set(Color3.fromRGB(192, 202, 245))
-                        themingSubtextColor:Set(Color3.fromRGB(86, 95, 137))
-                        themingBorder1Color:Set(Color3.fromRGB(65, 72, 104))
-                        themingBorder0Color:Set(Color3.fromRGB(41, 46, 66))
-                        themingSurface1Color:Set(Color3.fromRGB(52, 59, 88))
-                        themingSurface0Color:Set(Color3.fromRGB(36, 40, 59))
-                        themingCrustColor:Set(Color3.fromRGB(15, 17, 26))
-                    elseif theme == 'Nord' then
-                        themingAccentColor:Set(Color3.fromRGB(136, 192, 208))
-                        themingBodyColor:Set(Color3.fromRGB(46, 52, 64))
-                        themingTextColor:Set(Color3.fromRGB(229, 233, 240))
-                        themingSubtextColor:Set(Color3.fromRGB(129, 161, 193))
-                        themingBorder1Color:Set(Color3.fromRGB(76, 86, 106))
-                        themingBorder0Color:Set(Color3.fromRGB(59, 66, 82))
-                        themingSurface1Color:Set(Color3.fromRGB(67, 76, 94))
-                        themingSurface0Color:Set(Color3.fromRGB(59, 66, 82))
-                        themingCrustColor:Set(Color3.fromRGB(30, 34, 42))
-                    elseif theme == 'Dracula' then
-                        themingAccentColor:Set(Color3.fromRGB(189, 147, 249))
-                        themingBodyColor:Set(Color3.fromRGB(40, 42, 54))
-                        themingTextColor:Set(Color3.fromRGB(248, 248, 242))
-                        themingSubtextColor:Set(Color3.fromRGB(98, 114, 164))
-                        themingBorder1Color:Set(Color3.fromRGB(68, 71, 90))
-                        themingBorder0Color:Set(Color3.fromRGB(52, 54, 71))
-                        themingSurface1Color:Set(Color3.fromRGB(68, 71, 90))
-                        themingSurface0Color:Set(Color3.fromRGB(44, 47, 61))
-                        themingCrustColor:Set(Color3.fromRGB(20, 21, 28))
+                    elseif theme == 'Bloodmoon' then
+                        themingAccentColor:Set(Color3.fromRGB(235, 28, 52))
+                        themingBodyColor:Set(Color3.fromRGB(22, 10, 12))
+                        themingTextColor:Set(Color3.fromRGB(250, 200, 205))
+                        themingSubtextColor:Set(Color3.fromRGB(180, 95, 105))
+                        themingBorder1Color:Set(Color3.fromRGB(125, 30, 45))
+                        themingBorder0Color:Set(Color3.fromRGB(78, 20, 28))
+                        themingSurface1Color:Set(Color3.fromRGB(70, 22, 32))
+                        themingSurface0Color:Set(Color3.fromRGB(42, 15, 20))
+                        themingCrustColor:Set(Color3.fromRGB(12, 6, 8))
+                    elseif theme == 'Seaside' then
+                        themingAccentColor:Set(Color3.fromRGB(64, 195, 200))
+                        themingBodyColor:Set(Color3.fromRGB(12, 32, 55))
+                        themingTextColor:Set(Color3.fromRGB(225, 240, 248))
+                        themingSubtextColor:Set(Color3.fromRGB(115, 160, 185))
+                        themingBorder1Color:Set(Color3.fromRGB(40, 95, 125))
+                        themingBorder0Color:Set(Color3.fromRGB(25, 60, 90))
+                        themingSurface1Color:Set(Color3.fromRGB(32, 72, 105))
+                        themingSurface0Color:Set(Color3.fromRGB(18, 45, 72))
+                        themingCrustColor:Set(Color3.fromRGB(6, 18, 35))
+                    elseif theme == 'Ember' then
+                        themingAccentColor:Set(Color3.fromRGB(252, 115, 30))
+                        themingBodyColor:Set(Color3.fromRGB(22, 14, 10))
+                        themingTextColor:Set(Color3.fromRGB(245, 215, 180))
+                        themingSubtextColor:Set(Color3.fromRGB(170, 125, 82))
+                        themingBorder1Color:Set(Color3.fromRGB(115, 55, 25))
+                        themingBorder0Color:Set(Color3.fromRGB(70, 35, 18))
+                        themingSurface1Color:Set(Color3.fromRGB(60, 32, 18))
+                        themingSurface0Color:Set(Color3.fromRGB(38, 22, 13))
+                        themingCrustColor:Set(Color3.fromRGB(12, 7, 5))
+                    elseif theme == 'Synthwave' then
+                        themingAccentColor:Set(Color3.fromRGB(255, 60, 180))
+                        themingBodyColor:Set(Color3.fromRGB(30, 20, 50))
+                        themingTextColor:Set(Color3.fromRGB(245, 235, 255))
+                        themingSubtextColor:Set(Color3.fromRGB(155, 115, 200))
+                        themingBorder1Color:Set(Color3.fromRGB(110, 60, 165))
+                        themingBorder0Color:Set(Color3.fromRGB(70, 40, 115))
+                        themingSurface1Color:Set(Color3.fromRGB(60, 35, 110))
+                        themingSurface0Color:Set(Color3.fromRGB(40, 25, 75))
+                        themingCrustColor:Set(Color3.fromRGB(15, 10, 35))
+                    elseif theme == 'Matcha' then
+                        themingAccentColor:Set(Color3.fromRGB(127, 176, 105))
+                        themingBodyColor:Set(Color3.fromRGB(240, 248, 232))
+                        themingTextColor:Set(Color3.fromRGB(45, 80, 50))
+                        themingSubtextColor:Set(Color3.fromRGB(115, 150, 110))
+                        themingBorder1Color:Set(Color3.fromRGB(175, 210, 165))
+                        themingBorder0Color:Set(Color3.fromRGB(200, 225, 190))
+                        themingSurface1Color:Set(Color3.fromRGB(220, 238, 208))
+                        themingSurface0Color:Set(Color3.fromRGB(232, 244, 220))
+                        themingCrustColor:Set(Color3.fromRGB(155, 190, 140))
                     elseif theme == 'Femboy' then
                         themingAccentColor:Set(Color3.fromRGB(200, 50, 120))
                         themingBodyColor:Set(Color3.fromRGB(254, 247, 252))
