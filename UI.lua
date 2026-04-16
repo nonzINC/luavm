@@ -1435,6 +1435,8 @@
             self._settings_item_refs = nil
             self._anim_state = {}
             self._base_alpha = {}
+            self._glow_last_mode = nil
+            self._glow_rot_count = 0
             self._last_step_at = 0
             self._frame_dt = 16/1000
             setrobloxinput(true)
