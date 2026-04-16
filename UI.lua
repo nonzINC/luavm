@@ -1,3 +1,6 @@
+-- Demo menu:
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua"))(); UILib:ShowDemoMenu()
+
     -- UILib v2 (glassmorphism sidebar)
     UILib = {
         _font_face = Drawing.Fonts.UI,
@@ -54,8 +57,6 @@
         _columns = 2,
         _column_gap = 18,
         _background_alpha = 92/100,
-        _shadow_intensity = 1.0,
-        _shadow_spread = 1.0,
         _theming = {
             accent = Color3.fromRGB(203, 166, 247),
             unsafe = Color3.fromRGB(255, 215, 64),
@@ -268,145 +269,6 @@
             return '...'
         end
 
-        function UILib:_DrawRoundedShadow(drawId, drawColor, drawZIndex, rectPosition, rectSize, cornerSize, cornerMask)
-            cornerSize = math.max(0, math.floor(tonumber(cornerSize) or 0))
-            if cornerSize <= 0 then
-                self:_Draw(drawId, 'rect', drawColor, drawZIndex, rectPosition, rectSize, true)
-                return
-            end
-
-            local safeCorner = math.min(cornerSize, math.floor(rectSize.x / 2), math.floor(rectSize.y / 2))
-            if safeCorner <= 0 then
-                self:_Draw(drawId, 'rect', drawColor, drawZIndex, rectPosition, rectSize, true)
-                return
-            end
-
-            -- cornerMask.{tl,tr,bl,br} = false to keep that corner square (default: all rounded)
-            local roundTL = cornerMask == nil or cornerMask.tl ~= false
-            local roundTR = cornerMask == nil or cornerMask.tr ~= false
-            local roundBL = cornerMask == nil or cornerMask.bl ~= false
-            local roundBR = cornerMask == nil or cornerMask.br ~= false
-
-            local innerW = math.max(0, rectSize.x - safeCorner * 2)
-
-            -- mid strip: full height, between the left and right strips
-            self:_Draw(drawId .. '_mid', 'rect', drawColor, drawZIndex, rectPosition + Vector2.new(safeCorner, 0), Vector2.new(innerW, rectSize.y), true)
-
-            -- left strip: starts below the TL arc (or at y=0 if TL is flat), ends above the BL arc
-            local leftStartY = roundTL and safeCorner or 0
-            local leftEndY = rectSize.y - (roundBL and safeCorner or 0)
-            self:_Draw(drawId .. '_left', 'rect', drawColor, drawZIndex, rectPosition + Vector2.new(0, leftStartY), Vector2.new(safeCorner, math.max(0, leftEndY - leftStartY)), true)
-
-            -- right strip
-            local rightStartY = roundTR and safeCorner or 0
-            local rightEndY = rectSize.y - (roundBR and safeCorner or 0)
-            self:_Draw(drawId .. '_right', 'rect', drawColor, drawZIndex, rectPosition + Vector2.new(rectSize.x - safeCorner, rightStartY), Vector2.new(safeCorner, math.max(0, rightEndY - rightStartY)), true)
-
-            -- rounded corners: filled circles at the corner pivots. the circle extends into the
-            -- adjacent strips but harmlessly overlaps since they all share drawColor.
-            -- right/bottom pivots use -1 for the inclusive pixel convention so tangents land on
-            -- the last pixel column/row (matches _DrawRoundedOutline). sides=24 smooth at cs<=12.
-            local cornerSides = 24
-            if roundTL then
-                self:_Draw(drawId .. '_tlc', 'circle', drawColor, drawZIndex, rectPosition + Vector2.new(safeCorner, safeCorner), safeCorner, true, 1, cornerSides)
-            end
-            if roundTR then
-                self:_Draw(drawId .. '_trc', 'circle', drawColor, drawZIndex, rectPosition + Vector2.new(rectSize.x - 1 - safeCorner, safeCorner), safeCorner, true, 1, cornerSides)
-            end
-            if roundBR then
-                self:_Draw(drawId .. '_brc', 'circle', drawColor, drawZIndex, rectPosition + Vector2.new(rectSize.x - 1 - safeCorner, rectSize.y - 1 - safeCorner), safeCorner, true, 1, cornerSides)
-            end
-            if roundBL then
-                self:_Draw(drawId .. '_blc', 'circle', drawColor, drawZIndex, rectPosition + Vector2.new(safeCorner, rectSize.y - 1 - safeCorner), safeCorner, true, 1, cornerSides)
-            end
-
-            -- legacy single-triangle corners from old implementation; hide so hot-reload doesn't leave ghost fills
-            self:_Undraw(drawId .. '_tl')
-            self:_Undraw(drawId .. '_tr')
-            self:_Undraw(drawId .. '_bl')
-            self:_Undraw(drawId .. '_br')
-        end
-
-        -- draws a 1-pixel rounded outline (edges + arc corners via multi-segment lines).
-        -- cornerMask like _DrawRoundedShadow; thickness defaults to 1.
-        function UILib:_DrawRoundedOutline(drawId, drawColor, drawZIndex, rectPosition, rectSize, cornerSize, cornerMask, thickness)
-            cornerSize = math.max(0, math.floor(tonumber(cornerSize) or 0))
-            thickness = thickness or 1
-
-            local safeCorner = math.min(cornerSize, math.floor(rectSize.x / 2), math.floor(rectSize.y / 2))
-            if safeCorner < 0 then safeCorner = 0 end
-
-            local roundTL = cornerMask == nil or cornerMask.tl ~= false
-            local roundTR = cornerMask == nil or cornerMask.tr ~= false
-            local roundBL = cornerMask == nil or cornerMask.bl ~= false
-            local roundBR = cornerMask == nil or cornerMask.br ~= false
-
-            local rx, ry = rectPosition.x, rectPosition.y
-            local rw, rh = rectSize.x, rectSize.y
-
-            -- top edge (skip the corner regions that get an arc)
-            self:_Draw(drawId .. '_t', 'line', drawColor, drawZIndex,
-                Vector2.new(rx + (roundTL and safeCorner or 0), ry),
-                Vector2.new(rx + rw - 1 - (roundTR and safeCorner or 0), ry), thickness)
-
-            -- bottom edge
-            self:_Draw(drawId .. '_b', 'line', drawColor, drawZIndex,
-                Vector2.new(rx + (roundBL and safeCorner or 0), ry + rh - 1),
-                Vector2.new(rx + rw - 1 - (roundBR and safeCorner or 0), ry + rh - 1), thickness)
-
-            -- left edge
-            self:_Draw(drawId .. '_l', 'line', drawColor, drawZIndex,
-                Vector2.new(rx, ry + (roundTL and safeCorner or 0)),
-                Vector2.new(rx, ry + rh - 1 - (roundBL and safeCorner or 0)), thickness)
-
-            -- right edge
-            self:_Draw(drawId .. '_r', 'line', drawColor, drawZIndex,
-                Vector2.new(rx + rw - 1, ry + (roundTR and safeCorner or 0)),
-                Vector2.new(rx + rw - 1, ry + rh - 1 - (roundBR and safeCorner or 0)), thickness)
-
-            if safeCorner <= 0 then
-                self:_Undraw(drawId .. '_ctl')
-                self:_Undraw(drawId .. '_ctr')
-                self:_Undraw(drawId .. '_cbl')
-                self:_Undraw(drawId .. '_cbr')
-                return
-            end
-
-            -- corner arcs as N short line segments
-            local arcSegs = 8
-            local arcStep = (math.pi / 2) / arcSegs
-
-            local function arcLines(suffix, pivotX, pivotY, angleStart)
-                for i = 0, arcSegs - 1 do
-                    local t0 = angleStart + i * arcStep
-                    local t1 = angleStart + (i + 1) * arcStep
-                    local p0 = Vector2.new(pivotX + math.cos(t0) * safeCorner, pivotY + math.sin(t0) * safeCorner)
-                    local p1 = Vector2.new(pivotX + math.cos(t1) * safeCorner, pivotY + math.sin(t1) * safeCorner)
-                    self:_Draw(drawId .. suffix .. '_' .. i, 'line', drawColor, drawZIndex, p0, p1, thickness)
-                end
-            end
-
-            if roundTL then
-                arcLines('_ctl', rx + safeCorner, ry + safeCorner, math.pi)
-            else
-                self:_Undraw(drawId .. '_ctl')
-            end
-            if roundTR then
-                arcLines('_ctr', rx + rw - 1 - safeCorner, ry + safeCorner, 3 * math.pi / 2)
-            else
-                self:_Undraw(drawId .. '_ctr')
-            end
-            if roundBR then
-                arcLines('_cbr', rx + rw - 1 - safeCorner, ry + rh - 1 - safeCorner, 0)
-            else
-                self:_Undraw(drawId .. '_cbr')
-            end
-            if roundBL then
-                arcLines('_cbl', rx + safeCorner, ry + rh - 1 - safeCorner, math.pi / 2)
-            else
-                self:_Undraw(drawId .. '_cbl')
-            end
-        end
 
         function UILib:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
             local draw = self._drawings[drawId]
@@ -1215,16 +1077,6 @@
                         if options.onAlphaChange then options.onAlphaChange(self._background_alpha) end
                     end)
                 end
-                if options.shadowControls ~= false then
-                    settingsRefs.shadowIntensity = themingSection:Slider('Shadow intensity', math.floor((self._shadow_intensity or 1) * 100 + 0.5), 1, 0, 200, '%', function(newValue)
-                        self._shadow_intensity = clamp((tonumber(newValue) or 100) / 100, 0, 2)
-                        if options.onShadowIntensityChange then options.onShadowIntensityChange(self._shadow_intensity) end
-                    end)
-                    settingsRefs.shadowSpread = themingSection:Slider('Shadow spread', math.floor((self._shadow_spread or 1) * 100 + 0.5), 1, 0, 200, '%', function(newValue)
-                        self._shadow_spread = clamp((tonumber(newValue) or 100) / 100, 0, 2)
-                        if options.onShadowSpreadChange then options.onShadowSpreadChange(self._shadow_spread) end
-                    end)
-                end
                 local themes = {'Catppuccin', 'Gamesense', 'Bloodmoon', 'Seaside', 'Ember', 'Synthwave', 'Matcha', 'Femboy'}
                 -- per-theme bg+fg color preview so each dropdown row looks like that theme
                 local themePreviewColors = {
@@ -1538,9 +1390,6 @@
             local watermarkTextSize = self:_GetTextBounds(watermarkContent)
             local watermarkSize = Vector2.new(watermarkTextSize.x + self._padding * 2 + 14, watermarkTextSize.y + self._padding + 2)
             if self._watermark_enabled then
-                -- drop shadow
-                self:_Draw('watermark_sh0', 'rect', self._theming.crust, 99, watermarkPos + Vector2.new(2, 3), watermarkSize, true)
-                self:_SetOpacity('watermark_sh0', 0.35)
                 -- body
                 self:_Draw('watermark_body', 'rect', self._theming.body, 100, watermarkPos, watermarkSize, true)
                 self:_SetOpacity('watermark_body', clamp(self._background_alpha + 0.02, 5/100, 1))
@@ -1576,8 +1425,6 @@
 
                 local progressPercent = math.min((os.clock() - notification._spawned_at)/notification.time, 1)
 
-                -- shadow
-                self:_Draw(notificationDrawId .. '_sh0', 'rect', self._theming.crust, 99, notificationOrigin + Vector2.new(2, 3), notificationSize, true)
                 -- body glass
                 self:_Draw(notificationDrawId .. '_body', 'rect', self._theming.body, 100, notificationOrigin, notificationSize, true)
                 -- accent stripe left
@@ -1592,7 +1439,6 @@
                 self:_Draw(notificationDrawId .. '_text', 'text', self._theming.text, 103, notificationOrigin + Vector2.new(self._padding + 6, self._padding/2 + 1), notificationText, true)
                 self:_SetOpacityStartsWith(notificationDrawId, notificationFade)
                 -- re-apply glass body alpha on top of fade
-                self:_SetOpacity(notificationDrawId .. '_sh0', 0.35 * notificationFade)
                 self:_SetOpacity(notificationDrawId .. '_body', clamp(self._background_alpha + 0.03, 5/100, 1) * notificationFade)
 
                 totalNotificationsHeight = totalNotificationsHeight + (notificationTextSize.y + self._padding * 2 + 6) * notificationFade
@@ -1741,8 +1587,6 @@
                     end
 
                     local popSize = Vector2.new(dropdown.width + self._padding * 2, totalHeight)
-                    -- shadow
-                    self:_Draw('dropdown_sh0', 'rect', self._theming.crust, 898, dropdownOrigin + Vector2.new(2, 3), popSize, true)
                     -- body
                     self:_Draw('dropdown_body', 'rect', self._theming.body, 900, dropdownOrigin, popSize, true)
                     -- crust and border
@@ -1750,7 +1594,6 @@
                     self:_Draw('dropdown_border', 'rect', self._theming.border1, 901, dropdownOrigin + Vector2.new(1, 1), popSize - Vector2.new(2, 2), false)
                     local dropdownFadeAlpha = clamp(dropdownFade, 0, 1)
                     self:_SetOpacityStartsWith('dropdown_', dropdownFadeAlpha)
-                    self:_SetOpacity('dropdown_sh0', 0.35 * dropdownFadeAlpha)
                     self:_SetOpacity('dropdown_body', clamp(self._background_alpha + 0.03, 5/100, 1) * dropdownFadeAlpha)
 
                     -- fire hover callback when the hovered row changes
@@ -1788,8 +1631,6 @@
                     local colorpickerTitle = tostring(colorpicker.label or 'Color')
                     local colorpickerTitleSize = self:_GetTextBounds(colorpickerTitle)
 
-                    -- shadow
-                    self:_Draw('colorpicker_sh0', 'rect', self._theming.crust, 898, colorpickerOrigin + Vector2.new(2, 3), colorpickerSize, true)
                     -- body glass
                     self:_Draw('colorpicker_body', 'rect', self._theming.body, 900, colorpickerOrigin, colorpickerSize, true)
                     self:_Draw('colorpicker_crust', 'rect', self._theming.crust, 901, colorpickerOrigin, colorpickerSize, false)
@@ -1841,7 +1682,6 @@
                     if colorpickerFade < 1.1 then
                         local colorpickerFadeAlpha = clamp(colorpickerFade, 0, 1)
                         self:_SetOpacityStartsWith('colorpicker_', colorpickerFadeAlpha)
-                        self:_SetOpacity('colorpicker_sh0', 0.35 * colorpickerFadeAlpha)
                         self:_SetOpacity('colorpicker_body', clamp(self._background_alpha + 0.03, 5/100, 1) * colorpickerFadeAlpha)
                     end
 
@@ -1905,35 +1745,23 @@
                 local sidebarW = self._sidebar_w
                 local topbarH = self._topbar_h
 
-                local cs = 8
-                local sp = self._shadow_spread or 1
-                local function sr(v) return math.floor(v * sp + 0.5) end
-                self:_DrawRoundedShadow('menu_sh0', self._theming.crust, 0, Vector2.new(self.x + sr(2),  self.y + sr(3)),  Vector2.new(self.w - sr(2), self.h - sr(2)), cs)
-                self:_DrawRoundedShadow('menu_sh1', self._theming.crust, 0, Vector2.new(self.x + sr(5),  self.y + sr(7)),  Vector2.new(self.w - sr(4), self.h - sr(4)), cs)
-                self:_DrawRoundedShadow('menu_sh2', self._theming.crust, 0, Vector2.new(self.x + sr(8),  self.y + sr(11)), Vector2.new(self.w - sr(6), self.h - sr(6)), cs)
-                self:_DrawRoundedShadow('menu_sh3', self._theming.crust, 0, Vector2.new(self.x + sr(11), self.y + sr(15)), Vector2.new(self.w - sr(8), self.h - sr(8)), cs)
-
-                -- main body fill (glass) - rounded
-                self:_DrawRoundedShadow('menu_body', self._theming.body, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), cs)
+                -- main body fill (glass)
+                self:_Draw('menu_body', 'rect', self._theming.body, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
 
                 -- overlay (glass sheen) - thin lighter layer on top of body
-                self:_DrawRoundedShadow('menu_overlay', self._theming.surface1, 2, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), cs)
+                self:_Draw('menu_overlay', 'rect', self._theming.surface1, 2, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
 
-                -- outer + inner menu border, rounded to match the body arc
-                self:_DrawRoundedOutline('menu_border_out', self._theming.crust, 20, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), cs, nil, 1)
-                self:_DrawRoundedOutline('menu_border_in', self._theming.border1, 20, Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, self.h - 2), cs, nil, 1)
-                -- top accent line (2px) - inset by cs so it doesn't cross rounded corners
-                self:_Draw('menu_accent_top', 'rect', self._theming.accent, 21, Vector2.new(self.x + cs, self.y + 1), Vector2.new(self.w - 2*cs, 2), true)
+                -- outer + inner menu border
+                self:_Draw('menu_border_out', 'rect', self._theming.crust, 20, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), false)
+                self:_Draw('menu_border_in', 'rect', self._theming.border1, 20, Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, self.h - 2), false)
+                -- top accent line (2px)
+                self:_Draw('menu_accent_top', 'rect', self._theming.accent, 21, Vector2.new(self.x, self.y + 1), Vector2.new(self.w, 2), true)
 
-                self:_Undraw('menu_corner_tl_0')
-                self:_Undraw('menu_corner_tr_0')
-                self:_Undraw('menu_corner_bl_0')
-                self:_Undraw('menu_corner_br_0')
 
                 -- topbar
                 local topbarPos = Vector2.new(self.x, self.y)
                 local topbarSize = Vector2.new(self.w, topbarH)
-                self:_DrawRoundedShadow('menu_topbar_bg', self._theming.surface0, 6, topbarPos, Vector2.new(self.w, topbarH), cs, { tl = true, tr = true, bl = false, br = false })
+                self:_Draw('menu_topbar_bg', 'rect', self._theming.surface0, 6, topbarPos, Vector2.new(self.w, topbarH), true)
                 self:_Draw('menu_topbar_div', 'rect', self._theming.border1, 7, Vector2.new(self.x, self.y + topbarH), Vector2.new(self.w, 1), true)
                 local menuDotCenter = Vector2.new(self.x + self._padding + 7, self.y + topbarH / 2 + 1)
                 self:_Draw('menu_topbar_dot_ring', 'circle', self._theming.border1, 8, menuDotCenter, 5, false, 1, 18)
@@ -1960,9 +1788,7 @@
                 -- sidebar
                 local sidebarPos = Vector2.new(self.x + 1, self.y + topbarH + 1)
                 local sidebarSize = Vector2.new(sidebarW - 1, self.h - topbarH - 2)
-                -- radius 7 (= body cs - 1 inset) so pivot lands on the exact body BL pivot and
-                -- the sidebar curve sits one px inside the body curve, never poking out
-                self:_DrawRoundedShadow('menu_sidebar_bg', self._theming.surface0, 6, sidebarPos, sidebarSize, 7, { tl = false, tr = false, bl = true, br = false })
+                self:_Draw('menu_sidebar_bg', 'rect', self._theming.surface0, 6, sidebarPos, sidebarSize, true)
                 -- vertical separator between sidebar and content
                 self:_Draw('menu_sidebar_sep', 'rect', self._theming.border1, 7, Vector2.new(self.x + sidebarW, self.y + topbarH + 1), Vector2.new(1, self.h - topbarH - 2), true)
 
@@ -2349,7 +2175,9 @@
                                     self:_Draw(sectionItemId .. '_kb_bg', 'rect', self._theming.surface0, 12, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), true)
                                     self:_Draw(sectionItemId .. '_kb_border', 'rect', self._theming.border0, 13, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), false)
                                     local kbColor = itemKeybind.value and self._theming.text or self._theming.subtext
-                                    self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, self:_GetCenteredTextPos(Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), keybindText, nil, 11), keybindText, true, 'center', 11)
+                                    local kbTextSize = self:_GetTextBounds(keybindText, nil, 11)
+                                    local kbTextPos = Vector2.new(kbX + kbW / 2, kbY + math.floor((kbH - kbTextSize.y) / 2))
+                                    self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, kbTextPos, keybindText, true, 'center', 11)
                                 end
 
                                 -- colorpicker swatch (left of pill, or replacing pill if overwrite)
@@ -2802,8 +2630,6 @@
                     end
                     if tooltipOrigin.x < 4 then tooltipOrigin = Vector2.new(4, tooltipOrigin.y) end
                     if tooltipOrigin.y < 4 then tooltipOrigin = Vector2.new(tooltipOrigin.x, 4) end
-                    self:_Draw('menu_tooltip_sh', 'rect', self._theming.crust, 998, tooltipOrigin + Vector2.new(2, 3), tooltipBoxSize, true)
-                    self:_SetOpacity('menu_tooltip_sh', 0.35)
                     self:_Draw('menu_tooltip_body', 'rect', self._theming.body, 1000, tooltipOrigin, tooltipBoxSize, true)
                     self:_SetOpacity('menu_tooltip_body', clamp(self._background_alpha + 0.03, 5/100, 1))
                     self:_Draw('menu_tooltip_crust', 'rect', self._theming.crust, 1001, tooltipOrigin, tooltipBoxSize, false)
@@ -2852,16 +2678,10 @@
 
             if menuOpacity > 0 then
                 local bgAlpha = clamp(self._background_alpha or 1, 5/100, 1)
-                local si = self._shadow_intensity or 1
-                self:_SetOpacityStartsWith('menu_sh0', 0.24 * si * menuOpacity)
-                self:_SetOpacityStartsWith('menu_sh1', 0.17 * si * menuOpacity)
-                self:_SetOpacityStartsWith('menu_sh2', 0.10 * si * menuOpacity)
-                self:_SetOpacityStartsWith('menu_sh3', 0.05 * si * menuOpacity)
                 self:_SetOpacityStartsWith('menu_body', bgAlpha * menuOpacity)
                 self:_SetOpacityStartsWith('menu_overlay', bgAlpha * 0.12 * menuOpacity)
                 self:_SetOpacityStartsWith('menu_topbar_bg', clamp(bgAlpha + 0.04, 0, 1) * menuOpacity)
                 self:_SetOpacityStartsWith('menu_sidebar_bg', clamp(bgAlpha + 0.03, 0, 1) * menuOpacity)
-                self:_SetOpacity('menu_tooltip_sh', 0.35 * menuOpacity)
                 self:_SetOpacity('menu_tooltip_body', clamp(bgAlpha + 0.03, 0, 1) * menuOpacity)
             end
         end
@@ -2873,69 +2693,167 @@
             self:CenterMenu()
             self:SetMenuTitle('UILib v2')
 
-            local rage = self:Tab('Rage')
-            local aimbot = rage:Section('Aimbot')
+            -- tab 1: toggles, keybinds, colorpickers, sliders, buttons, textbox
+            local combat = self:Tab('Combat')
+            local aimbot = combat:Section('Aimbot')
             local enabled = aimbot:Toggle('Enabled', false, nil, false, 'Master aimbot switch')
-            local aimKey = enabled:AddKeybind('unbound', 'Hold')
+            local aimKey = enabled:AddKeybind('unbound', 'Hold', true)
             local silent = aimbot:Toggle('Silent aim', true)
-            local hitColor = silent:AddColorpicker('Hit color', Color3.fromRGB(255, 80, 120))
-            aimbot:Toggle('Auto wall (unsafe)', false, nil, true, 'Unsafe features may get you banned')
+            local silentColor = silent:AddColorpicker('Hit color', Color3.fromRGB(255, 80, 120))
+            local autoWall = aimbot:Toggle('Auto wall (unsafe)', false, nil, true, 'Unsafe features may get you banned')
+            autoWall:AddKeybind('v', 'Toggle', true)
+            local overwriteColor = aimbot:Toggle('Crosshair color')
+            overwriteColor:AddColorpicker('Crosshair', Color3.fromRGB(0, 255, 128), true)
             local fov = aimbot:Slider('FOV', 90, 1, 1, 360, 'deg')
             local smooth = aimbot:Slider('Smoothness', 2.5, 0.1, 0.1, 10, 'x')
             local hitbox = aimbot:Dropdown('Hitbox', {'Head', 'Chest'}, {'Head', 'Neck', 'Chest', 'Stomach', 'Pelvis', 'Arms', 'Legs'}, true)
+            aimbot:Dropdown('Priority', {'Distance'}, {'Distance', 'Health', 'FOV', 'Threat'}, false)
             aimbot:Button('Reset settings', function()
                 enabled:Set(false)
                 aimKey:Set(nil)
                 silent:Set(false)
-                hitColor:Set(Color3.fromRGB(255, 255, 255))
+                silentColor:Set(Color3.fromRGB(255, 255, 255))
                 fov:Set(90)
                 smooth:Set(2.5)
                 hitbox:Set({'Head'})
             end)
 
-            local accuracy = rage:Section('Accuracy')
+            local accuracy = combat:Section('Accuracy')
             local animOn = false
-            accuracy:Toggle('Live meter', animOn, function(v)
-                animOn = v
-            end)
+            accuracy:Toggle('Live meter', animOn, function(v) animOn = v end)
             local meterSlider = accuracy:Slider('Meter', 0, 1, -100, 100, '%')
+            accuracy:Slider('Prediction', 0.5, 0.05, 0, 2, 's')
             local targetBox = accuracy:Textbox('Target filter', '')
-            accuracy:Button('Clear filter', function()
-                targetBox:Set('')
-            end)
+            accuracy:Textbox('Ignore list', '')
+            accuracy:Button('Clear filter', function() targetBox:Set('') end)
 
+            -- tab 2: esp, world, many toggles with colorpickers
             local vis = self:Tab('Visuals')
             local esp = vis:Section('ESP')
             local espOn = esp:Toggle('Enabled', false)
             espOn:AddColorpicker('Color', Color3.fromRGB(0, 200, 255))
+            espOn:AddKeybind('unbound', 'Toggle', true)
             esp:Toggle('Box', true)
             esp:Toggle('Name', true)
-            esp:Toggle('Health', false)
+            esp:Toggle('Health bar', false)
             esp:Toggle('Distance', false)
+            esp:Toggle('Skeleton', false)
+            esp:Toggle('Head dot', false)
+            esp:Toggle('Tracers', false)
+            esp:Toggle('Chams', false)
             esp:Slider('Max distance', 500, 10, 10, 2000, 'm')
-            esp:Dropdown('Style', {'Corner'}, {'Corner', 'Full', 'Outline'}, false)
+            esp:Slider('Text size', 13, 1, 8, 24, 'px')
+            -- stress test: 20 items single-select
+            esp:Dropdown('Style', {'Corner'}, {
+                'Corner', 'Full', 'Outline', 'Rounded', 'Dotted',
+                'Dashed', 'Thick', 'Thin', 'Double', 'Glow',
+                'Neon', 'Gradient', 'Fade', 'Pulse', 'Rainbow',
+                'Matrix', 'Retro', 'Minimal', 'Bold', 'Custom'
+            }, false)
+            -- stress test: 18 items multi-select
+            esp:Dropdown('Flags', {'Armor', 'Weapon'}, {
+                'Armor', 'Weapon', 'Ammo', 'Reload', 'Scoped',
+                'Flashed', 'Defusing', 'Planting', 'Peeking', 'Lit',
+                'Bot', 'AFK', 'Lagging', 'Streaming', 'Admin',
+                'VIP', 'Suspect', 'Reported'
+            }, true)
 
             local world = vis:Section('World')
-            world:Toggle('Chams', false)
-            world:Toggle('Glow', false)
+            local worldGlow = world:Toggle('Glow', false)
+            worldGlow:AddColorpicker('Glow color', Color3.fromRGB(255, 255, 0))
+            world:Toggle('Night mode', false)
+            world:Toggle('No fog', false)
+            world:Toggle('Fullbright', false)
             world:Slider('FOV changer', 70, 1, 40, 120, 'deg')
+            world:Slider('View distance', 1000, 50, 100, 5000, 'm')
+            world:Dropdown('Skybox', {'Default'}, {'Default', 'Night', 'Sunset', 'Space', 'Custom'}, false)
 
+            -- tab 3: movement, automation
             local misc = self:Tab('Misc')
             local movement = misc:Section('Movement')
             movement:Toggle('Bunnyhop', false)
             movement:Toggle('Auto strafe', false)
+            movement:Toggle('Speed boost', false)
+            movement:Toggle('No fall damage', false)
             movement:Slider('Jump height', 16, 1, 10, 100, 'u')
-            movement:Button('Teleport home', function()
-                self:Notification('Teleport sent', 3)
-            end)
+            movement:Slider('Walk speed', 16, 1, 1, 50, 'u/s')
+            movement:Button('Teleport home', function() self:Notification('Teleport sent', 3) end)
+            movement:Button('Respawn', function() self:Notification('Respawning...', 2) end)
 
+            local automation = misc:Section('Automation')
+            automation:Toggle('Auto heal', false)
+            automation:Toggle('Auto reload', false)
+            automation:Toggle('Auto pickup', false)
+            automation:Slider('Heal threshold', 50, 5, 10, 100, '%')
+            automation:Dropdown('Pickup priority', {'Nearest'}, {'Nearest', 'Rarest', 'Best weapon', 'Ammo first'}, false)
+            automation:Textbox('Macro command', '')
+
+            -- tab 4: subtabs test
+            local config = self:Tab('Config')
+            local profiles = config:SubTab('Profiles')
+            local profSection = profiles:Section('Manage')
+            profSection:Textbox('Profile name', 'default')
+            profSection:Button('Save', function() self:Notification('Profile saved', 3) end)
+            profSection:Button('Load', function() self:Notification('Profile loaded', 3) end)
+            profSection:Button('Delete', function() self:Notification('Profile deleted', 3) end)
+            profSection:Dropdown('Active profile', {'default'}, {'default', 'rage', 'legit', 'hvh', 'casual'}, false)
+
+            local scripts = config:SubTab('Scripts')
+            local scriptSection = scripts:Section('Loader')
+            scriptSection:Textbox('Script URL', '')
+            scriptSection:Button('Execute', function() self:Notification('Script executed', 3) end)
+            scriptSection:Toggle('Auto-run on inject', false)
+
+            -- tab 5: sidebar groups test
+            local dbgParent = self:Tab('Debug')
+            local dbgPerf = dbgParent:SubTab('Perf')
+            local perfSection = dbgPerf:Section('Metrics')
+            local fpsSlider = perfSection:Slider('Simulated FPS', 60, 1, 1, 240, '')
+            perfSection:Toggle('Show FPS overlay', false)
+            perfSection:Toggle('Show draw count', false)
+            perfSection:Toggle('Show memory', false)
+
+            local dbgInput = dbgParent:SubTab('Input')
+            local inputSection = dbgInput:Section('Test')
+            inputSection:Toggle('Log keypresses', false)
+            inputSection:Toggle('Log mouse', false)
+            inputSection:Textbox('Last key', '')
+            inputSection:Button('Clear log', function() self:Notification('Log cleared', 2) end)
+
+            -- tab 6: column layout, y-offset, overflow test
+            local layout = self:Tab('Layout')
+            local leftRight = layout:Section('Columns')
+            local ll = leftRight:Left()
+            ll:Toggle('Left toggle 1', false)
+            ll:Toggle('Left toggle 2', true)
+            ll:Slider('Left slider', 50, 1, 0, 100, '%')
+            ll:Button('Left button', function() self:Notification('Left!', 2) end)
+            local rr = leftRight:Right()
+            rr:Toggle('Right toggle 1', true)
+            rr:Toggle('Right toggle 2', false)
+            rr:Slider('Right slider', 75, 1, 0, 100, '%')
+            rr:Dropdown('Right dropdown', {'A'}, {'A', 'B', 'C', 'D', 'E'}, false)
+
+            -- overflow: many items to trigger the overflow hint
+            local overflow = layout:Section('Overflow Test')
+            for i = 1, 15 do
+                overflow:Toggle('Item #' .. tostring(i), i % 3 == 0)
+            end
+
+            -- settings tab
             local _, menuSettings = self:CreateSettingsTab()
             local shouldDie = false
-            menuSettings:Button('Unload', function()
-                shouldDie = true
+            menuSettings:Button('Unload', function() shouldDie = true end)
+            menuSettings:Button('Fire notification', function()
+                self:Notification('Test notification at ' .. tostring(math.floor(os.clock())), 5)
+            end)
+            menuSettings:Button('Fire 3 notifications', function()
+                for i = 1, 3 do
+                    self:Notification('Notification #' .. tostring(i), 4 + i)
+                end
             end)
 
-            self:Notification('UILib v2 loaded', 5)
+            self:Notification('UILib v2 demo loaded', 5)
             self:Notification('Press F1 to toggle the menu', 6)
 
             while not shouldDie do
