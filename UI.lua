@@ -59,8 +59,15 @@
         _background_alpha = 92/100,
         _glow_enabled = false,
         _glow_color = nil,
-        _glow_intensity = 50,
-        _glow_radius = 10,
+        _glow_mode = 'Static',
+        _glow_last_mode = nil,
+        -- per-mode settings
+        _glow_s_intensity = 50,
+        _glow_s_radius = 10,
+        _glow_b_speed = 2,
+        _glow_b_intensity = 70,
+        _glow_r_worm = 40,
+        _glow_r_speed = 3,
         _theming = {
             accent = Color3.fromRGB(203, 166, 247),
             unsafe = Color3.fromRGB(255, 215, 64),
@@ -589,6 +596,11 @@
                 return handle
             end
             handle.SetSide = handle.SetColumn
+            handle.SetHidden = function(_, hidden)
+                local itemRef = getItem()
+                if itemRef then itemRef._hidden = hidden end
+                return handle
+            end
             handle.SetYOffset = function(_, newOffset)
                 local itemRef = getItem()
                 if itemRef then
@@ -1338,11 +1350,33 @@
                 glowColorRef = glowToggle:AddColorpicker('Glow color', self._glow_color or self._theming.accent, false, function(newValue)
                     self._glow_color = newValue
                 end)
-                themingSection:Slider('Glow intensity', self._glow_intensity, 1, 1, 100, '%', function(newValue)
-                    self._glow_intensity = newValue
-                end)
-                themingSection:Slider('Glow radius', self._glow_radius, 1, 1, 20, 'px', function(newValue)
-                    self._glow_radius = newValue
+
+                -- per-mode sliders (hidden/shown on mode change)
+                local glowSIntensity = themingSection:Slider('Intensity', self._glow_s_intensity, 1, 1, 100, '%', function(v) self._glow_s_intensity = v end)
+                local glowSRadius = themingSection:Slider('Radius', self._glow_s_radius, 1, 1, 20, 'px', function(v) self._glow_s_radius = v end)
+                local glowBSpeed = themingSection:Slider('Speed', self._glow_b_speed, 1, 1, 5, 's', function(v) self._glow_b_speed = v end)
+                local glowBIntensity = themingSection:Slider('Max intensity', self._glow_b_intensity, 1, 1, 100, '%', function(v) self._glow_b_intensity = v end)
+                local glowRWorm = themingSection:Slider('Worm size', self._glow_r_worm, 1, 1, 100, '%', function(v) self._glow_r_worm = v end)
+                local glowRSpeed = themingSection:Slider('Speed', self._glow_r_speed, 1, 1, 10, '', function(v) self._glow_r_speed = v end)
+
+                local function updateGlowSliderVisibility(mode)
+                    local isS = mode == 'Static'
+                    local isB = mode == 'Breathe'
+                    local isR = mode == 'Rotate'
+                    glowSIntensity:SetHidden(not isS)
+                    glowSRadius:SetHidden(not isS)
+                    glowBSpeed:SetHidden(not isB)
+                    glowBIntensity:SetHidden(not isB)
+                    glowRWorm:SetHidden(not isR)
+                    glowRSpeed:SetHidden(not isR)
+                end
+                updateGlowSliderVisibility(self._glow_mode)
+
+                themingSection:Dropdown('Glow animation', {self._glow_mode}, {'Static', 'Breathe', 'Rotate'}, false, function(newValue)
+                    if newValue and newValue[1] then
+                        self._glow_mode = newValue[1]
+                        updateGlowSliderVisibility(newValue[1])
+                    end
                 end)
 
                 settingsRefs.font = themingFont
@@ -1817,20 +1851,121 @@
                 local sidebarW = self._sidebar_w
                 local topbarH = self._topbar_h
 
-                -- neon glow (unfilled rects outside menu bounds)
-                local glowRadius = self._glow_radius or 6
+                -- neon glow
+                local glowMode = self._glow_mode or 'Static'
+                -- clean up on mode change
+                if glowMode ~= self._glow_last_mode then
+                    self:_UndrawStartsWith('menu_glow_')
+                    self._glow_rot_count = 0
+                    self._glow_last_mode = glowMode
+                end
                 if self._glow_enabled then
                     local glowColor = self._glow_color or self._theming.accent
-                    local glowPeak = (self._glow_intensity or 25) / 100
-                    for gi = 1, glowRadius do
-                        local glowAlpha = (1 - (gi - 1) / glowRadius) * glowPeak
-                        self:_Draw('menu_glow_' .. tostring(gi), 'rect', glowColor, 0, Vector2.new(self.x - gi, self.y - gi), Vector2.new(self.w + gi * 2, self.h + gi * 2), false)
-                        self:_SetOpacity('menu_glow_' .. tostring(gi), glowAlpha)
+                    local mx, my, mw, mh = self.x, self.y, self.w, self.h
+                    local now = os.clock()
+
+                    if glowMode == 'Rotate' then
+                        -- smooth 360 rotation: each edge split into segments
+                        local glowPeak = 0.5
+                        local layers = 9
+                        local segs = 18
+                        local totalSegs = segs * 4
+                        local speed = self._glow_r_speed or 3
+                        local wormW = (self._glow_r_worm or 40) / 200
+                        if wormW < 0.05 then wormW = 0.05 end
+                        local phase = ((now * speed) % 6.28318) / 6.28318
+                        local segCount = 0
+
+                        for gi = 1, layers do
+                            local layerAlpha = (1 - (gi - 1) / layers) * glowPeak
+                            local edgeW = mw + gi * 2
+                            local edgeH = mh + gi * 2 - 2
+                            local segW = edgeW / segs
+                            local segH = edgeH / segs
+
+                            for edge = 0, 3 do
+                                for si = 0, segs - 1 do
+                                    segCount = segCount + 1
+                                    local t = (edge * segs + si + 0.5) / totalSegs
+                                    -- signed circular distance (positive = behind worm, negative = ahead)
+                                    local rawDiff = t - phase
+                                    if rawDiff > 0.5 then rawDiff = rawDiff - 1 end
+                                    if rawDiff < -0.5 then rawDiff = rawDiff + 1 end
+                                    -- asymmetric: leading edge sharp, trailing tail long
+                                    local diff
+                                    if rawDiff < 0 then
+                                        diff = -rawDiff / (wormW * 0.3)  -- ahead: sharp falloff
+                                    else
+                                        diff = rawDiff / wormW           -- behind: long tail
+                                    end
+                                    local bright = 0.08 + 0.92 * ((diff < 1) and (1 - diff) * (1 - diff) or 0)
+
+                                    local sx, sy, sw, sh
+                                    if edge == 0 then
+                                        sx = mx - gi + si * segW
+                                        sy = my - gi
+                                        sw = math.floor(segW + 1)
+                                        sh = 1
+                                    elseif edge == 1 then
+                                        sx = mx + mw + gi - 1
+                                        sy = my - gi + 1 + si * segH
+                                        sw = 1
+                                        sh = math.floor(segH + 1)
+                                    elseif edge == 2 then
+                                        sx = mx - gi + (segs - 1 - si) * segW
+                                        sy = my + mh + gi - 1
+                                        sw = math.floor(segW + 1)
+                                        sh = 1
+                                    else
+                                        sx = mx - gi
+                                        sy = my - gi + 1 + (segs - 1 - si) * segH
+                                        sw = 1
+                                        sh = math.floor(segH + 1)
+                                    end
+
+                                    local sid = 'menu_glow_r' .. tostring(segCount)
+                                    self:_Draw(sid, 'rect', glowColor, 0, Vector2.new(sx, sy), Vector2.new(sw, sh), true)
+                                    self:_SetOpacity(sid, layerAlpha * bright)
+                                end
+                            end
+                        end
+                        -- cleanup excess from previous frame
+                        local prevMax = self._glow_rot_count or 0
+                        for i = segCount + 1, prevMax do
+                            self:_Undraw('menu_glow_r' .. tostring(i))
+                        end
+                        self._glow_rot_count = segCount
+                    else
+                        local effectiveRadius, glowPeak, peakMul
+                        if glowMode == 'Static' then
+                            effectiveRadius = self._glow_s_radius or 10
+                            glowPeak = (self._glow_s_intensity or 50) / 100
+                            peakMul = 1
+                        elseif glowMode == 'Breathe' then
+                            effectiveRadius = 14
+                            glowPeak = (self._glow_b_intensity or 70) / 100
+                            local speed = self._glow_b_speed or 2
+                            local freq = (speed > 0) and (6.28318 / speed) or 1
+                            local raw = math.sin(now * freq) * 0.5 + 0.5
+                            local smooth = raw * raw * (3 - 2 * raw)
+                            peakMul = 0.3 + 0.7 * smooth
+                        else
+                            effectiveRadius = 10
+                            glowPeak = 0.5
+                            peakMul = 1
+                        end
+                        for gi = 1, effectiveRadius do
+                            local glowAlpha = (1 - (gi - 1) / effectiveRadius) * glowPeak * peakMul
+                            self:_Draw('menu_glow_' .. tostring(gi), 'rect', glowColor, 0, Vector2.new(mx - gi, my - gi), Vector2.new(mw + gi * 2, mh + gi * 2), false)
+                            self:_SetOpacity('menu_glow_' .. tostring(gi), glowAlpha)
+                        end
+                        for gi = effectiveRadius + 1, 20 do
+                            self:_Undraw('menu_glow_' .. tostring(gi))
+                        end
                     end
-                end
-                -- hide unused glow layers
-                for gi = (self._glow_enabled and glowRadius + 1 or 1), 20 do
-                    self:_Undraw('menu_glow_' .. tostring(gi))
+                else
+                    self:_UndrawStartsWith('menu_glow_')
+                    self._glow_rot_count = 0
                 end
 
                 -- main body fill (glass)
@@ -2165,6 +2300,11 @@
                         -- render widgets in this section
                         for sectionItemIter, sectionItem in ipairs(sectionContent._items) do
                             local sectionItemId = 'menu_widget_' .. tostring(openTabIdx) .. '_' .. tostring(sIdx) .. '_' .. tostring(sectionItemIter)
+                            -- skip hidden items (no drawing, no height)
+                            if sectionItem._hidden then
+                                self:_UndrawStartsWith(sectionItemId)
+                            else
+
                             local itemType = sectionItem.type_
                             local itemValue = sectionItem.value
                             local itemCallback = sectionItem.callback
@@ -2670,6 +2810,8 @@
                             if columnCursorY[itemColumn] > furthestCursorY then
                                 furthestCursorY = columnCursorY[itemColumn]
                             end
+
+                            end -- end _hidden else
                         end
 
                         for usedColumn, _ in pairs(sectionUsedColumns) do
