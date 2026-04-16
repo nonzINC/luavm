@@ -1,5 +1,4 @@
--- Demo menu:
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua"))(); UILib:ShowDemoMenu()
+    -- loadstring(game:HttpGet("https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua"))(); UILib:ShowDemoMenu()
 
     -- UILib v2 (glassmorphism sidebar)
     UILib = {
@@ -17,6 +16,7 @@
             Fortnite   = Drawing.Fonts.Fortnite,
         },
         _drawings = {},
+        _base_alpha = {},
         _tree = {},
         _tab_order = {},
         _menu_open = true,
@@ -386,7 +386,14 @@
 
             if draw.Color ~= drawColor then draw.Color = drawColor end
             if draw.ZIndex ~= drawZIndex then draw.ZIndex = drawZIndex end
-            if not draw.Visible then draw.Visible = true end
+            if not draw.Visible then
+                -- apply fade multiplier when making visible (prevents 1-frame flash)
+                local mul = self._menu_fade_mul
+                if mul and mul < 1 and drawId:sub(1, 5) == 'menu_' then
+                    draw.Transparency = self._base_alpha[drawId] or mul
+                end
+                draw.Visible = true
+            end
         end
 
         function UILib:_RemoveDraw(drawId)
@@ -394,6 +401,7 @@
             if drawObject then
                 drawObject:Remove()
                 self._drawings[drawId] = nil
+                self._base_alpha[drawId] = nil
             end
         end
 
@@ -404,12 +412,20 @@
 
         function UILib:_SetOpacity(drawId, opacity)
             local drawObject = self._drawings[drawId]
-            if drawObject then drawObject.Transparency = opacity end
+            if drawObject then
+                self._base_alpha[drawId] = opacity
+                -- inline fade: menu_ drawings get multiplied by fade factor
+                local mul = self._menu_fade_mul
+                if mul and mul < 1 and drawId:sub(1, 5) == 'menu_' then
+                    drawObject.Transparency = opacity * mul
+                else
+                    drawObject.Transparency = opacity
+                end
+            end
         end
 
         function UILib:_RemoveDrawStartsWith(drawId)
             local len = #drawId
-            -- two pass to avoid modifying table during pairs iteration (UB risk in lua)
             local toRemove = {}
             for drawName, drawObject in pairs(self._drawings) do
                 if drawName:sub(1, len) == drawId then
@@ -417,8 +433,11 @@
                     toRemove[#toRemove + 1] = drawName
                 end
             end
+            local ba = self._base_alpha
             for i = 1, #toRemove do
-                self._drawings[toRemove[i]] = nil
+                local name = toRemove[i]
+                self._drawings[name] = nil
+                ba[name] = nil
             end
         end
 
@@ -433,9 +452,27 @@
 
         function UILib:_SetOpacityStartsWith(drawId, opacity)
             local len = #drawId
+            local ba = self._base_alpha
+            local mul = self._menu_fade_mul
+            local applyMul = mul and mul < 1
             for drawName, drawObject in pairs(self._drawings) do
                 if drawName:sub(1, len) == drawId then
-                    drawObject.Transparency = opacity
+                    ba[drawName] = opacity
+                    if applyMul and drawName:sub(1, 5) == 'menu_' then
+                        drawObject.Transparency = opacity * mul
+                    else
+                        drawObject.Transparency = opacity
+                    end
+                end
+            end
+        end
+
+        -- apply fade as multiplier on stored base alphas (preserves per-element alpha relationships)
+        function UILib:_ApplyMenuFade(multiplier)
+            local ba = self._base_alpha
+            for drawName, drawObject in pairs(self._drawings) do
+                if drawName:sub(1, 5) == 'menu_' then
+                    drawObject.Transparency = (ba[drawName] or 1) * multiplier
                 end
             end
         end
@@ -1335,6 +1372,7 @@
             self._settings_theming_section_ref = nil
             self._settings_item_refs = nil
             self._anim_state = {}
+            self._base_alpha = {}
             self._last_step_at = 0
             self._frame_dt = 16/1000
             setrobloxinput(true)
@@ -1350,9 +1388,12 @@
             end
             self._last_step_at = stepNow
 
+            -- compute fade multiplier once per frame (used inline by _SetOpacity)
+            local menuOpacityEarly = self:_ResolveMenuFadeOpacity()
+            self._menu_fade_mul = menuOpacityEarly
+
             -- input processing
-            local inputMenuOpacity = self:_ResolveMenuFadeOpacity()
-            setrobloxinput(inputMenuOpacity <= 0.001)
+            setrobloxinput(menuOpacityEarly <= 0.001)
             for keycode, inputData in pairs(self._inputs) do
                 local interacted = iskeypressed(inputData.id)
                 if isrbxactive() and interacted then
@@ -1382,7 +1423,10 @@
                 self._menu_toggled_at = os.clock()
                 self._menu_fade_done = false
             end
-            setrobloxinput(self:_ResolveMenuFadeOpacity() <= 0.001)
+            -- refresh multiplier after toggle (state changed)
+            local menuOpacityRefresh = self:_ResolveMenuFadeOpacity()
+            self._menu_fade_mul = menuOpacityRefresh
+            setrobloxinput(menuOpacityRefresh <= 0.001)
 
             -- watermark (glass pill)
             local watermarkPos = Vector2.new(20, 20)
@@ -2631,7 +2675,7 @@
                     if tooltipOrigin.x < 4 then tooltipOrigin = Vector2.new(4, tooltipOrigin.y) end
                     if tooltipOrigin.y < 4 then tooltipOrigin = Vector2.new(tooltipOrigin.x, 4) end
                     self:_Draw('menu_tooltip_body', 'rect', self._theming.body, 1000, tooltipOrigin, tooltipBoxSize, true)
-                    self:_SetOpacity('menu_tooltip_body', clamp(self._background_alpha + 0.03, 5/100, 1))
+                    self:_SetOpacity('menu_tooltip_body', 1)
                     self:_Draw('menu_tooltip_crust', 'rect', self._theming.crust, 1001, tooltipOrigin, tooltipBoxSize, false)
                     self:_Draw('menu_tooltip_border', 'rect', self._theming.border1, 1002, tooltipOrigin + Vector2.new(1, 1), tooltipBoxSize - Vector2.new(2, 2), false)
                     self:_Draw('menu_tooltip_text', 'text', self._theming.text, 1003, tooltipOrigin + Vector2.new(self._padding, self._padding/2 - 1), tooltipText, true)
@@ -2665,8 +2709,19 @@
             end
 
             local menuOpacity, menuFadeProgress = self:_ResolveMenuFadeOpacity()
+
+            -- set base alphas for glass elements (independent of fade)
+            if menuOpacity > 0 then
+                local bgAlpha = clamp(self._background_alpha or 1, 5/100, 1)
+                self:_SetOpacityStartsWith('menu_body', bgAlpha)
+                self:_SetOpacityStartsWith('menu_overlay', bgAlpha * 0.12)
+                self:_SetOpacityStartsWith('menu_topbar_bg', clamp(bgAlpha + 0.04, 0, 1))
+                self:_SetOpacityStartsWith('menu_sidebar_bg', clamp(bgAlpha + 0.03, 0, 1))
+            end
+
+            -- apply fade multiplier on top of base alphas (preserves gradients, glass, etc.)
             if not self._menu_fade_done then
-                self:_SetOpacityStartsWith('menu_', menuOpacity)
+                self:_ApplyMenuFade(menuOpacity)
                 if menuFadeProgress >= 1 then
                     self._menu_fade_done = true
                     self._menu_fade_start_opacity = self._menu_open and 1 or 0
@@ -2674,15 +2729,6 @@
                         self:_UndrawStartsWith('menu_')
                     end
                 end
-            end
-
-            if menuOpacity > 0 then
-                local bgAlpha = clamp(self._background_alpha or 1, 5/100, 1)
-                self:_SetOpacityStartsWith('menu_body', bgAlpha * menuOpacity)
-                self:_SetOpacityStartsWith('menu_overlay', bgAlpha * 0.12 * menuOpacity)
-                self:_SetOpacityStartsWith('menu_topbar_bg', clamp(bgAlpha + 0.04, 0, 1) * menuOpacity)
-                self:_SetOpacityStartsWith('menu_sidebar_bg', clamp(bgAlpha + 0.03, 0, 1) * menuOpacity)
-                self:_SetOpacity('menu_tooltip_body', clamp(bgAlpha + 0.03, 0, 1) * menuOpacity)
             end
         end
 
