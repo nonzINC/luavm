@@ -57,6 +57,10 @@
         _columns = 2,
         _column_gap = 18,
         _background_alpha = 92/100,
+        _glow_enabled = false,
+        _glow_color = nil,
+        _glow_intensity = 50,
+        _glow_radius = 10,
         _theming = {
             accent = Color3.fromRGB(203, 166, 247),
             unsafe = Color3.fromRGB(255, 215, 64),
@@ -134,14 +138,14 @@
 
     -- textbox input maps (hoisted)
     local _charMap = {
-        space=' ',dash='-',colon=':',period='.',comma=',',slash='/',semicolon=';',
-        quote='\'',leftbracket='[',rightbracket=']',backslash='\\',equals='=',minus='-',
+        space=' ',period='.',comma=',',slash='/',semicolon=';',minus='-',
+        quote='\'',lbracket='[',rbracket=']',backslash='\\',plus='=',tilde='`',
         -- numpad support
         numpad0='0',numpad1='1',numpad2='2',numpad3='3',numpad4='4',
         numpad5='5',numpad6='6',numpad7='7',numpad8='8',numpad9='9',
         multiply='*',add='+',subtract='-',decimal='.',divide='/',
     }
-    local _shiftMap = {['1']='!',['2']='@',['3']='#',['4']='$',['5']='%',['6']='^',['7']='&',['8']='*',['9']='(',['0']=')',['-']='_',['=']='+',['[']='{',[']']='}',[';']=':',['\'']='"',[',']='<',['.']='>',['/']='?',['\\']='|'}
+    local _shiftMap = {['1']='!',['2']='@',['3']='#',['4']='$',['5']='%',['6']='^',['7']='&',['8']='*',['9']='(',['0']=')',['-']='_',['=']='+',['[']='{',[']']='}',[';']=':',['\'']='"',[',']='<',['.']='>',['/']='?',['\\']='|',['`']='~'}
 
     UILib._inputs['m4'] = {id=0x05, held=false, click=false}
     UILib._inputs['m5'] = {id=0x06, held=false, click=false}
@@ -1127,6 +1131,7 @@
                     ['Femboy']      = {bg = Color3.fromRGB(254, 247, 252), fg = Color3.fromRGB(60, 35, 85)},
                 }
                 local themingTextColor, themingBodyColor, themingAccentColor, themingSubtextColor, themingBorder0Color, themingBorder1Color, themingSurface0Color, themingSurface1Color, themingCrustColor
+                local glowColorRef
                 local themeSnapshot = nil
                 local function snapshotTheme()
                     return {
@@ -1154,6 +1159,7 @@
                     themingCrustColor:Set(snap.crust)
                 end
                 local function applyTheme(theme)
+                    local gc = glowColorRef
                     if theme == 'Catppuccin' then
                         themingAccentColor:Set(Color3.fromRGB(203, 166, 247))
                         themingBodyColor:Set(Color3.fromRGB(17, 17, 27))
@@ -1164,6 +1170,7 @@
                         themingSurface1Color:Set(Color3.fromRGB(49, 50, 68))
                         themingSurface0Color:Set(Color3.fromRGB(30, 30, 46))
                         themingCrustColor:Set(Color3.fromRGB(11, 11, 18))
+                        if gc then gc:Set(Color3.fromRGB(180, 140, 255)) end
                     elseif theme == 'Gamesense' then
                         themingAccentColor:Set(Color3.fromRGB(114, 178, 21))
                         themingBodyColor:Set(Color3.fromRGB(6, 6, 6))
@@ -1174,6 +1181,7 @@
                         themingSurface1Color:Set(Color3.fromRGB(30, 30, 30))
                         themingSurface0Color:Set(Color3.fromRGB(18, 18, 18))
                         themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
+                        if gc then gc:Set(Color3.fromRGB(90, 200, 0)) end
                     elseif theme == 'Bloodmoon' then
                         themingAccentColor:Set(Color3.fromRGB(235, 28, 52))
                         themingBodyColor:Set(Color3.fromRGB(22, 10, 12))
@@ -1184,6 +1192,7 @@
                         themingSurface1Color:Set(Color3.fromRGB(70, 22, 32))
                         themingSurface0Color:Set(Color3.fromRGB(42, 15, 20))
                         themingCrustColor:Set(Color3.fromRGB(12, 6, 8))
+                        if gc then gc:Set(Color3.fromRGB(255, 30, 60)) end
                     elseif theme == 'Seaside' then
                         themingAccentColor:Set(Color3.fromRGB(64, 195, 200))
                         themingBodyColor:Set(Color3.fromRGB(12, 32, 55))
@@ -1194,6 +1203,7 @@
                         themingSurface1Color:Set(Color3.fromRGB(32, 72, 105))
                         themingSurface0Color:Set(Color3.fromRGB(18, 45, 72))
                         themingCrustColor:Set(Color3.fromRGB(6, 18, 35))
+                        if gc then gc:Set(Color3.fromRGB(50, 220, 230)) end
                     elseif theme == 'Ember' then
                         themingAccentColor:Set(Color3.fromRGB(252, 115, 30))
                         themingBodyColor:Set(Color3.fromRGB(22, 14, 10))
@@ -1204,6 +1214,7 @@
                         themingSurface1Color:Set(Color3.fromRGB(60, 32, 18))
                         themingSurface0Color:Set(Color3.fromRGB(38, 22, 13))
                         themingCrustColor:Set(Color3.fromRGB(12, 7, 5))
+                        if gc then gc:Set(Color3.fromRGB(255, 120, 20)) end
                     elseif theme == 'Synthwave' then
                         themingAccentColor:Set(Color3.fromRGB(255, 60, 180))
                         themingBodyColor:Set(Color3.fromRGB(30, 20, 50))
@@ -1214,6 +1225,7 @@
                         themingSurface1Color:Set(Color3.fromRGB(60, 35, 110))
                         themingSurface0Color:Set(Color3.fromRGB(40, 25, 75))
                         themingCrustColor:Set(Color3.fromRGB(15, 10, 35))
+                        if gc then gc:Set(Color3.fromRGB(255, 50, 200)) end
                     elseif theme == 'Matcha' then
                         themingAccentColor:Set(Color3.fromRGB(127, 176, 105))
                         themingBodyColor:Set(Color3.fromRGB(240, 248, 232))
@@ -1224,6 +1236,7 @@
                         themingSurface1Color:Set(Color3.fromRGB(220, 238, 208))
                         themingSurface0Color:Set(Color3.fromRGB(232, 244, 220))
                         themingCrustColor:Set(Color3.fromRGB(155, 190, 140))
+                        if gc then gc:Set(Color3.fromRGB(100, 190, 80)) end
                     elseif theme == 'Femboy' then
                         themingAccentColor:Set(Color3.fromRGB(200, 50, 120))
                         themingBodyColor:Set(Color3.fromRGB(254, 247, 252))
@@ -1234,6 +1247,7 @@
                         themingSurface1Color:Set(Color3.fromRGB(245, 215, 235))
                         themingSurface0Color:Set(Color3.fromRGB(250, 230, 240))
                         themingCrustColor:Set(Color3.fromRGB(140, 100, 160))
+                        if gc then gc:Set(Color3.fromRGB(220, 60, 140)) end
                     end
                 end
                 local themingTheme = themingSection:Dropdown('Theme', {themes[1]}, themes, false, function(newValue)
@@ -1316,6 +1330,20 @@
                     end
                     if options.onFontChange then options.onFontChange(faceName) end
                 end, 'font family used across the ui', fontPreviewMap)
+
+                -- glow settings
+                local glowToggle = themingSection:Toggle('Glow', self._glow_enabled, function(newValue)
+                    self._glow_enabled = newValue
+                end)
+                glowColorRef = glowToggle:AddColorpicker('Glow color', self._glow_color or self._theming.accent, false, function(newValue)
+                    self._glow_color = newValue
+                end)
+                themingSection:Slider('Glow intensity', self._glow_intensity, 1, 1, 100, '%', function(newValue)
+                    self._glow_intensity = newValue
+                end)
+                themingSection:Slider('Glow radius', self._glow_radius, 1, 1, 20, 'px', function(newValue)
+                    self._glow_radius = newValue
+                end)
 
                 settingsRefs.font = themingFont
                 settingsRefs.theme = themingTheme
@@ -1788,6 +1816,22 @@
                 local tooltipPending = nil
                 local sidebarW = self._sidebar_w
                 local topbarH = self._topbar_h
+
+                -- neon glow (unfilled rects outside menu bounds)
+                local glowRadius = self._glow_radius or 6
+                if self._glow_enabled then
+                    local glowColor = self._glow_color or self._theming.accent
+                    local glowPeak = (self._glow_intensity or 25) / 100
+                    for gi = 1, glowRadius do
+                        local glowAlpha = (1 - (gi - 1) / glowRadius) * glowPeak
+                        self:_Draw('menu_glow_' .. tostring(gi), 'rect', glowColor, 0, Vector2.new(self.x - gi, self.y - gi), Vector2.new(self.w + gi * 2, self.h + gi * 2), false)
+                        self:_SetOpacity('menu_glow_' .. tostring(gi), glowAlpha)
+                    end
+                end
+                -- hide unused glow layers
+                for gi = (self._glow_enabled and glowRadius + 1 or 1), 20 do
+                    self:_Undraw('menu_glow_' .. tostring(gi))
+                end
 
                 -- main body fill (glass)
                 self:_Draw('menu_body', 'rect', self._theming.body, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
