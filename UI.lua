@@ -2999,12 +2999,13 @@
             esp:Toggle('Chams', false)
             esp:Slider('Max distance', 500, 10, 10, 2000, 'm')
             esp:Slider('Text size', 13, 1, 8, 24, 'px')
-            -- stress test: 20 items single-select
+            -- pager test: 25 items single-select (3 pages, last page wraps to start)
             esp:Dropdown('Style', {'Corner'}, {
                 'Corner', 'Full', 'Outline', 'Rounded', 'Dotted',
                 'Dashed', 'Thick', 'Thin', 'Double', 'Glow',
                 'Neon', 'Gradient', 'Fade', 'Pulse', 'Rainbow',
-                'Matrix', 'Retro', 'Minimal', 'Bold', 'Custom'
+                'Matrix', 'Retro', 'Minimal', 'Bold', 'Custom',
+                'Sketch', 'Comic', 'Cyber', 'Vapor', 'Holo'
             }, false)
             -- stress test: 18 items multi-select
             esp:Dropdown('Flags', {'Armor', 'Weapon'}, {
@@ -3096,6 +3097,15 @@
                 overflow:Toggle('Item #' .. tostring(i), i % 3 == 0)
             end
 
+            -- snap demo: min=5 step=3, slider snaps to 5,8,11,14,17,20 (snap-relative-to-min fix)
+            local snapDemo = layout:Section('Snap Demo')
+            snapDemo:Slider('min=5 step=3', 5, 3, 5, 20, '')
+            snapDemo:Slider('min=10 step=7', 10, 7, 10, 80, '')
+            -- button row: short / medium / long labels — all should be center-aligned
+            snapDemo:Button('OK', function() self:Notification('OK', 2) end)
+            snapDemo:Button('Save Configuration', function() self:Notification('Saved', 2) end)
+            snapDemo:Button('A', function() self:Notification('A', 2) end)
+
             -- settings tab
             local _, menuSettings = self:CreateSettingsTab()
             local shouldDie = false
@@ -3111,6 +3121,7 @@
 
             self:Notification('UILib v2 demo loaded', 5)
             self:Notification('Press F1 to toggle the menu', 6)
+            self:Notification('Try the 25-item Style dropdown (Visuals tab) for the pager', 7)
 
             while not shouldDie do
                 if animOn then
