@@ -1,6 +1,5 @@
     -- loadstring(game:HttpGet("https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua"))(); UILib:ShowDemoMenu()
-
-    -- UILib v2 (glassmorphism sidebar)
+    -- Original repo is Nulare's UI library, improved for personal use.
     UILib = {
         _font_face = Drawing.Fonts.UI,
         _font_size = 13,
@@ -66,8 +65,11 @@
         _glow_s_radius = 10,
         _glow_b_speed = 2,
         _glow_b_intensity = 70,
+        _glow_b_radius = 14,
         _glow_r_worm = 40,
         _glow_r_speed = 3,
+        _glow_r_radius = 9,
+        _glow_r_intensity = 50,
         _theming = {
             accent = Color3.fromRGB(203, 166, 247),
             unsafe = Color3.fromRGB(255, 215, 64),
@@ -1351,13 +1353,10 @@
                     self._glow_color = newValue
                 end)
 
-                -- per-mode sliders (hidden/shown on mode change)
-                local glowSIntensity = themingSection:Slider('Intensity', self._glow_s_intensity, 1, 1, 100, '%', function(v) self._glow_s_intensity = v end)
-                local glowSRadius = themingSection:Slider('Radius', self._glow_s_radius, 1, 1, 20, 'px', function(v) self._glow_s_radius = v end)
-                local glowBSpeed = themingSection:Slider('Speed', self._glow_b_speed, 1, 1, 5, 's', function(v) self._glow_b_speed = v end)
-                local glowBIntensity = themingSection:Slider('Max intensity', self._glow_b_intensity, 1, 1, 100, '%', function(v) self._glow_b_intensity = v end)
-                local glowRWorm = themingSection:Slider('Worm size', self._glow_r_worm, 1, 1, 100, '%', function(v) self._glow_r_worm = v end)
-                local glowRSpeed = themingSection:Slider('Speed', self._glow_r_speed, 1, 1, 10, '', function(v) self._glow_r_speed = v end)
+                -- mode select sits right under the toggle
+                local glowSIntensity, glowSRadius
+                local glowBSpeed, glowBIntensity, glowBRadius
+                local glowRWorm, glowRSpeed, glowRRadius, glowRIntensity
 
                 local function updateGlowSliderVisibility(mode)
                     local isS = mode == 'Static'
@@ -1367,10 +1366,12 @@
                     glowSRadius:SetHidden(not isS)
                     glowBSpeed:SetHidden(not isB)
                     glowBIntensity:SetHidden(not isB)
+                    glowBRadius:SetHidden(not isB)
                     glowRWorm:SetHidden(not isR)
                     glowRSpeed:SetHidden(not isR)
+                    glowRRadius:SetHidden(not isR)
+                    glowRIntensity:SetHidden(not isR)
                 end
-                updateGlowSliderVisibility(self._glow_mode)
 
                 themingSection:Dropdown('Glow animation', {self._glow_mode}, {'Static', 'Breathe', 'Rotate'}, false, function(newValue)
                     if newValue and newValue[1] then
@@ -1378,6 +1379,19 @@
                         updateGlowSliderVisibility(newValue[1])
                     end
                 end)
+
+                -- per-mode sliders (hidden/shown on mode change)
+                glowSIntensity = themingSection:Slider('Intensity', self._glow_s_intensity, 1, 1, 100, '%', function(v) self._glow_s_intensity = v end)
+                glowSRadius = themingSection:Slider('Radius', self._glow_s_radius, 1, 1, 20, 'px', function(v) self._glow_s_radius = v end)
+                glowBSpeed = themingSection:Slider('Speed', self._glow_b_speed, 1, 1, 5, 's', function(v) self._glow_b_speed = v end)
+                glowBIntensity = themingSection:Slider('Max intensity', self._glow_b_intensity, 1, 1, 100, '%', function(v) self._glow_b_intensity = v end)
+                glowBRadius = themingSection:Slider('Max radius', self._glow_b_radius, 1, 1, 20, 'px', function(v) self._glow_b_radius = v end)
+                glowRWorm = themingSection:Slider('Worm size', self._glow_r_worm, 1, 1, 100, '%', function(v) self._glow_r_worm = v end)
+                glowRSpeed = themingSection:Slider('Speed', self._glow_r_speed, 1, 1, 10, '', function(v) self._glow_r_speed = v end)
+                glowRRadius = themingSection:Slider('Glow radius', self._glow_r_radius, 1, 1, 20, 'px', function(v) self._glow_r_radius = v end)
+                glowRIntensity = themingSection:Slider('Worm glow intensity', self._glow_r_intensity, 1, 1, 100, '%', function(v) self._glow_r_intensity = v end)
+
+                updateGlowSliderVisibility(self._glow_mode)
 
                 settingsRefs.font = themingFont
                 settingsRefs.theme = themingTheme
@@ -1868,8 +1882,8 @@
 
                     if glowMode == 'Rotate' then
                         -- smooth 360 rotation: each edge split into segments
-                        local glowPeak = 0.5
-                        local layers = 9
+                        local glowPeak = (self._glow_r_intensity or 50) / 100
+                        local layers = self._glow_r_radius or 9
                         local segs = 18
                         local totalSegs = segs * 4
                         local speed = self._glow_r_speed or 3
@@ -1944,7 +1958,7 @@
                             glowPeak = (self._glow_s_intensity or 50) / 100
                             peakMul = 1
                         elseif glowMode == 'Breathe' then
-                            effectiveRadius = 14
+                            effectiveRadius = self._glow_b_radius or 14
                             glowPeak = (self._glow_b_intensity or 70) / 100
                             local speed = self._glow_b_speed or 2
                             local freq = (speed > 0) and (6.28318 / speed) or 1
@@ -1993,22 +2007,8 @@
                 self:_Draw('menu_topbar_dot', 'circle', self._theming.accent, 9, menuDotCenter, 2, true, 1, 18)
                 self:_Draw('menu_topbar_title', 'text', self._theming.text, 8, Vector2.new(self.x + self._padding + 20, self.y + topbarH/2 - 7), menuTitle, true)
 
-                -- close button (X) on topbar
-                local closeBtnSize = 14
-                local closeBtnPos = Vector2.new(self.x + self.w - closeBtnSize - self._padding, self.y + topbarH/2 - closeBtnSize/2)
-                local isHoveringClose = self:_IsMouseWithinBounds(closeBtnPos, Vector2.new(closeBtnSize, closeBtnSize))
-                local closeColor = isHoveringClose and self._theming.accent or self._theming.subtext
-                -- X drawn as two lines
-                self:_Draw('menu_topbar_close_l1', 'line', closeColor, 8, closeBtnPos + Vector2.new(3, 3), closeBtnPos + Vector2.new(closeBtnSize - 3, closeBtnSize - 3), 1)
-                self:_Draw('menu_topbar_close_l2', 'line', closeColor, 8, closeBtnPos + Vector2.new(closeBtnSize - 3, 3), closeBtnPos + Vector2.new(3, closeBtnSize - 3), 1)
-                if clickFrame and isHoveringClose then
-                    local currentOpacity = self:_ResolveMenuFadeOpacity()
-                    self._menu_fade_start_opacity = currentOpacity
-                    self._menu_open = false
-                    self._menu_toggled_at = os.clock()
-                    self._menu_fade_done = false
-                    clickFrame = false
-                end
+                self:_Undraw('menu_topbar_close_l1')
+                self:_Undraw('menu_topbar_close_l2')
 
                 -- sidebar
                 local sidebarPos = Vector2.new(self.x + 1, self.y + topbarH + 1)
@@ -2280,7 +2280,8 @@
                                 local cursorY = columnCursorY[col] + (tonumber(sectionContent._y_offset) or 0)
                                 if cursorY + headerSize.y < contentBottom then
                                     self:_Draw(sectionColumnDrawId .. '_title', 'text', self._theming.subtext, 12, Vector2.new(widgetX, cursorY), headerText, true, 'left', 11)
-                                    self:_Draw(sectionColumnDrawId .. '_line', 'line', self._theming.border1, 12, Vector2.new(widgetX + headerSize.x + 8, cursorY + headerSize.y/2 + 1), Vector2.new(widgetX + widgetW, cursorY + headerSize.y/2 + 1), 1)
+                                    local lineY = cursorY + math.floor(headerSize.y / 2) - 1
+                                    self:_Draw(sectionColumnDrawId .. '_line', 'line', self._theming.border1, 12, Vector2.new(widgetX + headerSize.x + 8, lineY), Vector2.new(widgetX + widgetW, lineY), 1)
                                 else
                                     self:_Undraw(sectionColumnDrawId .. '_title')
                                     self:_Undraw(sectionColumnDrawId .. '_line')
@@ -2405,9 +2406,7 @@
                                     self:_Draw(sectionItemId .. '_kb_bg', 'rect', self._theming.surface0, 12, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), true)
                                     self:_Draw(sectionItemId .. '_kb_border', 'rect', self._theming.border0, 13, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), false)
                                     local kbColor = itemKeybind.value and self._theming.text or self._theming.subtext
-                                    local kbTextSize = self:_GetTextBounds(keybindText, nil, 11)
-                                    local kbTextPos = Vector2.new(kbX + kbW / 2, kbY + math.floor((kbH - kbTextSize.y) / 2))
-                                    self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, kbTextPos, keybindText, true, 'center', 11)
+                                    self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, self:_GetCenteredTextPos(Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), keybindText, nil, 11), keybindText, true, 'center', 11)
                                 end
 
                                 -- colorpicker swatch (left of pill, or replacing pill if overwrite)
@@ -2871,8 +2870,8 @@
                     self:_UndrawStartsWith('menu_tooltip')
                 end
 
-                -- drag start: topbar only (exclude close button area)
-                if clickFrame and not self._menu_drag and self:_IsMouseWithinBounds(Vector2.new(self.x, self.y), Vector2.new(self.w - closeBtnSize - self._padding * 2, topbarH)) then
+                -- drag start: topbar only
+                if clickFrame and not self._menu_drag and self:_IsMouseWithinBounds(Vector2.new(self.x, self.y), Vector2.new(self.w, topbarH)) then
                     local mousePos = self:_GetMousePos()
                     self._menu_drag = Vector2.new(mousePos.x - self.x, mousePos.y - self.y)
                 end
