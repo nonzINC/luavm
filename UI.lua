@@ -533,6 +533,7 @@
                 _cancelCallback = cancelCallback,
                 _last_hover = nil,
                 _committed = false,
+                _page_offset = 0,
                 _spawned_at = os.clock()
             }
             self._active_dropdown = item
@@ -1611,12 +1612,15 @@
                     -- cap visible items to keep popup reasonable
                     local maxVisible = 10
                     local totalChoices = #dropdown.choices
-                    local visibleChoices = math.min(totalChoices, maxVisible)
-                    local extraChoices = totalChoices - visibleChoices
+                    local pageOffset = dropdown._page_offset or 0
+                    if pageOffset >= totalChoices or pageOffset < 0 then pageOffset = 0 end
+                    dropdown._page_offset = pageOffset
+                    local visibleChoices = math.min(totalChoices - pageOffset, maxVisible)
+                    local hasMorePages = totalChoices > maxVisible
 
                     -- clamp popup to screen
                     local screenSize = self:_GetScreenSize()
-                    local estimatedH = visibleChoices * (self._font_size + self._padding) + self._padding * 2 + (extraChoices > 0 and (self._font_size + self._padding) or 0)
+                    local estimatedH = visibleChoices * (self._font_size + self._padding) + self._padding * 2 + (hasMorePages and (self._font_size + self._padding) or 0)
                     local estimatedW = dropdown.width + self._padding * 2
                     local clampedX = math.min(dropdown.position.x, screenSize.x - estimatedW - 4)
                     local clampedY = math.min(dropdown.position.y, screenSize.y - estimatedH - 4)
@@ -1629,7 +1633,7 @@
                     local totalHeight = self._padding
                     local currentHover = nil
                     for i = 1, visibleChoices do
-                        local choice = dropdown.choices[i]
+                        local choice = dropdown.choices[pageOffset + i]
                         local choiceFoundIndex = table.find(dropdown.value, choice)
                         local choiceFont = dropdown.previewFonts and dropdown.previewFonts[choice] or nil
                         local choicePreview = dropdown.previewColors and dropdown.previewColors[choice] or nil
@@ -1693,12 +1697,29 @@
                         totalHeight = totalHeight + labelSize.y + self._padding
                     end
 
-                    -- "N more" hint if choices were capped
-                    if extraChoices > 0 then
-                        local moreText = '+' .. tostring(extraChoices) .. ' more...'
+                    -- pager: click to advance to next page; on last page, click wraps back to first
+                    if hasMorePages then
+                        local visibleEnd = pageOffset + visibleChoices
+                        local hasNext = visibleEnd < totalChoices
+                        local remaining = totalChoices - visibleEnd
+                        local moreText = hasNext
+                            and ('next ' .. tostring(math.min(maxVisible, remaining)) .. ' →')
+                            or '← back to start'
                         local moreOrigin = Vector2.new(dropdownOrigin.x + self._padding, dropdownOrigin.y + totalHeight)
-                        self:_Draw('dropdown_more', 'text', self._theming.subtext, 902, moreOrigin, moreText, true, 'left', 11)
+                        local moreSize = self:_GetTextBounds(moreText, nil, 11)
+                        local moreHitOrigin = Vector2.new(moreOrigin.x - 4, moreOrigin.y - self._padding/2)
+                        local moreHitSize = Vector2.new(dropdown.width + 8, moreSize.y + self._padding)
+                        local isHoveringMore = self:_IsMouseWithinBounds(moreHitOrigin, moreHitSize)
+                        local moreColor = isHoveringMore and self._theming.text or self._theming.subtext
+                        self:_Draw('dropdown_more', 'text', moreColor, 902, moreOrigin, moreText, true, 'left', 11)
+                        if isHoveringMore and clickFrame then
+                            dropdown._page_offset = hasNext and visibleEnd or 0
+                            shouldCancel = false
+                            clickFrame = false
+                        end
                         totalHeight = totalHeight + self._font_size + self._padding
+                    else
+                        self:_Undraw('dropdown_more')
                     end
 
                     -- cleanup stale choice drawings from larger previous lists
@@ -2007,9 +2028,6 @@
                 self:_Draw('menu_topbar_dot_ring', 'circle', self._theming.border1, 8, menuDotCenter, 5, false, 1, 18)
                 self:_Draw('menu_topbar_dot', 'circle', self._theming.accent, 9, menuDotCenter, 2, true, 1, 18)
                 self:_Draw('menu_topbar_title', 'text', self._theming.text, 8, Vector2.new(self.x + self._padding + 20, self.y + topbarH/2 - 7), menuTitle, true)
-
-                self:_Undraw('menu_topbar_close_l1')
-                self:_Undraw('menu_topbar_close_l2')
 
                 -- sidebar
                 local sidebarPos = Vector2.new(self.x + 1, self.y + topbarH + 1)
@@ -2350,7 +2368,7 @@
                                 -- pill switch
                                 local pillW = 26
                                 local labelCenterY = labelPos.y + 6 -- visual center of the 12-13px label row, widgets anchor here
-                                local pillH = 12
+                                local pillH = 14
                                 local rightEdge = widgetX + widgetW
                                 local pillX = rightEdge - pillW
                                 local pillY = labelCenterY - pillH / 2
@@ -2416,7 +2434,7 @@
                                 -- colorpicker swatch (left of pill, or replacing pill if overwrite)
                                 if itemColorpicker then
                                     local swatchW = 16
-                                    local swatchH = 12
+                                    local swatchH = 14
                                     local swatchX, swatchY
                                     if itemColorpicker.overwrite then
                                         swatchW = 20
@@ -2550,7 +2568,8 @@
                                         newValue = sectionItem.min + (sectionItem.max - sectionItem.min) * percent
                                         local sStep = sectionItem.step
                                         if sStep and sStep > 0 then
-                                            newValue = math.floor((newValue / sStep) + 0.5) * sStep
+                                            -- snap relative to min so step grid always includes min/max boundary
+                                            newValue = sectionItem.min + math.floor(((newValue - sectionItem.min) / sStep) + 0.5) * sStep
                                         end
                                         newValue = clamp(newValue, sectionItem.min, sectionItem.max)
                                     end
@@ -2682,7 +2701,7 @@
                                 self:_Draw(sectionItemId .. '_border', 'rect', borderColor, 13, btnPos, btnSize, false)
                                 self:_Draw(sectionItemId .. '_border_in', 'rect', self._theming.crust, 14, btnPos + Vector2.new(1, 1), btnSize - Vector2.new(2, 2), false)
                                 local btnLabel = self:_TruncateText(sectionItem.label, btnSize.x - 16)
-                                self:_Draw(sectionItemId .. '_text', 'text', textColor, 14, self:_GetCenteredTextPos(btnPos, btnSize, btnLabel), btnLabel, true, 'left')
+                                self:_Draw(sectionItemId .. '_text', 'text', textColor, 14, self:_GetCenteredTextPos(btnPos, btnSize, btnLabel), btnLabel, true, 'center')
 
                                 cursorY = cursorY + rowH + 4
 
