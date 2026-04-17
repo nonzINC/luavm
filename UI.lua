@@ -1,5 +1,5 @@
     -- loadstring(game:HttpGet("https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua"))(); UILib:ShowDemoMenu()
-    -- Original repo is Nulare's UI library, improved for personal use.
+-- improved version of nulares ui lib for personal usage
     UILib = {
         _font_face = Drawing.Fonts.UI,
         _font_size = 13,
@@ -1386,7 +1386,7 @@
                 glowBSpeed = themingSection:Slider('Speed', self._glow_b_speed, 1, 1, 5, 's', function(v) self._glow_b_speed = v end)
                 glowBIntensity = themingSection:Slider('Max intensity', self._glow_b_intensity, 1, 1, 100, '%', function(v) self._glow_b_intensity = v end)
                 glowBRadius = themingSection:Slider('Max radius', self._glow_b_radius, 1, 1, 20, 'px', function(v) self._glow_b_radius = v end)
-                glowRWorm = themingSection:Slider('Worm size', self._glow_r_worm, 1, 1, 100, '%', function(v) self._glow_r_worm = v end)
+                glowRWorm = themingSection:Slider('Worm size', self._glow_r_worm, 1, 10, 100, '%', function(v) self._glow_r_worm = v end)
                 glowRSpeed = themingSection:Slider('Speed', self._glow_r_speed, 1, 1, 10, '', function(v) self._glow_r_speed = v end)
                 glowRRadius = themingSection:Slider('Glow radius', self._glow_r_radius, 1, 1, 20, 'px', function(v) self._glow_r_radius = v end)
                 glowRIntensity = themingSection:Slider('Worm glow intensity', self._glow_r_intensity, 1, 1, 100, '%', function(v) self._glow_r_intensity = v end)
@@ -1451,6 +1451,7 @@
             self._base_alpha = {}
             self._glow_last_mode = nil
             self._glow_rot_count = 0
+            self._last_cleared_inactive_for = nil
             self._last_step_at = 0
             self._frame_dt = 16/1000
             setrobloxinput(true)
@@ -2232,12 +2233,15 @@
                 local openTabIdx = 0
                 for i, n in ipairs(self._tab_order) do if n == self._open_tab then openTabIdx = i break end end
 
-                -- hide non-active tabs' widgets
-                for i = 1, tabCount do
-                    if i ~= openTabIdx then
-                        self:_UndrawStartsWith('menu_section_' .. tostring(i) .. '_')
-                        self:_UndrawStartsWith('menu_widget_' .. tostring(i) .. '_')
+                -- hide non-active tabs' widgets — only on tab change to avoid per-frame full-table sweep
+                if self._last_cleared_inactive_for ~= self._open_tab then
+                    for i = 1, tabCount do
+                        if i ~= openTabIdx then
+                            self:_UndrawStartsWith('menu_section_' .. tostring(i) .. '_')
+                            self:_UndrawStartsWith('menu_widget_' .. tostring(i) .. '_')
+                        end
                     end
+                    self._last_cleared_inactive_for = self._open_tab
                 end
 
                 if tabContent then
