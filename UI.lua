@@ -1,4 +1,4 @@
-    -- loadstring(game:HttpGet("https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua"))(); UILib:ShowDemoMenu()
+-- https://raw.githubusercontent.com/catowice/p/refs/heads/main/library.lua
 -- improved version of nulares ui lib for personal usage
     UILib = {
         _font_face = Drawing.Fonts.UI,
