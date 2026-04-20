@@ -1,1245 +1,2675 @@
--- original repo
--- https://github.com/catowice/p
--- tooltip broken 
-UILib = {
-    _font_face = Drawing.Fonts.UI,
-    _font_size = 13,
-    _drawings = {},
-    _tree = {},
-    _tab_order = {},
-    _menu_open = true,
-    _menu_toggled_at = 0,
-    _watermark_enabled = true,
-    _notifications = {},
-    _notifications_spawned = 0,
-    _open_tab = nil,
-    _tab_change_at = 0,
-    _inputs = {['m1']={id=0x01,held=false,click=false},['m2']={id=0x02,held=false,click=false},['mb']={id=0x04,held=false,click=false},['unbound']={id=0x08,held=false,click=false},['tab']={id=0x09,held=false,click=false},['enter']={id=0x0D,held=false,click=false},['shift']={id=0x10,held=false,click=false},['ctrl']={id=0x11,held=false,click=false},['alt']={id=0x12,held=false,click=false},['pause']={id=0x13,held=false,click=false},['capslock']={id=0x14,held=false,click=false},['esc']={id=0x1B,held=false,click=false},['space']={id=0x20,held=false,click=false},['pageup']={id=0x21,held=false,click=false},['pagedown']={id=0x22,held=false,click=false},['end']={id=0x23,held=false,click=false},['home']={id=0x24,held=false,click=false},['left']={id=0x25,held=false,click=false},['up']={id=0x26,held=false,click=false},['right']={id=0x27,held=false,click=false},['down']={id=0x28,held=false,click=false},['insert']={id=0x2D,held=false,click=false},['delete']={id=0x2E,held=false,click=false},['0']={id=0x30,held=false,click=false},['1']={id=0x31,held=false,click=false},['2']={id=0x32,held=false,click=false},['3']={id=0x33,held=false,click=false},['4']={id=0x34,held=false,click=false},['5']={id=0x35,held=false,click=false},['6']={id=0x36,held=false,click=false},['7']={id=0x37,held=false,click=false},['8']={id=0x38,held=false,click=false},['9']={id=0x39,held=false,click=false},['a']={id=0x41,held=false,click=false},['b']={id=0x42,held=false,click=false},['c']={id=0x43,held=false,click=false},['d']={id=0x44,held=false,click=false},['e']={id=0x45,held=false,click=false},['f']={id=0x46,held=false,click=false},['g']={id=0x47,held=false,click=false},['h']={id=0x48,held=false,click=false},['i']={id=0x49,held=false,click=false},['j']={id=0x4A,held=false,click=false},['k']={id=0x4B,held=false,click=false},['l']={id=0x4C,held=false,click=false},['m']={id=0x4D,held=false,click=false},['n']={id=0x4E,held=false,click=false},['o']={id=0x4F,held=false,click=false},['p']={id=0x50,held=false,click=false},['q']={id=0x51,held=false,click=false},['r']={id=0x52,held=false,click=false},['s']={id=0x53,held=false,click=false},['t']={id=0x54,held=false,click=false},['u']={id=0x55,held=false,click=false},['v']={id=0x56,held=false,click=false},['w']={id=0x57,held=false,click=false},['x']={id=0x58,held=false,click=false},['y']={id=0x59,held=false,click=false},['z']={id=0x5A,held=false,click=false},['numpad0']={id=0x60,held=false,click=false},['numpad1']={id=0x61,held=false,click=false},['numpad2']={id=0x62,held=false,click=false},['numpad3']={id=0x63,held=false,click=false},['numpad4']={id=0x64,held=false,click=false},['numpad5']={id=0x65,held=false,click=false},['numpad6']={id=0x66,held=false,click=false},['numpad7']={id=0x67,held=false,click=false},['numpad8']={id=0x68,held=false,click=false},['numpad9']={id=0x69,held=false,click=false},['multiply']={id=0x6A,held=false,click=false},['add']={id=0x6B,held=false,click=false},['separator']={id=0x6C,held=false,click=false},['subtract']={id=0x6D,held=false,click=false},['decimal']={id=0x6E,held=false,click=false},['divide']={id=0x6F,held=false,click=false},['f1']={id=0x70,held=false,click=false},['f2']={id=0x71,held=false,click=false},['f3']={id=0x72,held=false,click=false},['f4']={id=0x73,held=false,click=false},['f5']={id=0x74,held=false,click=false},['f6']={id=0x75,held=false,click=false},['f7']={id=0x76,held=false,click=false},['f8']={id=0x77,held=false,click=false},['f9']={id=0x78,held=false,click=false},['f10']={id=0x79,held=false,click=false},['f11']={id=0x7A,held=false,click=false},['f12']={id=0x7B,held=false,click=false},['numlock']={id=0x90,held=false,click=false},['scrolllock']={id=0x91,held=false,click=false},['lshift']={id=0xA0,held=false,click=false},['rshift']={id=0xA1,held=false,click=false},['lctrl']={id=0xA2,held=false,click=false},['rctrl']={id=0xA3,held=false,click=false},['lalt']={id=0xA4,held=false,click=false},['ralt']={id=0xA5,held=false,click=false},['semicolon']={id=0xBA,held=false,click=false},['plus']={id=0xBB,held=false,click=false},['comma']={id=0xBC,held=false,click=false},['minus']={id=0xBD,held=false,click=false},['period']={id=0xBE,held=false,click=false},['slash']={id=0xBF,held=false,click=false},['tilde']={id=0xC0,held=false,click=false},['lbracket']={id=0xDB,held=false,click=false},['backslash']={id=0xDC,held=false,click=false},['rbracket']={id=0xDD,held=false,click=false},['quote']={id=0xDE,held=false,click=false}},
-    _slider_drag = nil,
-    _menu_drag = nil,
-    _input_ctx = nil,
-    _overwrite_menu_key = false,
-    _menu_key = 'f1',
-    _active_dropdown = nil,
-    _active_colorpicker = nil,
-    _copied_color = nil,
-    _menu_fade_done = false,
-    _section_fade_done = false,
-    _activities = {},
+-- test uwu
+    UILib = {
+        _font_face = Drawing.Fonts.UI,
+        _font_size = 13,
+        _font_name = 'UI',
+        _font_list = {'UI', 'System', 'SystemBold', 'Monospace', 'Minecraft', 'Pixel', 'Fortnite'},
+        _font_face_by_name = {
+            UI         = Drawing.Fonts.UI,
+            System     = Drawing.Fonts.System,
+            SystemBold = Drawing.Fonts.SystemBold,
+            Monospace  = Drawing.Fonts.Monospace,
+            Minecraft  = Drawing.Fonts.Minecraft,
+            Pixel      = Drawing.Fonts.Pixel,
+            Fortnite   = Drawing.Fonts.Fortnite,
+        },
+        _drawings = {},
+        _base_alpha = {},
+        _tree = {},
+        _tab_order = {},
+        _menu_open = true,
+        _menu_toggled_at = 0,
+        _watermark_enabled = true,
+        _notifications = {},
+        _notifications_spawned = 0,
+        _open_tab = nil,
+        _tab_change_at = 0,
+        _inputs = {['m1']={id=0x01,held=false,click=false},['m2']={id=0x02,held=false,click=false},['mb']={id=0x04,held=false,click=false},['unbound']={id=0x08,held=false,click=false},['tab']={id=0x09,held=false,click=false},['enter']={id=0x0D,held=false,click=false},['shift']={id=0x10,held=false,click=false},['ctrl']={id=0x11,held=false,click=false},['alt']={id=0x12,held=false,click=false},['pause']={id=0x13,held=false,click=false},['capslock']={id=0x14,held=false,click=false},['esc']={id=0x1B,held=false,click=false},['space']={id=0x20,held=false,click=false},['pageup']={id=0x21,held=false,click=false},['pagedown']={id=0x22,held=false,click=false},['end']={id=0x23,held=false,click=false},['home']={id=0x24,held=false,click=false},['left']={id=0x25,held=false,click=false},['up']={id=0x26,held=false,click=false},['right']={id=0x27,held=false,click=false},['down']={id=0x28,held=false,click=false},['insert']={id=0x2D,held=false,click=false},['delete']={id=0x2E,held=false,click=false},['0']={id=0x30,held=false,click=false},['1']={id=0x31,held=false,click=false},['2']={id=0x32,held=false,click=false},['3']={id=0x33,held=false,click=false},['4']={id=0x34,held=false,click=false},['5']={id=0x35,held=false,click=false},['6']={id=0x36,held=false,click=false},['7']={id=0x37,held=false,click=false},['8']={id=0x38,held=false,click=false},['9']={id=0x39,held=false,click=false},['a']={id=0x41,held=false,click=false},['b']={id=0x42,held=false,click=false},['c']={id=0x43,held=false,click=false},['d']={id=0x44,held=false,click=false},['e']={id=0x45,held=false,click=false},['f']={id=0x46,held=false,click=false},['g']={id=0x47,held=false,click=false},['h']={id=0x48,held=false,click=false},['i']={id=0x49,held=false,click=false},['j']={id=0x4A,held=false,click=false},['k']={id=0x4B,held=false,click=false},['l']={id=0x4C,held=false,click=false},['m']={id=0x4D,held=false,click=false},['n']={id=0x4E,held=false,click=false},['o']={id=0x4F,held=false,click=false},['p']={id=0x50,held=false,click=false},['q']={id=0x51,held=false,click=false},['r']={id=0x52,held=false,click=false},['s']={id=0x53,held=false,click=false},['t']={id=0x54,held=false,click=false},['u']={id=0x55,held=false,click=false},['v']={id=0x56,held=false,click=false},['w']={id=0x57,held=false,click=false},['x']={id=0x58,held=false,click=false},['y']={id=0x59,held=false,click=false},['z']={id=0x5A,held=false,click=false},['numpad0']={id=0x60,held=false,click=false},['numpad1']={id=0x61,held=false,click=false},['numpad2']={id=0x62,held=false,click=false},['numpad3']={id=0x63,held=false,click=false},['numpad4']={id=0x64,held=false,click=false},['numpad5']={id=0x65,held=false,click=false},['numpad6']={id=0x66,held=false,click=false},['numpad7']={id=0x67,held=false,click=false},['numpad8']={id=0x68,held=false,click=false},['numpad9']={id=0x69,held=false,click=false},['multiply']={id=0x6A,held=false,click=false},['add']={id=0x6B,held=false,click=false},['separator']={id=0x6C,held=false,click=false},['subtract']={id=0x6D,held=false,click=false},['decimal']={id=0x6E,held=false,click=false},['divide']={id=0x6F,held=false,click=false},['f1']={id=0x70,held=false,click=false},['f2']={id=0x71,held=false,click=false},['f3']={id=0x72,held=false,click=false},['f4']={id=0x73,held=false,click=false},['f5']={id=0x74,held=false,click=false},['f6']={id=0x75,held=false,click=false},['f7']={id=0x76,held=false,click=false},['f8']={id=0x77,held=false,click=false},['f9']={id=0x78,held=false,click=false},['f10']={id=0x79,held=false,click=false},['f11']={id=0x7A,held=false,click=false},['f12']={id=0x7B,held=false,click=false},['numlock']={id=0x90,held=false,click=false},['scrolllock']={id=0x91,held=false,click=false},['lshift']={id=0xA0,held=false,click=false},['rshift']={id=0xA1,held=false,click=false},['lctrl']={id=0xA2,held=false,click=false},['rctrl']={id=0xA3,held=false,click=false},['lalt']={id=0xA4,held=false,click=false},['ralt']={id=0xA5,held=false,click=false},['semicolon']={id=0xBA,held=false,click=false},['plus']={id=0xBB,held=false,click=false},['comma']={id=0xBC,held=false,click=false},['minus']={id=0xBD,held=false,click=false},['period']={id=0xBE,held=false,click=false},['slash']={id=0xBF,held=false,click=false},['tilde']={id=0xC0,held=false,click=false},['lbracket']={id=0xDB,held=false,click=false},['backslash']={id=0xDC,held=false,click=false},['rbracket']={id=0xDD,held=false,click=false},['quote']={id=0xDE,held=false,click=false}},
+        _slider_drag = nil,
+        _menu_drag = nil,
+        _input_ctx = nil,
+        _button_held = nil,
+        _overwrite_menu_key = false,
+        _menu_key = 'f1',
+        _active_dropdown = nil,
+        _active_colorpicker = nil,
+        _copied_color = nil,
+        _menu_fade_done = false,
+        _section_fade_done = false,
+        _anim_state = {},
+        _last_step_at = 0,
+        _frame_dt = 16/1000,
 
-    title = 'My menu',
-    _custom_title_enabled = false,
-    _custom_title = '',
-    w = 400,
-    h = 480,
-    x = 20,
-    y = 100,
-    _padding = 8,
-    _tab_h = 40,
-    _theming = {
-        accent = Color3.fromRGB(0, 128, 255),
-        unsafe = Color3.fromRGB(255, 255, 51),
-        body = Color3.fromRGB(5, 5, 5),
-        text = Color3.fromRGB(255, 255, 255),
-        subtext = Color3.fromRGB(120, 120, 120),
-        border1 = Color3.fromRGB(40, 40, 40),
-        border0 = Color3.fromRGB(32, 32, 32),
-        surface1 = Color3.fromRGB(42, 42, 42),
-        surface0 = Color3.fromRGB(24, 24, 24),
-        crust = Color3.fromRGB(0, 0, 0),
-    },
-}
+        title = 'UILib v2',
+        _custom_title_enabled = false,
+        _custom_title = '',
+        w = 720,
+        h = 440,
+        x = 120,
+        y = 120,
+        _padding = 10,
+        _sidebar_w = 140,
+        _topbar_h = 36,
+        _tab_btn_h = 32,
+        _row_h = 22,
+        _columns = 2,
+        _column_gap = 18,
+        _background_alpha = 92/100,
+        _glow_enabled = false,
+        _glow_color = nil,
+        _glow_mode = 'Static',
+        _glow_last_mode = nil,
+        -- per-mode settings
+        _glow_s_intensity = 50,
+        _glow_s_radius = 10,
+        _glow_b_speed = 2,
+        _glow_b_intensity = 70,
+        _glow_b_radius = 14,
+        _glow_r_worm = 40,
+        _glow_r_speed = 3,
+        _glow_r_radius = 9,
+        _glow_r_intensity = 50,
+        _glow_test_method = 1,
+        _theming = {
+            accent = Color3.fromRGB(203, 166, 247),
+            unsafe = Color3.fromRGB(255, 215, 64),
+            body = Color3.fromRGB(17, 17, 27),
+            text = Color3.fromRGB(205, 214, 244),
+            subtext = Color3.fromRGB(127, 132, 156),
+            border1 = Color3.fromRGB(69, 71, 90),
+            border0 = Color3.fromRGB(49, 50, 68),
+            surface1 = Color3.fromRGB(49, 50, 68),
+            surface0 = Color3.fromRGB(30, 30, 46),
+            crust = Color3.fromRGB(11, 11, 18),
+        },
+    }
 
-local function clamp(x, a, b)
-    if x > b then
-        return b
-    elseif x < a then
-        return a
-    else
-        return x
+    -- utils
+    local function clamp(x, a, b)
+        if x > b then return b elseif x < a then return a else return x end
     end
-end
 
-local function rgbToHsv(r, g, b)
-    local max = math.max(r, g, b)
-    local min = math.min(r, g, b)
-    local h, s, v = 0, 0, max
-    local d = max - min
-
-    if max ~= 0 then
-        s = d / max
-    end
-
-    if d == 0 then
-        h = 0
-    else
-        if max == r then
-            h = (g - b) / d
-            if g < b then
-                h = h + 6
-            end
-        elseif max == g then
-            h = (b - r) / d + 2
-        elseif max == b then
-            h = (r - g) / d + 4
+    -- format slider value based on step precision to avoid float noise
+    local function formatStep(value, step)
+        if type(value) ~= 'number' then return '0' end
+        step = tonumber(step) or 1
+        if step <= 0 then step = 1 end
+        if step >= 1 and math.floor(step) == step then
+            return tostring(math.floor(value + 0.5))
         end
-        h = h / 6
-    end
-
-    return h, s, v
-end
-
--- textbox input maps (hoisted to avoid per-frame allocation)
-local _charMap = {space=' ',dash='-',colon=':',period='.',comma=',',slash='/',semicolon=';',quote='\'',leftbracket='[',rightbracket=']',backslash='\\',equals='=',minus='-'}
-local _shiftMap = {['1']='!',['2']='@',['3']='#',['4']='$',['5']='%',['6']='^',['7']='&',['8']='*',['9']='(',['0']=')',['-']='_',['=']='+',['[']='{',[']']='}',[';']=':',['\'']='"',[',']='<',['.']='>',['/']='?',['\\']='|'}
-
-do
-    function UILib:_KeyIDToName(keyId)
-        for keyName, key in pairs(self._inputs) do
-            if key.id == keyId then
-                return keyName
-            end
+        -- count decimals in step; handle scientific notation like "1e-05"
+        local s = tostring(step)
+        local decimals = 0
+        local dot = s:find('%.')
+        if dot then
+            decimals = #s - dot
+            -- strip trailing exponent if any
+            local ePos = s:find('[eE]')
+            if ePos and ePos > dot then decimals = ePos - dot - 1 end
         end
-
-        return nil
-    end
-
-    function UILib:_IsKeyPressed(keycode)
-        return self._inputs[keycode].click
-    end
-
-    function UILib:_IsKeyHeld(keycode)
-        return self._inputs[keycode].held
-    end
-
-    function UILib:_GetScreenSize()
-        local screenSize = Vector2.new(1920, 1080)
-
-        local camera = workspace.CurrentCamera
-        if camera and camera.ViewportSize then
-            screenSize = camera.ViewportSize
-        end
-
-        return screenSize
-    end
-
-    function UILib:_GetMousePos()
-        local mousePos = Vector2.new()
-
-        local myPlayer = game:GetService('Players').LocalPlayer
-        if myPlayer then
-            local myMouse = myPlayer:GetMouse()
-            if myMouse then
-                mousePos = Vector2.new(myMouse.X, myMouse.Y) 
+        local ePos = s:find('[eE]')
+        if ePos then
+            local expStr = s:sub(ePos + 1)
+            local expNum = tonumber(expStr)
+            if expNum and expNum < 0 then
+                decimals = math.max(decimals, -expNum)
             end
         end
-
-        return mousePos
+        if decimals > 6 then decimals = 6 end
+        if decimals < 0 then decimals = 0 end
+        local mult = 10 ^ decimals
+        local rounded = math.floor(value * mult + 0.5) / mult
+        local fmt = string.format('%%.%df', decimals)
+        return string.format(fmt, rounded)
     end
 
-    function UILib:_IsMouseWithinBounds(origin, size)
-        local mousePos = self:_GetMousePos()
-        return mousePos.x >= origin.x and mousePos.x <= origin.x + size.x and mousePos.y >= origin.y and mousePos.y <= origin.y + size.y
+    local function rgbToHsv(r, g, b)
+        local maxv = math.max(r, g, b)
+        local minv = math.min(r, g, b)
+        local h, s, v = 0, 0, maxv
+        local d = maxv - minv
+        if maxv ~= 0 then s = d / maxv end
+        if d == 0 then
+            h = 0
+        else
+            if maxv == r then
+                h = (g - b) / d
+                if g < b then h = h + 6 end
+            elseif maxv == g then
+                h = (b - r) / d + 2
+            elseif maxv == b then
+                h = (r - g) / d + 4
+            end
+            h = h / 6
+        end
+        return h, s, v
     end
-end
 
-do
-    function UILib:_GetTextBounds(text, fontFace, fontSize)
-        fontFace = fontFace or self._font_face
-        fontSize = fontSize or self._font_size
+    -- textbox input maps (hoisted)
+    local _charMap = {
+        space=' ',period='.',comma=',',slash='/',semicolon=';',minus='-',
+        quote='\'',lbracket='[',rbracket=']',backslash='\\',plus='=',tilde='`',
+        -- numpad support
+        numpad0='0',numpad1='1',numpad2='2',numpad3='3',numpad4='4',
+        numpad5='5',numpad6='6',numpad7='7',numpad8='8',numpad9='9',
+        multiply='*',add='+',subtract='-',decimal='.',divide='/',
+    }
+    local _shiftMap = {['1']='!',['2']='@',['3']='#',['4']='$',['5']='%',['6']='^',['7']='&',['8']='*',['9']='(',['0']=')',['-']='_',['=']='+',['[']='{',[']']='}',[';']=':',['\'']='"',[',']='<',['.']='>',['/']='?',['\\']='|',['`']='~'}
 
-        if fontFace == Drawing.Fonts.UI then
-            return Vector2.new(#text * fontSize * 0.53846, fontSize)
+    UILib._inputs['m4'] = {id=0x05, held=false, click=false}
+    UILib._inputs['m5'] = {id=0x06, held=false, click=false}
+
+    do
+        function UILib:_KeyIDToName(keyId)
+            for keyName, key in pairs(self._inputs) do
+                if key.id == keyId then return keyName end
+            end
+            return nil
         end
 
-        return Vector2.new(#text * fontSize, fontSize)
+        function UILib:_IsKeyPressed(keycode)
+            return self._inputs[keycode] and self._inputs[keycode].click or false
+        end
+
+        function UILib:_IsKeyHeld(keycode)
+            return self._inputs[keycode] and self._inputs[keycode].held or false
+        end
+
+        function UILib:_GetScreenSize()
+            local screenSize = Vector2.new(1920, 1080)
+            local camera = workspace.CurrentCamera
+            if camera and camera.ViewportSize then screenSize = camera.ViewportSize end
+            return screenSize
+        end
+
+        function UILib:_GetMousePos()
+            local mousePos = Vector2.new()
+            local myPlayer = game:GetService('Players').LocalPlayer
+            if myPlayer then
+                local myMouse = myPlayer:GetMouse()
+                if myMouse then mousePos = Vector2.new(myMouse.X, myMouse.Y) end
+            end
+            return mousePos
+        end
+
+        function UILib:_IsMouseWithinBounds(origin, size)
+            local mp = self:_GetMousePos()
+            return mp.x >= origin.x and mp.x <= origin.x + size.x and mp.y >= origin.y and mp.y <= origin.y + size.y
+        end
     end
 
-    function UILib:_Lerp(a, b, t)
-        return a + (b - a) * t
-    end
+    do
+        function UILib:_GetFontRatio(fontFace)
+            fontFace = fontFace or self._font_face
+            -- rough per-font avg char-width ratios, err on the wide side to avoid clipping
+            if fontFace == Drawing.Fonts.UI then return 0.53846 end
+            if fontFace == Drawing.Fonts.System then return 0.55 end
+            if fontFace == Drawing.Fonts.SystemBold then return 0.58 end
+            if fontFace == Drawing.Fonts.Monospace then return 0.60 end
+            if fontFace == Drawing.Fonts.Minecraft then return 0.60 end
+            if fontFace == Drawing.Fonts.Pixel then return 0.55 end
+            if fontFace == Drawing.Fonts.Fortnite then return 0.58 end
+            return 0.58
+        end
 
-    function UILib:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
-        local draw = self._drawings[drawId]
+        function UILib:_GetTextBounds(text, fontFace, fontSize)
+            fontFace = fontFace or self._font_face
+            fontSize = fontSize or self._font_size
+            return Vector2.new(#text * fontSize * self:_GetFontRatio(fontFace), fontSize)
+        end
 
-        if drawType == 'rect' then
-            if not draw then
-                self._drawings[drawId] = Drawing.new('Square')
-                return self:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
-            end
+        function UILib:_Lerp(a, b, t)
+            return a + (b - a) * t
+        end
 
-            local rectPosition, rectSize, rectFilled = ...
+        function UILib:_LerpColor(a, b, t)
+            return Color3.new(
+                self:_Lerp(a.R, b.R, t),
+                self:_Lerp(a.G, b.G, t),
+                self:_Lerp(a.B, b.B, t)
+            )
+        end
 
-            draw.Position = rectPosition
-            draw.Size = rectSize
-            if draw.Filled ~= rectFilled then draw.Filled = rectFilled end
-        elseif drawType == 'text' then
-            if not draw then
-                self._drawings[drawId] = Drawing.new('Text')
-                return self:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
-            end
-
-            local textPosition, textContent, textOutline, textAlign, textSize, textFontFace = ...
-            
-            if textAlign == 'center' then
-                draw.Center = true
-                draw.Position = textPosition
-            elseif textAlign == 'right' then
-
+        function UILib:_StepAnim(key, target, speed)
+            local current = self._anim_state[key]
+            if current == nil then
+                current = target
             else
+                local alpha = clamp((self._frame_dt or (16/1000)) * (speed or 16), 0, 1)
+                current = current + (target - current) * alpha
+                if math.abs(target - current) < 0.001 then
+                    current = target
+                end
+            end
+            self._anim_state[key] = current
+            return current
+        end
+
+        function UILib:_SetAnim(key, value)
+            self._anim_state[key] = value
+            return value
+        end
+
+        function UILib:_ResolveMenuFadeOpacity()
+            if self._menu_fade_done then
+                return self._menu_open and 1 or 0, 1
+            end
+            local t = clamp((os.clock() - self._menu_toggled_at) / 0.3, 0, 1)
+            local eased = t * t * (3 - 2 * t)
+            local target = self._menu_open and 1 or 0
+            local startOp = self._menu_fade_start_opacity
+            if startOp == nil then
+                startOp = self._menu_open and 0 or 1
+            end
+            return startOp + (target - startOp) * eased, t
+        end
+
+        function UILib:_GetCenteredTextPos(origin, size, text, fontFace, fontSize)
+            local textSize = self:_GetTextBounds(text or '', fontFace, fontSize)
+            return Vector2.new(origin.x + size.x / 2, origin.y + math.floor((size.y - textSize.y) / 2) - 1)
+        end
+
+        -- truncate string with ellipsis so it fits within maxWidth pixels
+        function UILib:_TruncateText(text, maxWidth, fontFace, fontSize)
+            if not text or text == '' then return '' end
+            if self:_GetTextBounds(text, fontFace, fontSize).x <= maxWidth then return text end
+            for i = #text, 1, -1 do
+                local sub = text:sub(1, i) .. '...'
+                if self:_GetTextBounds(sub, fontFace, fontSize).x <= maxWidth then
+                    return sub
+                end
+            end
+            return '...'
+        end
+
+
+        function UILib:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
+            local draw = self._drawings[drawId]
+
+            if drawType == 'rect' then
+                if not draw then
+                    self._drawings[drawId] = Drawing.new('Square')
+                    return self:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
+                end
+                local rectPosition, rectSize, rectFilled = ...
+                draw.Position = rectPosition
+                draw.Size = rectSize
+                if draw.Filled ~= rectFilled then draw.Filled = rectFilled end
+            elseif drawType == 'text' then
+                if not draw then
+                    self._drawings[drawId] = Drawing.new('Text')
+                    return self:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
+                end
+                local textPosition, textContent, _, textAlign, textSize, textFontFace = ...
+                if textAlign == 'center' then
+                    if not draw.Center then draw.Center = true end
+                else
+                    if draw.Center then draw.Center = false end
+                end
                 draw.Position = textPosition
-            end
-
-            if draw.Text ~= textContent then draw.Text = textContent end
-            if draw.Outline ~= textOutline then draw.Outline = textOutline end
-            local resolvedFont = textFontFace or self._font_face
-            if draw.Font ~= resolvedFont then draw.Font = resolvedFont end
-            local resolvedSize = textSize or self._font_size
-            if draw.Size ~= resolvedSize then draw.Size = resolvedSize end
-        elseif drawType == 'line' then
-            if not draw then
-                self._drawings[drawId] = Drawing.new('Line')
-                return self:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
-            end
-
-            local lineFrom, lineTo, lineThickness = ...
-
-            draw.From = lineFrom
-            draw.To = lineTo
-            local resolvedThickness = lineThickness or 1
-            if draw.Thickness ~= resolvedThickness then draw.Thickness = resolvedThickness end
-        elseif drawType == 'triangle' then
-            if not draw then
-                self._drawings[drawId] = Drawing.new('Triangle')
-                return self:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
-            end
-
-            local triangleFilled, trianglePointA, trianglePointB, trianglePointC = ...
-
-            if draw.Filled ~= triangleFilled then draw.Filled = triangleFilled end
-            draw.PointA = trianglePointA
-            draw.PointB = trianglePointB
-            draw.PointC = trianglePointC
-        elseif drawType == 'gradient' then
-            local args = {...}
-
-            if #args == 4 then
-                local firstColor = args[4]
-                local tintColor = self._theming.crust
-
-                table.insert(args, Color3.new(
-                    self:_Lerp(firstColor.R, tintColor.R, 0.5),
-                    self:_Lerp(firstColor.G, tintColor.G, 0.5),
-                    self:_Lerp(firstColor.B, tintColor.B, 0.5)
-                ))
-            end
-
-            local gradientDirection = args[1]
-            local gradientOrigin = args[2]
-            local gradientSize = args[3]
-
-            local numSegments = (#args - 3) - 1
-            local lod = 26
-
-            for i = 4, #args-1 do
-                local currentColor = args[i]
-                local nextColor = args[i+1]
-
-                local segmentLengthX = gradientSize.x / numSegments
-                local segmentLengthY = gradientSize.y / numSegments
-
-                for j = 1, lod do
-                    local t = (j-1) / (lod-1)
-                    local targetColor = Color3.new(
-                        self:_Lerp(currentColor.R, nextColor.R, t),
-                        self:_Lerp(currentColor.G, nextColor.G, t),
-                        self:_Lerp(currentColor.B, nextColor.B, t)
-                    )
-
-                    local targetAlpha = self:_Lerp(currentColor.A or 1, nextColor.A or 1, t)
-
-                    local segmentPosition, segmentSize
-                    if gradientDirection == 'horizontal' then
-                        segmentSize = Vector2.new(segmentLengthX / lod, gradientSize.y)
-                        segmentPosition = Vector2.new(
-                            gradientOrigin.x + (i-4) * segmentLengthX + (j-1) * segmentSize.x,
-                            gradientOrigin.y
+                if draw.Text ~= textContent then draw.Text = textContent end
+                if draw.Outline ~= false then draw.Outline = false end
+                local resolvedFont = textFontFace or self._font_face
+                if draw.Font ~= resolvedFont then draw.Font = resolvedFont end
+                local resolvedSize = textSize or self._font_size
+                if draw.Size ~= resolvedSize then draw.Size = resolvedSize end
+            elseif drawType == 'line' then
+                if not draw then
+                    self._drawings[drawId] = Drawing.new('Line')
+                    return self:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
+                end
+                local lineFrom, lineTo, lineThickness = ...
+                draw.From = lineFrom
+                draw.To = lineTo
+                local resolvedThickness = lineThickness or 1
+                if draw.Thickness ~= resolvedThickness then draw.Thickness = resolvedThickness end
+            elseif drawType == 'triangle' then
+                if not draw then
+                    self._drawings[drawId] = Drawing.new('Triangle')
+                    return self:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
+                end
+                local triangleFilled, trianglePointA, trianglePointB, trianglePointC = ...
+                if draw.Filled ~= triangleFilled then draw.Filled = triangleFilled end
+                draw.PointA = trianglePointA
+                draw.PointB = trianglePointB
+                draw.PointC = trianglePointC
+            elseif drawType == 'circle' then
+                if not draw then
+                    self._drawings[drawId] = Drawing.new('Circle')
+                    return self:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
+                end
+                local circlePosition, circleRadius, circleFilled, circleThickness, circleSides = ...
+                draw.Position = circlePosition
+                if draw.Radius ~= circleRadius then draw.Radius = circleRadius end
+                if draw.Filled ~= circleFilled then draw.Filled = circleFilled end
+                local resolvedThickness = circleThickness or 1
+                local resolvedSides = circleSides or 18
+                if draw.Thickness ~= resolvedThickness then draw.Thickness = resolvedThickness end
+                if draw.NumSides ~= resolvedSides then draw.NumSides = resolvedSides end
+            elseif drawType == 'gradient' then
+                local args = {...}
+                if #args == 4 then
+                    local firstColor = args[4]
+                    local tintColor = self._theming.crust
+                    table.insert(args, Color3.new(
+                        self:_Lerp(firstColor.R, tintColor.R, 0.5),
+                        self:_Lerp(firstColor.G, tintColor.G, 0.5),
+                        self:_Lerp(firstColor.B, tintColor.B, 0.5)
+                    ))
+                end
+                local gradientDirection = args[1]
+                local gradientOrigin = args[2]
+                local gradientSize = args[3]
+                local numSegments = (#args - 3) - 1
+                local lod = 26
+                for i = 4, #args-1 do
+                    local currentColor = args[i]
+                    local nextColor = args[i+1]
+                    local segmentLengthX = gradientSize.x / numSegments
+                    local segmentLengthY = gradientSize.y / numSegments
+                    for j = 1, lod do
+                        local t = (j-1) / (lod-1)
+                        local targetColor = Color3.new(
+                            self:_Lerp(currentColor.R, nextColor.R, t),
+                            self:_Lerp(currentColor.G, nextColor.G, t),
+                            self:_Lerp(currentColor.B, nextColor.B, t)
                         )
-                    elseif gradientDirection == 'vertical' then
-                        segmentSize = Vector2.new(gradientSize.x, segmentLengthY / lod)
-                        segmentPosition = Vector2.new(
-                            gradientOrigin.x,
-                            gradientOrigin.y + (i-4) * segmentLengthY + (j-1) * segmentSize.y
-                        )
-                    end
-
-                    local segmentDrawId = drawId .. '_' .. tostring(i) .. '_' .. tostring(j)
-                    self:_Draw(segmentDrawId, 'rect', targetColor, drawZIndex, segmentPosition, segmentSize, true)
-                    self:_SetOpacity(segmentDrawId, targetAlpha)
-                end
-            end
-
-            return
-        end
-
-        draw.Color = drawColor
-        if draw.ZIndex ~= drawZIndex then draw.ZIndex = drawZIndex end
-        if not draw.Visible then draw.Visible = true end
-    end
-
-    function UILib:_RemoveDraw(drawId)
-        local drawObject = self._drawings[drawId]
-        if drawObject then
-            drawObject:Remove()
-            self._drawings[drawId] = nil
-        end
-    end
-
-    function UILib:_Undraw(drawId)
-        local drawObject = self._drawings[drawId]
-        if drawObject then
-            drawObject.Visible = false
-        end
-    end
-
-    function UILib:_SetOpacity(drawId, opacity)
-        local drawObject = self._drawings[drawId]
-        if drawObject then
-            drawObject.Transparency = opacity
-        end
-    end
-
-    function UILib:_RemoveDrawStartsWith(drawId)
-        local len = #drawId
-        for drawName, drawObject in pairs(self._drawings) do
-            if drawName:sub(1, len) == drawId then
-                drawObject:Remove()
-                self._drawings[drawName] = nil
-            end
-        end
-    end
-
-    function UILib:_UndrawStartsWith(drawId)
-        local len = #drawId
-        for drawName, drawObject in pairs(self._drawings) do
-            if drawName:sub(1, len) == drawId then
-                drawObject.Visible = false
-            end
-        end
-    end
-
-    function UILib:_SetOpacityStartsWith(drawId, opacity)
-        local len = #drawId
-        for drawName, drawObject in pairs(self._drawings) do
-            if drawName:sub(1, len) == drawId then
-                drawObject.Transparency = opacity
-            end
-        end
-    end
-end
-
-do
-    function UILib:_SpawnColorpicker(position, label, value, callback)
-        self:_RemoveColorpicker()
-
-        local h, s, v = 0, 0, 0
-        if value then
-            h, s, v = rgbToHsv(value.R, value.G, value.B)
-        end
-
-        local item = {
-            position = position or Vector2.new(self.x + self.w + self._padding, self.y),
-            label = label,
-            callback = callback,
-            _h = h or 0,
-            _s = s or 0,
-            _v = v or 0,
-            _spawned_at = os.clock()
-        }
-
-        self._active_colorpicker = item
-    end
-
-    function UILib:_RemoveColorpicker()
-        self._active_colorpicker = nil
-        self:_UndrawStartsWith('colorpicker_')
-    end
-
-    function UILib:_SpawnDropdown(position, width, value, choices, multi, callback)
-        self:_RemoveDropdown()
-
-        local item = {
-            position = position,
-            width = width,
-            value = value,
-            choices = choices,
-            multi = multi,
-            callback = callback,
-            _spawned_at = os.clock()
-        }
-
-        self._active_dropdown = item
-    end
-
-    function UILib:_RemoveDropdown()
-        self._active_dropdown = nil
-        self:_UndrawStartsWith('dropdown_')
-    end
-
-    function UILib:_Toggle(tabName, sectionName, label, value, callback, unsafe, tooltip)
-        local itemId = #self._tree[tabName]._items[sectionName]._items + 1
-        local item = {
-            type_ = 'toggle',
-            label = label,
-            value = value,
-            callback = callback,
-            unsafe = unsafe or false,
-            tooltip = tooltip,
-        }
-
-        table.insert(self._tree[tabName]._items[sectionName]._items, item)
-
-        return {
-            Set = function(_, newValue)
-                self._tree[tabName]._items[sectionName]._items[itemId].value = newValue
-
-                if self._tree[tabName]._items[sectionName]._items[itemId].callback then
-                    self._tree[tabName]._items[sectionName]._items[itemId].callback(newValue)
-                end
-            end,
-            AddKeybind = function(_, value, mode, canChange, callback)
-                local item = {
-                    value = value,
-                    callback = callback,
-                    mode = mode or 'Hold',
-                    canChange = canChange or true,
-                    _listening = false,
-                    _listening_start = 0
-                }
-
-                self._tree[tabName]._items[sectionName]._items[itemId].keybind = item
-
-                return {
-                    Set = function(_, newValue, newMode)
-                        local mode = newMode or self._tree[tabName]._items[sectionName]._items[itemId].keybind.mode
-
-                        self._tree[tabName]._items[sectionName]._items[itemId].keybind.value = newValue
-                        self._tree[tabName]._items[sectionName]._items[itemId].keybind.mode = mode
-
-                        if self._tree[tabName]._items[sectionName]._items[itemId].keybind.callback then
-                            self._tree[tabName]._items[sectionName]._items[itemId].keybind.callback(newValue, mode)
+                        local targetAlpha = self:_Lerp(currentColor.A or 1, nextColor.A or 1, t)
+                        local segmentPosition, segmentSize
+                        if gradientDirection == 'horizontal' then
+                            segmentSize = Vector2.new(segmentLengthX / lod, gradientSize.y)
+                            segmentPosition = Vector2.new(
+                                gradientOrigin.x + (i-4) * segmentLengthX + (j-1) * segmentSize.x,
+                                gradientOrigin.y
+                            )
+                        elseif gradientDirection == 'vertical' then
+                            segmentSize = Vector2.new(gradientSize.x, segmentLengthY / lod)
+                            segmentPosition = Vector2.new(
+                                gradientOrigin.x,
+                                gradientOrigin.y + (i-4) * segmentLengthY + (j-1) * segmentSize.y
+                            )
                         end
+                        local segmentDrawId = drawId .. '_' .. tostring(i) .. '_' .. tostring(j)
+                        self:_Draw(segmentDrawId, 'rect', targetColor, drawZIndex, segmentPosition, segmentSize, true)
+                        self:_SetOpacity(segmentDrawId, targetAlpha)
                     end
-                }
-            end,
-            AddColorpicker = function(_, label, value, overwrite, callback)
-                local item = {
-                    label = label,
-                    value = value or self._theming.accent,
-                    overwrite = overwrite,
-                    callback = callback
-                }
-
-                self._tree[tabName]._items[sectionName]._items[itemId].colorpicker = item
-
-                return {
-                    Set = function(_, newValue)
-                        self._tree[tabName]._items[sectionName]._items[itemId].colorpicker.value = newValue
-
-                        if self._tree[tabName]._items[sectionName]._items[itemId].colorpicker.callback then
-                            self._tree[tabName]._items[sectionName]._items[itemId].colorpicker.callback(newValue)
-                        end
-                    end
-                }
-            end
-        }
-    end
-
-    function UILib:_Slider(tabName, sectionName, label, value, step, min, max, suffix, callback)
-        local itemId = #self._tree[tabName]._items[sectionName]._items + 1
-        local item = {
-            type_ = 'slider',
-            label = label,
-            value = value,
-            step = step,
-            min = min,
-            max = max,
-            suffix = suffix or '',
-            callback = callback
-        }
-
-        table.insert(self._tree[tabName]._items[sectionName]._items, item)
-
-        return {
-            Set = function(_, newValue)
-                self._tree[tabName]._items[sectionName]._items[itemId].value = newValue
-
-                if self._tree[tabName]._items[sectionName]._items[itemId].callback then
-                    self._tree[tabName]._items[sectionName]._items[itemId].callback(newValue)
                 end
-            end
-        }
-    end
-
-    function UILib:_Dropdown(tabName, sectionName, label, value, choices, multi, callback)
-        local itemId = #self._tree[tabName]._items[sectionName]._items + 1
-        local item = {
-            type_ = 'dropdown',
-            label = label,
-            value = value,
-            choices = choices,
-            multi = multi,
-            callback = callback
-        }
-
-        table.insert(self._tree[tabName]._items[sectionName]._items, item)
-
-        return {
-            Set = function(_, newValue)
-                self._tree[tabName]._items[sectionName]._items[itemId].value = newValue
-
-                if self._tree[tabName]._items[sectionName]._items[itemId].callback then
-                     self._tree[tabName]._items[sectionName]._items[itemId].callback(newValue)
-                end
-            end,
-            UpdateChoices = function(_, newChoices)
-                self._tree[tabName]._items[sectionName]._items[itemId].choices = newChoices
-            end
-        }
-    end
-
-    function UILib:_Button(tabName, sectionName, label, callback)
-        local itemId = #self._tree[tabName]._items[sectionName]._items + 1
-        local item = {
-            type_ = 'button',
-            label = label,
-            callback = callback
-        }
-
-        table.insert(self._tree[tabName]._items[sectionName]._items, item)
-
-        return {}
-    end
-
-    function UILib:_Textbox(tabName, sectionName, label, value, callback)
-        local itemId = #self._tree[tabName]._items[sectionName]._items + 1
-        local item = {
-            type_ = 'textbox',
-            label = label,
-            value = value,
-            callback = callback
-        }
-
-        table.insert(self._tree[tabName]._items[sectionName]._items, item)
-
-        return {
-            Set = function(_, newValue)
-                self._tree[tabName]._items[sectionName]._items[itemId].value = newValue
-
-                if self._tree[tabName]._items[sectionName]._items[itemId].callback then
-                     self._tree[tabName]._items[sectionName]._items[itemId].callback(newValue)
-                end
-            end
-        }
-    end
-
-    function UILib:_Section(tabName, sectionName, subTabName, column)
-        if not self._tree[tabName]._items[sectionName] then
-            self._tree[tabName]._items[sectionName] = {
-                _items = {},
-                _subtab = subTabName or "Default",
-                _column = column or nil
-            }
-            table.insert(self._tree[tabName]._section_order, sectionName)
-            self._tree[tabName]._section_count = self._tree[tabName]._section_count + 1
-        end
-
-        return {
-            Toggle = function(_, ...)
-                return self:_Toggle(tabName, sectionName, ...)
-            end,
-            Slider = function(_, ...)
-                return self:_Slider(tabName, sectionName, ...)
-            end,
-            Dropdown = function(_, ...)
-                return self:_Dropdown(tabName, sectionName, ...)
-            end,
-            Button = function(_, ...)
-                return self:_Button(tabName, sectionName, ...)
-            end,
-            Textbox = function(_, ...)
-                return self:_Textbox(tabName, sectionName, ...)
-            end,
-        }
-    end
-
-    function UILib:GetMenuSize()
-        return Vector2.new(self.w, self.h)
-    end
-
-    function UILib:SetWatermarkEnabled(value)
-        self._watermark_enabled = value
-    end
-
-    function UILib:SetMenuTitle(newTitle)
-        self.title = newTitle
-    end
-
-    function UILib:SetMenuPosition(newPos)
-        self.x = newPos.x or self.x
-        self.y = newPos.y or self.y
-    end
-
-    function UILib:SetMenuSize(newSize)
-        self.w = newSize.x or self.x
-        self.h = newSize.y or self.y
-    end
-
-    function UILib:CenterMenu()
-        local screenSize = self:_GetScreenSize()
-        local menuSize = self:GetMenuSize()
-
-        self:SetMenuPosition(Vector2.new(screenSize.x/2 - menuSize.x/2, screenSize.y/2 - menuSize.y/2))
-    end
-
-    function UILib:Notification(text, time)
-        local item = {
-            text = text,
-            time = time,
-            _id = self._notifications_spawned,
-            _spawned_at = os.clock()
-        }
-
-        table.insert(self._notifications, item)
-        self._notifications_spawned = self._notifications_spawned + 1
-    end
-
-    function UILib:Tab(tabName)
-        if not self._tree[tabName] then
-            self._tree[tabName] = {
-                _items = {},
-                _section_order = {},
-                _section_count = 0,
-                _subtabs = {},
-                _active_subtab = nil
-            }
-            table.insert(self._tab_order, tabName)
-        end
-
-        if not self._open_tab then
-            self._open_tab = tabName
-        end
-
-        return {
-            Section = function(_, sectionName, column)
-                return self:_Section(tabName, sectionName, nil, column)
-            end,
-            SubTab = function(_, subTabName)
-                local t = self._tree[tabName]
-                local found = false
-                for _, v in ipairs(t._subtabs) do if v == subTabName then found = true break end end
-                if not found then
-                    table.insert(t._subtabs, subTabName)
-                    if not t._active_subtab then t._active_subtab = subTabName end
-                end
-                return {
-                    Section = function(_, sectionName, column)
-                        return self:_Section(tabName, sectionName, subTabName, column)
-                    end
-                }
-            end
-        }
-    end
-
-    function UILib:CreateSettingsTab(customName)
-        local settingsTab = self:Tab(customName or 'Menu')
-
-        local menuSection = settingsTab:Section('Menu')
-        local menuKey = menuSection:Toggle('Ov. menu key', self._overwrite_menu_key, function(newValue)
-            self._overwrite_menu_key = newValue
-        end)
-        menuKey:AddKeybind(self._menu_key, 'Hold', false, function(newValue)
-            self._menu_key = self:_KeyIDToName(newValue)
-        end)
-        menuSection:Toggle('Watermark', true, function(newValue)
-            self:SetWatermarkEnabled(newValue)
-        end)
-        menuSection:Toggle('Custom menu title', self._custom_title_enabled, function(newValue)
-            self._custom_title_enabled = newValue
-        end)
-        self._custom_title = self.title
-        menuSection:Textbox('Menu title', self.title, function(newValue)
-            self._custom_title = newValue
-        end)
-
-        local themingSection = settingsTab:Section('Theming')
-        local themes = {'Default', 'Gamesense', 'Bitchbot'}
-        local themingTextColor, themingBodyColor, themingAccentColor, themingSubtextColor, themingBorder0Color, themingBorder1Color, themingSurface0Color, themingSurface1Color, themingCrustColor
-        local themingTheme = themingSection:Dropdown('Theme', themes[1], themes, false, function(newValue)
-            if not newValue then
                 return
             end
 
-            local theme = newValue[1]
-            if theme == themes[1] then
-                -- default
-                themingAccentColor:Set(Color3.fromRGB(0, 128, 255))
-                themingBodyColor:Set(Color3.fromRGB(5, 5, 5))
-                themingTextColor:Set(Color3.fromRGB(255, 255, 255))
-                themingSubtextColor:Set(Color3.fromRGB(120, 120, 120))
-                themingBorder1Color:Set(Color3.fromRGB(40, 40, 40))
-                themingBorder0Color:Set(Color3.fromRGB(32, 32, 32))
-                themingSurface1Color:Set(Color3.fromRGB(42, 42, 42))
-                themingSurface0Color:Set(Color3.fromRGB(24, 24, 24))
-                themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
-            elseif theme == themes[2] then
-                -- gamesense
-                themingAccentColor:Set(Color3.fromRGB(114, 178, 21))
-                themingBodyColor:Set(Color3.fromRGB(0, 0, 0))
-                themingTextColor:Set(Color3.fromRGB(144, 144, 144))
-                themingSubtextColor:Set(Color3.fromRGB(59, 59, 59))
-                themingBorder1Color:Set(Color3.fromRGB(60, 60, 60))
-                themingBorder0Color:Set(Color3.fromRGB(48, 48, 48))
-                themingSurface1Color:Set(Color3.fromRGB(45, 45, 45))
-                themingSurface0Color:Set(Color3.fromRGB(26, 26, 26))
-                themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
-            elseif theme == themes[3] then
-                -- bitchbot
-                themingAccentColor:Set(Color3.fromRGB(120, 85, 147))
-                themingBodyColor:Set(Color3.fromRGB(31, 31, 31))
-                themingTextColor:Set(Color3.fromRGB(202, 201, 201))
-                themingSubtextColor:Set(Color3.fromRGB(100, 100, 100))
-                themingBorder1Color:Set(Color3.fromRGB(53, 52, 52))
-                themingBorder0Color:Set(Color3.fromRGB(53, 52, 52))
-                themingSurface1Color:Set(Color3.fromRGB(41, 42, 40))
-                themingSurface0Color:Set(Color3.fromRGB(41, 42, 40))
-                themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
+            if draw.Color ~= drawColor then draw.Color = drawColor end
+            if draw.ZIndex ~= drawZIndex then draw.ZIndex = drawZIndex end
+            if not draw.Visible then
+                -- apply fade multiplier when making visible (prevents 1-frame flash)
+                local mul = self._menu_fade_mul
+                if mul and mul < 1 and drawId:sub(1, 5) == 'menu_' then
+                    draw.Transparency = self._base_alpha[drawId] or mul
+                end
+                draw.Visible = true
             end
-        end)
+        end
 
-        local themingText = themingSection:Toggle('Text color')
-        themingTextColor = themingText:AddColorpicker('Text color', self._theming.text, true, function(newValue)
-            self._theming.text = newValue
-        end)
-        local themingBody = themingSection:Toggle('Body color')
-        themingBodyColor = themingBody:AddColorpicker('Body color', self._theming.body, true, function(newValue)
-            self._theming.body = newValue
-        end)
-
-        local themingAccent = themingSection:Toggle('Accent color')
-        themingAccentColor = themingAccent:AddColorpicker('Accent color', self._theming.accent, true, function(newValue)
-            self._theming.accent = newValue
-        end)
-
-        local themingSubtext = themingSection:Toggle('Subtext color')
-        themingSubtextColor = themingSubtext:AddColorpicker('Subtext color', self._theming.subtext, true, function(newValue)
-            self._theming.subtext = newValue
-        end)
-
-        local themingBorder0 = themingSection:Toggle('Border 0 color')
-        themingBorder0Color = themingBorder0:AddColorpicker('Border 0 color', self._theming.border0, true, function(newValue)
-            self._theming.border0 = newValue
-        end)
-
-        local themingBorder1 = themingSection:Toggle('Border 1 color')
-        themingBorder1Color = themingBorder1:AddColorpicker('Border 1 color', self._theming.border1, true, function(newValue)
-            self._theming.border1 = newValue
-        end)
-
-        local themingSurface0 = themingSection:Toggle('Surface 0 color')
-        themingSurface0Color = themingSurface0:AddColorpicker('Surface 0 color', self._theming.surface0, true, function(newValue)
-            self._theming.surface0 = newValue
-        end)
-
-        local themingSurface1 = themingSection:Toggle('Surface 1 color')
-        themingSurface1Color = themingSurface1:AddColorpicker('Surface 1 color', self._theming.surface1, true, function(newValue)
-            self._theming.surface1 = newValue
-        end)
-
-        local themingCrust = themingSection:Toggle('Crust color')
-        themingCrustColor = themingCrust:AddColorpicker('Crust color', self._theming.crust, true, function(newValue)
-            self._theming.crust = newValue
-        end)
-
-        themingTheme:Set({'Default'})
-
-        return settingsTab, menuSection, themingSection
-    end
-
-    function UILib:RegisterActivity(activity)
-        local activityId = #self._activities + 1
-
-        self._activities[activityId] = activity
-
-        return {
-            Remove = function(_)
-                self._activities[activityId] = nil
+        function UILib:_RemoveDraw(drawId)
+            local drawObject = self._drawings[drawId]
+            if drawObject then
+                drawObject:Remove()
+                self._drawings[drawId] = nil
+                self._base_alpha[drawId] = nil
             end
-        }
+        end
+
+        function UILib:_Undraw(drawId)
+            local drawObject = self._drawings[drawId]
+            if drawObject then drawObject.Visible = false end
+        end
+
+        function UILib:_SetOpacity(drawId, opacity)
+            local drawObject = self._drawings[drawId]
+            if drawObject then
+                self._base_alpha[drawId] = opacity
+                -- inline fade: menu_ drawings get multiplied by fade factor
+                local mul = self._menu_fade_mul
+                if mul and mul < 1 and drawId:sub(1, 5) == 'menu_' then
+                    drawObject.Transparency = opacity * mul
+                else
+                    drawObject.Transparency = opacity
+                end
+            end
+        end
+
+        function UILib:_RemoveDrawStartsWith(drawId)
+            local len = #drawId
+            local toRemove = {}
+            for drawName, drawObject in pairs(self._drawings) do
+                if drawName:sub(1, len) == drawId then
+                    drawObject:Remove()
+                    toRemove[#toRemove + 1] = drawName
+                end
+            end
+            local ba = self._base_alpha
+            for i = 1, #toRemove do
+                local name = toRemove[i]
+                self._drawings[name] = nil
+                ba[name] = nil
+            end
+        end
+
+        function UILib:_UndrawStartsWith(drawId)
+            local len = #drawId
+            for drawName, drawObject in pairs(self._drawings) do
+                if drawName:sub(1, len) == drawId then
+                    drawObject.Visible = false
+                end
+            end
+        end
+
+        function UILib:_SetOpacityStartsWith(drawId, opacity)
+            local len = #drawId
+            local ba = self._base_alpha
+            local mul = self._menu_fade_mul
+            local applyMul = mul and mul < 1
+            for drawName, drawObject in pairs(self._drawings) do
+                if drawName:sub(1, len) == drawId then
+                    ba[drawName] = opacity
+                    if applyMul and drawName:sub(1, 5) == 'menu_' then
+                        drawObject.Transparency = opacity * mul
+                    else
+                        drawObject.Transparency = opacity
+                    end
+                end
+            end
+        end
+
+        -- apply fade as multiplier on stored base alphas (preserves per-element alpha relationships)
+        function UILib:_ApplyMenuFade(multiplier)
+            local ba = self._base_alpha
+            for drawName, drawObject in pairs(self._drawings) do
+                if drawName:sub(1, 5) == 'menu_' then
+                    drawObject.Transparency = (ba[drawName] or 1) * multiplier
+                end
+            end
+        end
     end
 
-    function UILib:Unload()
-        self:_RemoveDrawStartsWith('')
-        setrobloxinput(true)
-    end
+    do
+        function UILib:_SpawnColorpicker(position, label, value, callback)
+            self:_RemoveColorpicker()
+            local h, s, v = 0, 0, 0
+            if value then h, s, v = rgbToHsv(value.R, value.G, value.B) end
+            local item = {
+                position = position or Vector2.new(self.x + self.w + self._padding, self.y),
+                label = label,
+                callback = callback,
+                _h = h or 0,
+                _s = s or 0,
+                _v = v or 0,
+                _spawned_at = os.clock()
+            }
+            self._active_colorpicker = item
+        end
 
-    function UILib:Step()
-        local menuTitle = self._custom_title_enabled and self._custom_title or self.title
+        function UILib:_RemoveColorpicker()
+            self._active_colorpicker = nil
+            self:_UndrawStartsWith('colorpicker_')
+        end
 
-        -- input processing
-        setrobloxinput(not self._menu_open)
-        for keycode, inputData in pairs(self._inputs) do
-            local keycodeId = inputData.id
-            local interacted = iskeypressed(keycodeId)
-            if isrbxactive() and interacted then
-                if inputData.held == false and inputData.click == false then
-                    self._inputs[keycode].click = true
+        function UILib:_SpawnDropdown(position, width, value, choices, multi, callback, previewFonts, previewColors, hoverCallback, cancelCallback)
+            self:_RemoveDropdown()
+            -- normalize value to always be a table (avoids table.find/concat crash)
+            if type(value) ~= 'table' then
+                if value ~= nil then value = {tostring(value)} else value = {} end
+            end
+            choices = choices or {}
+            local item = {
+                position = position or Vector2.new(0, 0),
+                width = width or 120,
+                value = value,
+                choices = choices,
+                multi = multi,
+                callback = callback,
+                previewFonts = previewFonts,
+                previewColors = previewColors,
+                _hoverCallback = hoverCallback,
+                _cancelCallback = cancelCallback,
+                _last_hover = nil,
+                _committed = false,
+                _page_offset = 0,
+                _spawned_at = os.clock()
+            }
+            self._active_dropdown = item
+        end
+
+        function UILib:_RemoveDropdown()
+            self._active_dropdown = nil
+            self:_UndrawStartsWith('dropdown_')
+        end
+
+        function UILib:_ResolveColumnValue(column, fallback)
+            local resolved = nil
+            if type(column) == 'string' then
+                local lowered = string.lower(column)
+                if lowered == 'left' or lowered == 'l' then
+                    resolved = 1
+                elseif lowered == 'right' or lowered == 'r' then
+                    resolved = 2
+                end
+            else
+                resolved = tonumber(column)
+                if resolved then
+                    resolved = math.floor(resolved + 0.5)
+                end
+            end
+
+            if resolved then
+                if resolved < 1 then resolved = 1 end
+                if resolved > self._columns then resolved = self._columns end
+                return resolved
+            end
+
+            return fallback
+        end
+
+        function UILib:_GetSectionRef(tabName, sectionName)
+            local tabData = self._tree[tabName]
+            return tabData and tabData._items[sectionName] or nil
+        end
+
+        function UILib:_GetItemRef(tabName, sectionName, itemId)
+            local sectionRef = self:_GetSectionRef(tabName, sectionName)
+            return sectionRef and sectionRef._items[itemId] or nil
+        end
+
+        function UILib:_MakeItemHandle(tabName, sectionName, itemId, handle)
+            handle = handle or {}
+
+            local function getItem()
+                return self:_GetItemRef(tabName, sectionName, itemId)
+            end
+
+            local function getDefaultColumn()
+                local sectionRef = self:_GetSectionRef(tabName, sectionName)
+                return (sectionRef and sectionRef._column) or 1
+            end
+
+            handle.SetColumn = function(_, newColumn)
+                local itemRef = getItem()
+                if itemRef then
+                    itemRef._column = self:_ResolveColumnValue(newColumn, itemRef._column or getDefaultColumn())
+                end
+                return handle
+            end
+            handle.SetSide = handle.SetColumn
+            handle.SetHidden = function(_, hidden)
+                local itemRef = getItem()
+                if itemRef then itemRef._hidden = hidden end
+                return handle
+            end
+            handle.SetYOffset = function(_, newOffset)
+                local itemRef = getItem()
+                if itemRef then
+                    itemRef._y_offset = tonumber(newOffset) or 0
+                end
+                return handle
+            end
+            handle.MoveY = function(_, delta)
+                local itemRef = getItem()
+                if itemRef then
+                    itemRef._y_offset = (tonumber(itemRef._y_offset) or 0) + (tonumber(delta) or 0)
+                end
+                return handle
+            end
+            handle.SetLayout = function(_, newColumn, newOffset)
+                if newColumn ~= nil then
+                    handle:SetColumn(newColumn)
+                end
+                if newOffset ~= nil then
+                    handle:SetYOffset(newOffset)
+                end
+                return handle
+            end
+            handle.GetLayout = function(_)
+                local itemRef = getItem()
+                if not itemRef then return nil end
+                return {
+                    column = itemRef._column or getDefaultColumn(),
+                    y_offset = itemRef._y_offset or 0,
+                }
+            end
+
+            return handle
+        end
+
+        -- widget factories
+        function UILib:_Toggle(tabName, sectionName, label, value, callback, unsafe, tooltip)
+            local itemId = #self._tree[tabName]._items[sectionName]._items + 1
+            local item = {
+                type_ = 'toggle',
+                label = label,
+                value = value,
+                callback = callback,
+                unsafe = unsafe or false,
+                tooltip = tooltip,
+                _y_offset = 0,
+            }
+            table.insert(self._tree[tabName]._items[sectionName]._items, item)
+
+            local handle = self:_MakeItemHandle(tabName, sectionName, itemId, {})
+            handle.Set = function(_, newValue)
+                    self._tree[tabName]._items[sectionName]._items[itemId].value = newValue
+                    if self._tree[tabName]._items[sectionName]._items[itemId].callback then
+                        self._tree[tabName]._items[sectionName]._items[itemId].callback(newValue)
+                    end
+                end
+            handle.AddKeybind = function(_, value, mode, canChange, callback)
+                    local kb = {
+                        value = value,
+                        callback = callback,
+                        mode = mode or 'Hold',
+                        canChange = canChange ~= false,
+                        _listening = false,
+                        _listening_start = 0
+                    }
+                    self._tree[tabName]._items[sectionName]._items[itemId].keybind = kb
+                    return {
+                        Set = function(_, newValue, newMode)
+                            local m = newMode or self._tree[tabName]._items[sectionName]._items[itemId].keybind.mode
+                            self._tree[tabName]._items[sectionName]._items[itemId].keybind.value = newValue
+                            self._tree[tabName]._items[sectionName]._items[itemId].keybind.mode = m
+                            if self._tree[tabName]._items[sectionName]._items[itemId].keybind.callback then
+                                self._tree[tabName]._items[sectionName]._items[itemId].keybind.callback(newValue, m)
+                            end
+                        end
+                    }
+                end
+            handle.AddColorpicker = function(_, label, value, overwrite, callback)
+                    local cp = {
+                        label = label,
+                        value = value or self._theming.accent,
+                        overwrite = overwrite,
+                        callback = callback
+                    }
+                    self._tree[tabName]._items[sectionName]._items[itemId].colorpicker = cp
+                    return {
+                        Set = function(_, newValue)
+                            local cpItem = self._tree[tabName]._items[sectionName]._items[itemId].colorpicker
+                            -- guard nil: passing nil to a drawing Color field crashes Matcha
+                            newValue = newValue or cpItem.value or self._theming.accent
+                            cpItem.value = newValue
+                            if cpItem.callback then
+                                cpItem.callback(newValue)
+                            end
+                        end
+                    }
+                end
+            return handle
+        end
+
+        function UILib:_Slider(tabName, sectionName, label, value, step, min, max, suffix, callback, tooltip)
+            local itemId = #self._tree[tabName]._items[sectionName]._items + 1
+            -- guard against invalid step/min/max that would crash rendering
+            step = tonumber(step) or 1
+            if step <= 0 then step = 1 end
+            min = tonumber(min) or 0
+            max = tonumber(max) or 1
+            if max <= min then max = min + 1 end
+            value = tonumber(value) or min
+            if value < min then value = min elseif value > max then value = max end
+            local item = {
+                type_ = 'slider',
+                label = label,
+                value = value,
+                step = step,
+                min = min,
+                max = max,
+                suffix = suffix or '',
+                callback = callback,
+                tooltip = tooltip,
+                _y_offset = 0,
+            }
+            table.insert(self._tree[tabName]._items[sectionName]._items, item)
+            local handle = self:_MakeItemHandle(tabName, sectionName, itemId, {})
+            handle.Set = function(_, newValue)
+                    local it = self._tree[tabName]._items[sectionName]._items[itemId]
+                    newValue = tonumber(newValue) or it.min
+                    -- clamp to valid range
+                    if newValue < it.min then newValue = it.min end
+                    if newValue > it.max then newValue = it.max end
+                    it.value = newValue
+                    if it.callback then it.callback(newValue) end
+                end
+            return handle
+        end
+
+        function UILib:_Dropdown(tabName, sectionName, label, value, choices, multi, callback, tooltip, previewFonts, previewColors, hoverCallback, cancelCallback)
+            local itemId = #self._tree[tabName]._items[sectionName]._items + 1
+            -- normalize value to always be a table of strings (avoids table.find / table.concat crashes)
+            if type(value) ~= 'table' then
+                if value ~= nil then value = {tostring(value)} else value = {} end
+            end
+            choices = choices or {}
+            local item = {
+                type_ = 'dropdown',
+                label = label,
+                value = value,
+                choices = choices,
+                multi = multi,
+                callback = callback,
+                tooltip = tooltip,
+                previewFonts = previewFonts,
+                previewColors = previewColors,
+                hoverCallback = hoverCallback,
+                cancelCallback = cancelCallback,
+                _y_offset = 0,
+            }
+            table.insert(self._tree[tabName]._items[sectionName]._items, item)
+            local handle = self:_MakeItemHandle(tabName, sectionName, itemId, {})
+            handle.Set = function(_, newValue)
+                    local it = self._tree[tabName]._items[sectionName]._items[itemId]
+                    if type(newValue) ~= 'table' then
+                        if newValue ~= nil then newValue = {tostring(newValue)} else newValue = {} end
+                    end
+                    it.value = newValue
+                    if it.callback then it.callback(newValue) end
+                end
+            handle.UpdateChoices = function(_, newChoices)
+                    local it = self._tree[tabName]._items[sectionName]._items[itemId]
+                    it.choices = newChoices or {}
+                    -- filter stale selections that are no longer in choices list
+                    if type(it.value) == 'table' then
+                        local filtered = {}
+                        for _, v in ipairs(it.value) do
+                            if table.find(it.choices, v) then
+                                filtered[#filtered + 1] = v
+                            end
+                        end
+                        it.value = filtered
+                    end
+                end
+            return handle
+        end
+
+        function UILib:_Button(tabName, sectionName, label, callback)
+            local itemId = #self._tree[tabName]._items[sectionName]._items + 1
+            local item = {
+                type_ = 'button',
+                label = label,
+                callback = callback,
+                _y_offset = 0,
+            }
+            table.insert(self._tree[tabName]._items[sectionName]._items, item)
+            return self:_MakeItemHandle(tabName, sectionName, itemId, {})
+        end
+
+        function UILib:_Textbox(tabName, sectionName, label, value, callback)
+            local itemId = #self._tree[tabName]._items[sectionName]._items + 1
+            local item = {
+                type_ = 'textbox',
+                label = label,
+                value = value,
+                callback = callback,
+                _y_offset = 0,
+            }
+            table.insert(self._tree[tabName]._items[sectionName]._items, item)
+            local handle = self:_MakeItemHandle(tabName, sectionName, itemId, {})
+            handle.Set = function(_, newValue)
+                    self._tree[tabName]._items[sectionName]._items[itemId].value = newValue
+                    if self._tree[tabName]._items[sectionName]._items[itemId].callback then
+                        self._tree[tabName]._items[sectionName]._items[itemId].callback(newValue)
+                    end
+                end
+            return handle
+        end
+
+        function UILib:_Section(tabName, sectionName, _subTabName, column)
+            local tabData = self._tree[tabName]
+            local sectionData = tabData._items[sectionName]
+            local resolvedColumn = nil
+            if column ~= nil then
+                resolvedColumn = self:_ResolveColumnValue(column, sectionData and sectionData._column or tabData._next_column or 1)
+            elseif sectionData then
+                resolvedColumn = sectionData._column or 1
+            else
+                resolvedColumn = tabData._next_column or 1
+                tabData._next_column = resolvedColumn >= self._columns and 1 or (resolvedColumn + 1)
+            end
+
+            if not sectionData then
+                sectionData = {
+                    _items = {},
+                    _column = resolvedColumn,
+                    _y_offset = 0,
+                }
+                tabData._items[sectionName] = sectionData
+                table.insert(tabData._section_order, sectionName)
+                tabData._section_count = tabData._section_count + 1
+            elseif column ~= nil then
+                sectionData._column = resolvedColumn
+            end
+            -- build a dropdown preloaded with the font list and a preview map.
+            -- accepts a plain string value and forwards a plain string to the callback,
+            -- unlike the raw Section:Dropdown which uses a table of strings.
+            local function buildFontDropdown(label, currentFont, callback, opts)
+                opts = opts or {}
+                local choices = opts.choices or self._font_list
+                local usePreview = opts.preview ~= false
+                local tooltip = opts.tooltip
+                local previewFonts = nil
+                if usePreview then
+                    previewFonts = {}
+                    for _, fn in ipairs(choices) do
+                        previewFonts[fn] = self._font_face_by_name[fn]
+                    end
+                end
+                local wrapped = function(newValue)
+                    local picked = (type(newValue) == 'table') and newValue[1] or newValue
+                    if callback then callback(picked) end
+                end
+                return self:_Dropdown(tabName, sectionName, label, { currentFont or choices[1] }, choices, false, wrapped, tooltip, previewFonts, nil, nil, nil)
+            end
+
+            local sectionApi
+            local function makeLane(defaultColumn)
+                return {
+                    Toggle = function(_, ...)
+                        local itemHandle = self:_Toggle(tabName, sectionName, ...)
+                        itemHandle:SetColumn(defaultColumn)
+                        return itemHandle
+                    end,
+                    Slider = function(_, ...)
+                        local itemHandle = self:_Slider(tabName, sectionName, ...)
+                        itemHandle:SetColumn(defaultColumn)
+                        return itemHandle
+                    end,
+                    Dropdown = function(_, ...)
+                        local itemHandle = self:_Dropdown(tabName, sectionName, ...)
+                        itemHandle:SetColumn(defaultColumn)
+                        return itemHandle
+                    end,
+                    FontDropdown = function(_, label, currentFont, callback, opts)
+                        local itemHandle = buildFontDropdown(label, currentFont, callback, opts)
+                        itemHandle:SetColumn(defaultColumn)
+                        return itemHandle
+                    end,
+                    Button = function(_, ...)
+                        local itemHandle = self:_Button(tabName, sectionName, ...)
+                        itemHandle:SetColumn(defaultColumn)
+                        return itemHandle
+                    end,
+                    Textbox = function(_, ...)
+                        local itemHandle = self:_Textbox(tabName, sectionName, ...)
+                        itemHandle:SetColumn(defaultColumn)
+                        return itemHandle
+                    end,
+                }
+            end
+
+            sectionApi = {
+                Toggle = function(_, ...) return self:_Toggle(tabName, sectionName, ...) end,
+                Slider = function(_, ...) return self:_Slider(tabName, sectionName, ...) end,
+                Dropdown = function(_, ...) return self:_Dropdown(tabName, sectionName, ...) end,
+                FontDropdown = function(_, label, currentFont, callback, opts)
+                    return buildFontDropdown(label, currentFont, callback, opts)
+                end,
+                Button = function(_, ...) return self:_Button(tabName, sectionName, ...) end,
+                Textbox = function(_, ...) return self:_Textbox(tabName, sectionName, ...) end,
+                SetColumn = function(_, newColumn)
+                    local ref = self:_GetSectionRef(tabName, sectionName)
+                    if ref then
+                        ref._column = self:_ResolveColumnValue(newColumn, ref._column or 1)
+                    end
+                    return sectionApi
+                end,
+                SetYOffset = function(_, newOffset)
+                    local ref = self:_GetSectionRef(tabName, sectionName)
+                    if ref then
+                        ref._y_offset = tonumber(newOffset) or 0
+                    end
+                    return sectionApi
+                end,
+                MoveY = function(_, delta)
+                    local ref = self:_GetSectionRef(tabName, sectionName)
+                    if ref then
+                        ref._y_offset = (tonumber(ref._y_offset) or 0) + (tonumber(delta) or 0)
+                    end
+                    return sectionApi
+                end,
+                SetLayout = function(_, newColumn, newOffset)
+                    if newColumn ~= nil then
+                        sectionApi:SetColumn(newColumn)
+                    end
+                    if newOffset ~= nil then
+                        sectionApi:SetYOffset(newOffset)
+                    end
+                    return sectionApi
+                end,
+                Left = function(_)
+                    return makeLane(1)
+                end,
+                Right = function(_)
+                    return makeLane(2)
+                end,
+            }
+            return sectionApi
+        end
+
+        -- menu api
+        function UILib:GetMenuSize()
+            return Vector2.new(self.w, self.h)
+        end
+
+        function UILib:SetWatermarkEnabled(value)
+            self._watermark_enabled = value
+        end
+
+        function UILib:SetMenuTitle(newTitle)
+            self.title = newTitle
+        end
+
+        function UILib:SetMenuPosition(newPos)
+            self.x = newPos.x or self.x
+            self.y = newPos.y or self.y
+        end
+
+        function UILib:SetMenuSize(newSize)
+            self.w = newSize.x or self.w
+            self.h = newSize.y or self.h
+        end
+
+        function UILib:CenterMenu()
+            local screenSize = self:_GetScreenSize()
+            local menuSize = self:GetMenuSize()
+            self:SetMenuPosition(Vector2.new(screenSize.x/2 - menuSize.x/2, screenSize.y/2 - menuSize.y/2))
+        end
+
+        function UILib:Notification(text, time)
+            local item = {
+                text = tostring(text or ''),
+                time = tonumber(time) or 3,
+                _id = self._notifications_spawned,
+                _spawned_at = os.clock()
+            }
+            table.insert(self._notifications, item)
+            self._notifications_spawned = self._notifications_spawned + 1
+        end
+
+        function UILib:Tab(tabName, options)
+            local sidebarGroup = nil
+            local sidebarGroupTitle = nil
+            if type(options) == 'table' then
+                sidebarGroup = options.sidebarGroup or options.group
+                sidebarGroupTitle = options.sidebarGroupTitle or options.groupTitle
+            elseif options ~= nil then
+                sidebarGroup = tostring(options)
+            end
+
+            if not self._tree[tabName] then
+                self._tree[tabName] = {
+                    _items = {},
+                    _section_order = {},
+                    _section_count = 0,
+                    _next_column = 1,
+                    _sidebar_group = sidebarGroup,
+                    _sidebar_group_title = sidebarGroupTitle,
+                }
+                table.insert(self._tab_order, tabName)
+            elseif options ~= nil then
+                self._tree[tabName]._sidebar_group = sidebarGroup
+                if type(options) == 'table' then
+                    self._tree[tabName]._sidebar_group_title = sidebarGroupTitle
+                end
+            end
+            if not self._open_tab then self._open_tab = tabName end
+
+            local parentLib = self
+            local tabObj
+            tabObj = {
+                Section = function(_, sectionName, column)
+                    return parentLib:_Section(tabName, sectionName, nil, column)
+                end,
+                SubTab = function(_, _subTabName)
+                    -- first subtab: pull parent out of sidebar, becomes group header only
+                    if not parentLib._tree[tabName]._has_subtabs then
+                        parentLib._tree[tabName]._has_subtabs = true
+                        for i = #parentLib._tab_order, 1, -1 do
+                            if parentLib._tab_order[i] == tabName then
+                                table.remove(parentLib._tab_order, i)
+                                break
+                            end
+                        end
+                    end
+                    local subKey = tabName .. ">" .. _subTabName
+                    local subTab = parentLib:Tab(subKey, {
+                        sidebarGroup = tabName,
+                        sidebarGroupTitle = tabName,
+                    })
+                    parentLib._tree[subKey]._display_name = _subTabName
+                    -- if open tab was parent, switch to first subtab
+                    if parentLib._open_tab == tabName then
+                        parentLib._open_tab = subKey
+                    end
+                    return subTab
+                end,
+                SetSidebarGroup = function(_, newGroup, newTitle)
+                    local tabRef = parentLib._tree[tabName]
+                    if tabRef then
+                        local parsedGroup = newGroup
+                        local parsedTitle = newTitle
+                        if type(newGroup) == 'table' then
+                            parsedGroup = newGroup.sidebarGroup or newGroup.group
+                            parsedTitle = newGroup.sidebarGroupTitle or newGroup.groupTitle
+                        end
+                        tabRef._sidebar_group = parsedGroup and tostring(parsedGroup) or nil
+                        if parsedTitle ~= nil then
+                            tabRef._sidebar_group_title = parsedTitle and tostring(parsedTitle) or nil
+                        end
+                    end
+                    return tabObj
+                end,
+                GetSidebarGroup = function(_)
+                    local tabRef = parentLib._tree[tabName]
+                    return tabRef and tabRef._sidebar_group or nil
+                end,
+                SetSidebarGroupTitle = function(_, newTitle)
+                    local tabRef = parentLib._tree[tabName]
+                    if tabRef then
+                        tabRef._sidebar_group_title = newTitle and tostring(newTitle) or nil
+                    end
+                    return tabObj
+                end,
+                GetSidebarGroupTitle = function(_)
+                    local tabRef = parentLib._tree[tabName]
+                    return tabRef and tabRef._sidebar_group_title or nil
+                end
+            }
+            return tabObj
+        end
+
+        function UILib:CreateSettingsTab(customName, options)
+            -- guard against double init which would duplicate all widgets
+            if self._settings_tab_created then
+                return self._settings_tab_ref, self._settings_menu_section_ref, self._settings_theming_section_ref, self._settings_item_refs
+            end
+            self._settings_tab_created = true
+            options = options or {}
+            local showWatermark = options.watermark ~= false
+            local showBackgroundAlpha = options.backgroundAlpha ~= false
+            local showCustomTitle = options.customTitle ~= false
+            local showTheming = options.theming ~= false
+            local menuKeyLabel = options.menuKeyLabel or 'Ov. menu key'
+            local settingsTab = self:Tab(customName or 'Menu')
+            local settingsRefs = {}
+
+            local menuSection = settingsTab:Section('Menu')
+            local menuKey = menuSection:Toggle(menuKeyLabel, self._overwrite_menu_key, function(newValue)
+                self._overwrite_menu_key = newValue
+                if options.onMenuKeyChange then options.onMenuKeyChange('override', newValue) end
+            end)
+            settingsRefs.menuKey = menuKey
+            menuKey:AddKeybind(self._menu_key, 'Hold', false, function(newValue)
+                if newValue and self._inputs[newValue] then
+                    self._menu_key = newValue
+                    if options.onMenuKeyChange then options.onMenuKeyChange('key', newValue) end
+                end
+            end)
+            if showWatermark then
+                settingsRefs.watermark = menuSection:Toggle('Watermark', self._watermark_enabled, function(newValue)
+                    self:SetWatermarkEnabled(newValue)
+                end)
+            end
+            if showCustomTitle then
+                settingsRefs.customTitleEnabled = menuSection:Toggle('Custom menu title', self._custom_title_enabled, function(newValue)
+                    self._custom_title_enabled = newValue
+                end)
+                self._custom_title = self.title
+                settingsRefs.menuTitle = menuSection:Textbox('Menu title', self.title, function(newValue)
+                    self._custom_title = newValue
+                end)
+            end
+
+            local themingSection = nil
+            if showTheming then
+                themingSection = settingsTab:Section('Theming')
+                if showBackgroundAlpha then
+                    settingsRefs.backgroundAlpha = themingSection:Slider('Background opacity', math.floor(self._background_alpha * 100 + 0.5), 1, 5, 100, '%', function(newValue)
+                        self._background_alpha = clamp((tonumber(newValue) or 100) / 100, 5/100, 1)
+                        if options.onAlphaChange then options.onAlphaChange(self._background_alpha) end
+                    end)
+                end
+                local themes = {'Catppuccin', 'Gamesense', 'Bloodmoon', 'Seaside', 'Ember', 'Synthwave', 'Matcha', 'Femboy'}
+                -- per-theme bg+fg color preview so each dropdown row looks like that theme
+                local themePreviewColors = {
+                    ['Catppuccin']  = {bg = Color3.fromRGB(17, 17, 27),    fg = Color3.fromRGB(205, 214, 244)},
+                    ['Gamesense']   = {bg = Color3.fromRGB(6, 6, 6),       fg = Color3.fromRGB(180, 180, 180)},
+                    ['Bloodmoon']   = {bg = Color3.fromRGB(22, 10, 12),    fg = Color3.fromRGB(250, 200, 205)},
+                    ['Seaside']     = {bg = Color3.fromRGB(12, 32, 55),    fg = Color3.fromRGB(225, 240, 248)},
+                    ['Ember']       = {bg = Color3.fromRGB(22, 14, 10),    fg = Color3.fromRGB(245, 215, 180)},
+                    ['Synthwave']   = {bg = Color3.fromRGB(30, 20, 50),    fg = Color3.fromRGB(245, 235, 255)},
+                    ['Matcha']      = {bg = Color3.fromRGB(240, 248, 232), fg = Color3.fromRGB(45, 80, 50)},
+                    ['Femboy']      = {bg = Color3.fromRGB(254, 247, 252), fg = Color3.fromRGB(60, 35, 85)},
+                }
+                local themingTextColor, themingBodyColor, themingAccentColor, themingSubtextColor, themingBorder0Color, themingBorder1Color, themingSurface0Color, themingSurface1Color, themingCrustColor
+                local glowColorRef
+                local themeSnapshot = nil
+                local function snapshotTheme()
+                    return {
+                        text     = self._theming.text,
+                        body     = self._theming.body,
+                        accent   = self._theming.accent,
+                        subtext  = self._theming.subtext,
+                        border0  = self._theming.border0,
+                        border1  = self._theming.border1,
+                        surface0 = self._theming.surface0,
+                        surface1 = self._theming.surface1,
+                        crust    = self._theming.crust,
+                    }
+                end
+                local function restoreSnapshot(snap)
+                    if not snap then return end
+                    themingTextColor:Set(snap.text)
+                    themingBodyColor:Set(snap.body)
+                    themingAccentColor:Set(snap.accent)
+                    themingSubtextColor:Set(snap.subtext)
+                    themingBorder0Color:Set(snap.border0)
+                    themingBorder1Color:Set(snap.border1)
+                    themingSurface0Color:Set(snap.surface0)
+                    themingSurface1Color:Set(snap.surface1)
+                    themingCrustColor:Set(snap.crust)
+                end
+                local function applyTheme(theme)
+                    local gc = glowColorRef
+                    if theme == 'Catppuccin' then
+                        themingAccentColor:Set(Color3.fromRGB(203, 166, 247))
+                        themingBodyColor:Set(Color3.fromRGB(17, 17, 27))
+                        themingTextColor:Set(Color3.fromRGB(205, 214, 244))
+                        themingSubtextColor:Set(Color3.fromRGB(127, 132, 156))
+                        themingBorder1Color:Set(Color3.fromRGB(69, 71, 90))
+                        themingBorder0Color:Set(Color3.fromRGB(49, 50, 68))
+                        themingSurface1Color:Set(Color3.fromRGB(49, 50, 68))
+                        themingSurface0Color:Set(Color3.fromRGB(30, 30, 46))
+                        themingCrustColor:Set(Color3.fromRGB(11, 11, 18))
+                        if gc then gc:Set(Color3.fromRGB(180, 140, 255)) end
+                    elseif theme == 'Gamesense' then
+                        themingAccentColor:Set(Color3.fromRGB(114, 178, 21))
+                        themingBodyColor:Set(Color3.fromRGB(6, 6, 6))
+                        themingTextColor:Set(Color3.fromRGB(180, 180, 180))
+                        themingSubtextColor:Set(Color3.fromRGB(80, 80, 80))
+                        themingBorder1Color:Set(Color3.fromRGB(60, 60, 60))
+                        themingBorder0Color:Set(Color3.fromRGB(40, 40, 40))
+                        themingSurface1Color:Set(Color3.fromRGB(30, 30, 30))
+                        themingSurface0Color:Set(Color3.fromRGB(18, 18, 18))
+                        themingCrustColor:Set(Color3.fromRGB(0, 0, 0))
+                        if gc then gc:Set(Color3.fromRGB(90, 200, 0)) end
+                    elseif theme == 'Bloodmoon' then
+                        themingAccentColor:Set(Color3.fromRGB(235, 28, 52))
+                        themingBodyColor:Set(Color3.fromRGB(22, 10, 12))
+                        themingTextColor:Set(Color3.fromRGB(250, 200, 205))
+                        themingSubtextColor:Set(Color3.fromRGB(180, 95, 105))
+                        themingBorder1Color:Set(Color3.fromRGB(125, 30, 45))
+                        themingBorder0Color:Set(Color3.fromRGB(78, 20, 28))
+                        themingSurface1Color:Set(Color3.fromRGB(70, 22, 32))
+                        themingSurface0Color:Set(Color3.fromRGB(42, 15, 20))
+                        themingCrustColor:Set(Color3.fromRGB(12, 6, 8))
+                        if gc then gc:Set(Color3.fromRGB(255, 30, 60)) end
+                    elseif theme == 'Seaside' then
+                        themingAccentColor:Set(Color3.fromRGB(64, 195, 200))
+                        themingBodyColor:Set(Color3.fromRGB(12, 32, 55))
+                        themingTextColor:Set(Color3.fromRGB(225, 240, 248))
+                        themingSubtextColor:Set(Color3.fromRGB(115, 160, 185))
+                        themingBorder1Color:Set(Color3.fromRGB(40, 95, 125))
+                        themingBorder0Color:Set(Color3.fromRGB(25, 60, 90))
+                        themingSurface1Color:Set(Color3.fromRGB(32, 72, 105))
+                        themingSurface0Color:Set(Color3.fromRGB(18, 45, 72))
+                        themingCrustColor:Set(Color3.fromRGB(6, 18, 35))
+                        if gc then gc:Set(Color3.fromRGB(50, 220, 230)) end
+                    elseif theme == 'Ember' then
+                        themingAccentColor:Set(Color3.fromRGB(252, 115, 30))
+                        themingBodyColor:Set(Color3.fromRGB(22, 14, 10))
+                        themingTextColor:Set(Color3.fromRGB(245, 215, 180))
+                        themingSubtextColor:Set(Color3.fromRGB(170, 125, 82))
+                        themingBorder1Color:Set(Color3.fromRGB(115, 55, 25))
+                        themingBorder0Color:Set(Color3.fromRGB(70, 35, 18))
+                        themingSurface1Color:Set(Color3.fromRGB(60, 32, 18))
+                        themingSurface0Color:Set(Color3.fromRGB(38, 22, 13))
+                        themingCrustColor:Set(Color3.fromRGB(12, 7, 5))
+                        if gc then gc:Set(Color3.fromRGB(255, 120, 20)) end
+                    elseif theme == 'Synthwave' then
+                        themingAccentColor:Set(Color3.fromRGB(255, 60, 180))
+                        themingBodyColor:Set(Color3.fromRGB(30, 20, 50))
+                        themingTextColor:Set(Color3.fromRGB(245, 235, 255))
+                        themingSubtextColor:Set(Color3.fromRGB(155, 115, 200))
+                        themingBorder1Color:Set(Color3.fromRGB(110, 60, 165))
+                        themingBorder0Color:Set(Color3.fromRGB(70, 40, 115))
+                        themingSurface1Color:Set(Color3.fromRGB(60, 35, 110))
+                        themingSurface0Color:Set(Color3.fromRGB(40, 25, 75))
+                        themingCrustColor:Set(Color3.fromRGB(15, 10, 35))
+                        if gc then gc:Set(Color3.fromRGB(255, 50, 200)) end
+                    elseif theme == 'Matcha' then
+                        themingAccentColor:Set(Color3.fromRGB(127, 176, 105))
+                        themingBodyColor:Set(Color3.fromRGB(240, 248, 232))
+                        themingTextColor:Set(Color3.fromRGB(45, 80, 50))
+                        themingSubtextColor:Set(Color3.fromRGB(115, 150, 110))
+                        themingBorder1Color:Set(Color3.fromRGB(175, 210, 165))
+                        themingBorder0Color:Set(Color3.fromRGB(200, 225, 190))
+                        themingSurface1Color:Set(Color3.fromRGB(220, 238, 208))
+                        themingSurface0Color:Set(Color3.fromRGB(232, 244, 220))
+                        themingCrustColor:Set(Color3.fromRGB(155, 190, 140))
+                        if gc then gc:Set(Color3.fromRGB(100, 190, 80)) end
+                    elseif theme == 'Femboy' then
+                        themingAccentColor:Set(Color3.fromRGB(200, 50, 120))
+                        themingBodyColor:Set(Color3.fromRGB(254, 247, 252))
+                        themingTextColor:Set(Color3.fromRGB(60, 35, 85))
+                        themingSubtextColor:Set(Color3.fromRGB(125, 95, 155))
+                        themingBorder1Color:Set(Color3.fromRGB(220, 180, 215))
+                        themingBorder0Color:Set(Color3.fromRGB(235, 200, 225))
+                        themingSurface1Color:Set(Color3.fromRGB(245, 215, 235))
+                        themingSurface0Color:Set(Color3.fromRGB(250, 230, 240))
+                        themingCrustColor:Set(Color3.fromRGB(140, 100, 160))
+                        if gc then gc:Set(Color3.fromRGB(220, 60, 140)) end
+                    end
+                end
+                local themingTheme = themingSection:Dropdown('Theme', {themes[1]}, themes, false, function(newValue)
+                    if not newValue then return end
+                    local theme = newValue[1]
+                    applyTheme(theme)
+                    themeSnapshot = nil
+                    if options.onPresetChange then options.onPresetChange(theme) end
+                end, nil, nil, themePreviewColors, function(hoveredTheme)
+                    -- hover preview: snapshot first hover, apply hovered theme
+                    if not hoveredTheme then return end
+                    if not themeSnapshot then themeSnapshot = snapshotTheme() end
+                    applyTheme(hoveredTheme)
+                end, function()
+                    -- cancel: restore snapshot if dismissed without selection
+                    if themeSnapshot then
+                        restoreSnapshot(themeSnapshot)
+                        themeSnapshot = nil
+                    end
+                end)
+
+                local themingText = themingSection:Toggle('Text color')
+                themingTextColor = themingText:AddColorpicker('Text color', self._theming.text, true, function(newValue)
+                    self._theming.text = newValue
+                    if options.onColorChange then options.onColorChange('text', newValue) end
+                end)
+                local themingBody = themingSection:Toggle('Body color')
+                themingBodyColor = themingBody:AddColorpicker('Body color', self._theming.body, true, function(newValue)
+                    self._theming.body = newValue
+                    if options.onColorChange then options.onColorChange('body', newValue) end
+                end)
+                local themingAccent = themingSection:Toggle('Accent color')
+                themingAccentColor = themingAccent:AddColorpicker('Accent color', self._theming.accent, true, function(newValue)
+                    self._theming.accent = newValue
+                    if options.onColorChange then options.onColorChange('accent', newValue) end
+                end)
+                local themingSubtext = themingSection:Toggle('Subtext color')
+                themingSubtextColor = themingSubtext:AddColorpicker('Subtext color', self._theming.subtext, true, function(newValue)
+                    self._theming.subtext = newValue
+                    if options.onColorChange then options.onColorChange('subtext', newValue) end
+                end)
+                local themingBorder0 = themingSection:Toggle('Border 0 color')
+                themingBorder0Color = themingBorder0:AddColorpicker('Border 0 color', self._theming.border0, true, function(newValue)
+                    self._theming.border0 = newValue
+                    if options.onColorChange then options.onColorChange('border0', newValue) end
+                end)
+                local themingBorder1 = themingSection:Toggle('Border 1 color')
+                themingBorder1Color = themingBorder1:AddColorpicker('Border 1 color', self._theming.border1, true, function(newValue)
+                    self._theming.border1 = newValue
+                    if options.onColorChange then options.onColorChange('border1', newValue) end
+                end)
+                local themingSurface0 = themingSection:Toggle('Surface 0 color')
+                themingSurface0Color = themingSurface0:AddColorpicker('Surface 0 color', self._theming.surface0, true, function(newValue)
+                    self._theming.surface0 = newValue
+                    if options.onColorChange then options.onColorChange('surface0', newValue) end
+                end)
+                local themingSurface1 = themingSection:Toggle('Surface 1 color')
+                themingSurface1Color = themingSurface1:AddColorpicker('Surface 1 color', self._theming.surface1, true, function(newValue)
+                    self._theming.surface1 = newValue
+                    if options.onColorChange then options.onColorChange('surface1', newValue) end
+                end)
+                local themingCrust = themingSection:Toggle('Crust color')
+                themingCrustColor = themingCrust:AddColorpicker('Crust color', self._theming.crust, true, function(newValue)
+                    self._theming.crust = newValue
+                    if options.onColorChange then options.onColorChange('crust', newValue) end
+                end)
+
+                -- font family picker, previews each choice in its own font
+                local fontPreviewMap = {}
+                for _, fontName in ipairs(self._font_list) do
+                    fontPreviewMap[fontName] = self._font_face_by_name[fontName]
+                end
+                local themingFont = themingSection:Dropdown('Font', {self._font_name}, self._font_list, false, function(newValue)
+                    if type(newValue) ~= 'table' or not newValue[1] then return end
+                    local faceName = newValue[1]
+                    local face = self._font_face_by_name[faceName]
+                    if face then
+                        self._font_face = face
+                        self._font_name = faceName
+                    end
+                    if options.onFontChange then options.onFontChange(faceName) end
+                end, 'font family used across the ui', fontPreviewMap)
+
+                -- glow settings
+                local function _glowChanged(field, value)
+                    if options.onGlowChange then options.onGlowChange(field, value) end
+                end
+                local glowToggle = themingSection:Toggle('Glow', self._glow_enabled, function(newValue)
+                    self._glow_enabled = newValue
+                    _glowChanged('enabled', newValue)
+                end)
+                glowColorRef = glowToggle:AddColorpicker('Glow color', self._glow_color or self._theming.accent, false, function(newValue)
+                    self._glow_color = newValue
+                    _glowChanged('color', newValue)
+                end)
+
+                -- mode select sits right under the toggle
+                local glowSIntensity, glowSRadius
+                local glowBSpeed, glowBIntensity, glowBRadius
+                local glowRWorm, glowRSpeed, glowRRadius, glowRIntensity
+                local glowTestMethod
+
+                local function updateGlowSliderVisibility(mode)
+                    local isS = mode == 'Static'
+                    local isB = mode == 'Breathe'
+                    local isR = mode == 'Rotate'
+                    local isT = mode == 'test'
+                    glowSIntensity:SetHidden(not (isS or isT))
+                    glowSRadius:SetHidden(not (isS or isT))
+                    glowBSpeed:SetHidden(not isB)
+                    glowBIntensity:SetHidden(not isB)
+                    glowBRadius:SetHidden(not isB)
+                    glowRWorm:SetHidden(not isR)
+                    glowRSpeed:SetHidden(not isR)
+                    glowRRadius:SetHidden(not isR)
+                    glowRIntensity:SetHidden(not isR)
+                    glowTestMethod:SetHidden(not isT)
+                end
+
+                themingSection:Dropdown('Glow animation', {self._glow_mode}, {'Static', 'Breathe', 'Rotate', 'test'}, false, function(newValue)
+                    if newValue and newValue[1] then
+                        self._glow_mode = newValue[1]
+                        updateGlowSliderVisibility(newValue[1])
+                        _glowChanged('mode', newValue[1])
+                    end
+                end)
+
+                -- per-mode sliders (hidden/shown on mode change)
+                glowSIntensity = themingSection:Slider('Intensity', self._glow_s_intensity, 1, 1, 100, '%', function(v) self._glow_s_intensity = v; _glowChanged('s_intensity', v) end)
+                glowSRadius = themingSection:Slider('Radius', self._glow_s_radius, 1, 1, 20, 'px', function(v) self._glow_s_radius = v; _glowChanged('s_radius', v) end)
+                glowTestMethod = themingSection:Slider('test method', self._glow_test_method, 1, 1, 4, '', function(v) self._glow_test_method = v; _glowChanged('test_method', v) end)
+                glowBSpeed = themingSection:Slider('Speed', self._glow_b_speed, 1, 1, 5, 's', function(v) self._glow_b_speed = v; _glowChanged('b_speed', v) end)
+                glowBIntensity = themingSection:Slider('Max intensity', self._glow_b_intensity, 1, 1, 100, '%', function(v) self._glow_b_intensity = v; _glowChanged('b_intensity', v) end)
+                glowBRadius = themingSection:Slider('Max radius', self._glow_b_radius, 1, 1, 20, 'px', function(v) self._glow_b_radius = v; _glowChanged('b_radius', v) end)
+                glowRWorm = themingSection:Slider('Worm size', self._glow_r_worm, 1, 10, 100, '%', function(v) self._glow_r_worm = v; _glowChanged('r_worm', v) end)
+                glowRSpeed = themingSection:Slider('Speed', self._glow_r_speed, 1, 1, 10, '', function(v) self._glow_r_speed = v; _glowChanged('r_speed', v) end)
+                glowRRadius = themingSection:Slider('Glow radius', self._glow_r_radius, 1, 1, 20, 'px', function(v) self._glow_r_radius = v; _glowChanged('r_radius', v) end)
+                glowRIntensity = themingSection:Slider('Worm glow intensity', self._glow_r_intensity, 1, 1, 100, '%', function(v) self._glow_r_intensity = v; _glowChanged('r_intensity', v) end)
+
+                updateGlowSliderVisibility(self._glow_mode)
+
+                settingsRefs.font = themingFont
+                settingsRefs.theme = themingTheme
+                settingsRefs.themingColors = {
+                    text     = themingTextColor,
+                    body     = themingBodyColor,
+                    accent   = themingAccentColor,
+                    subtext  = themingSubtextColor,
+                    border0  = themingBorder0Color,
+                    border1  = themingBorder1Color,
+                    surface0 = themingSurface0Color,
+                    surface1 = themingSurface1Color,
+                    crust    = themingCrustColor,
+                }
+                themingTheme:Set({'Catppuccin'})
+            end
+            -- cache refs so CreateSettingsTab re-entry returns the same objects
+            self._settings_tab_ref = settingsTab
+            self._settings_menu_section_ref = menuSection
+            self._settings_theming_section_ref = themingSection
+            self._settings_item_refs = settingsRefs
+            return settingsTab, menuSection, themingSection, settingsRefs
+        end
+
+        -- stub: activity registry dropped in v2, preserved for api compat
+        function UILib:RegisterActivity(_activity)
+            return { Remove = function(_) end }
+        end
+
+        function UILib:Unload()
+            self:_RemoveDrawStartsWith('')
+            -- full state reset so library can be re-used safely without ghost state
+            self._tree = {}
+            self._tab_order = {}
+            self._open_tab = nil
+            self._notifications = {}
+            self._notifications_spawned = 0
+            self._slider_drag = nil
+            self._menu_drag = nil
+            self._input_ctx = nil
+            self._button_held = nil
+            self._active_dropdown = nil
+            self._active_colorpicker = nil
+            self._menu_open = true
+            self._menu_toggled_at = 0
+            self._menu_fade_done = false
+            self._menu_fade_start_opacity = nil
+            self._section_fade_done = false
+            self._custom_title_enabled = false
+            self._custom_title = ''
+            self._settings_tab_created = false
+            self._settings_tab_ref = nil
+            self._settings_menu_section_ref = nil
+            self._settings_theming_section_ref = nil
+            self._settings_item_refs = nil
+            self._anim_state = {}
+            self._base_alpha = {}
+            self._glow_last_mode = nil
+            self._glow_rot_count = 0
+            self._last_cleared_inactive_for = nil
+            self._last_step_at = 0
+            self._frame_dt = 16/1000
+            setrobloxinput(true)
+        end
+
+        function UILib:Step()
+            local menuTitle = tostring(self._custom_title_enabled and self._custom_title or self.title or 'UILib')
+            local stepNow = os.clock()
+            if self._last_step_at == 0 then
+                self._frame_dt = 16/1000
+            else
+                self._frame_dt = clamp(stepNow - self._last_step_at, 0, 0.05)
+            end
+            self._last_step_at = stepNow
+
+            -- compute fade multiplier once per frame (used inline by _SetOpacity)
+            local menuOpacityEarly = self:_ResolveMenuFadeOpacity()
+            self._menu_fade_mul = menuOpacityEarly
+
+            -- input processing
+            setrobloxinput(menuOpacityEarly <= 0.001)
+            for keycode, inputData in pairs(self._inputs) do
+                local interacted = iskeypressed(inputData.id)
+                if isrbxactive() and interacted then
+                    if inputData.held == false and inputData.click == false then
+                        self._inputs[keycode].click = true
+                    else
+                        self._inputs[keycode].click = false
+                    end
+                    self._inputs[keycode].held = true
                 else
                     self._inputs[keycode].click = false
-                end
-
-                self._inputs[keycode].held = true
-            else
-                self._inputs[keycode].click = false
-                self._inputs[keycode].held = false
-            end
-        end
-
-        local clickFrame = self:_IsKeyPressed('m1')
-        local mouseHeld = self:_IsKeyHeld('m1')
-        local ctxFrame = self:_IsKeyPressed('m2')
-        local menuKeyPressed = self:_IsKeyPressed(self._overwrite_menu_key and self._menu_key or 'f1')
-
-        if menuKeyPressed then
-            self._menu_open = not self._menu_open
-            self._menu_toggled_at = os.clock()
-            self._menu_fade_done = false
-        end
-
-        -- draw watermark
-        local watermarkPos = Vector2.new(20, 20)
-        local watermarkStates = {menuTitle}
-        for _, activity in ipairs(self._activities) do
-            if type(activity) == 'function' then
-                local activityString = tostring(activity())
-                if activityString ~= 'nil' then
-                    table.insert(watermarkStates, activityString)
+                    self._inputs[keycode].held = false
                 end
             end
-        end
-        local watermarkContent = table.concat(watermarkStates, ' | ')
-        local watermarkSize = self:_GetTextBounds(watermarkContent) + Vector2.new(self._padding * 2, self._padding * 2)
-        if self._watermark_enabled then
-            self:_Draw('watermark_crust', 'rect', self._theming.crust, 102, watermarkPos, watermarkSize, false)
-            self:_Draw('watermark_border', 'rect', self._theming.border0, 102, watermarkPos + Vector2.new(1, 1), watermarkSize - Vector2.new(2, 2), false)
-            self:_Draw('watermark_accent', 'line', self._theming.accent, 103, watermarkPos + Vector2.new(2, 2), watermarkPos + Vector2.new(watermarkSize.x - 2, 2))
-            self:_Draw('watermark_body', 'gradient', nil, 101, 'vertical', watermarkPos + Vector2.new(2, 2), watermarkSize - Vector2.new(4, 4), self._theming.surface0)
-            self:_Draw('watermark_text', 'text', self._theming.text, 103, watermarkPos + Vector2.new(self._padding, self._padding + 2), watermarkContent, true)
-        else
-            self:_UndrawStartsWith('watermark_')
-        end
 
-        -- ... and notifications
-        local notificationsOrigin = watermarkPos + (self._watermark_enabled and Vector2.new(0, watermarkSize.y + self._padding) or Vector2.new(0, 0))
-        local totalNotificationsHeight = 0
-        local notifIdx = 1
-        while notifIdx <= #self._notifications do
-            local notification = self._notifications[notifIdx]
-            local shouldFade = os.clock() > notification._spawned_at + notification.time
-            local notificationText = notification.text
-            local notificationTextSize = self:_GetTextBounds(notificationText)
+            local clickFrame = self:_IsKeyPressed('m1')
+            local mouseHeld = self:_IsKeyHeld('m1')
+            local ctxFrame = self:_IsKeyPressed('m2')
+            local resolvedMenuKey = (self._overwrite_menu_key and self._menu_key) or 'f1'
+            if not self._inputs[resolvedMenuKey] then resolvedMenuKey = 'f1' end
+            local menuKeyPressed = self:_IsKeyPressed(resolvedMenuKey)
 
-            local t = math.max(0, math.min(notification._spawned_at - os.clock() + (shouldFade and notification.time + 1 or 1), 1))
-            local notificationFade = math.abs((shouldFade and 0 or 1) - (t * t * (3 - 2 * t)))
-
-            local notificationDrawId = 'notification_' .. notification._id
-            local notificationSize = Vector2.new(notificationTextSize.x + self._padding * 2, notificationTextSize.y + self._padding * 2)
-            local notificationOrigin = notificationsOrigin + Vector2.new((-notificationSize.x - 50) * (1 - notificationFade), totalNotificationsHeight)
-
-            local progressPercent = math.min((os.clock() - notification._spawned_at)/notification.time, 1)
-            self:_Draw(notificationDrawId .. '_crust', 'rect', self._theming.crust, 102, notificationOrigin, notificationSize, false)
-            self:_Draw(notificationDrawId .. '_border', 'rect', self._theming.border0, 102, notificationOrigin + Vector2.new(1, 1), notificationSize - Vector2.new(2, 2), false)
-            self:_Draw(notificationDrawId .. '_progress', 'gradient', nil, 103, 'horizontal', notificationOrigin + Vector2.new(2, notificationSize.y - 4), Vector2.new(notificationSize.x * progressPercent - 6, 2), {R=0, G=0, B=0, A=0}, self._theming.accent)
-            self:_Draw(notificationDrawId .. '_body', 'gradient', nil, 101, 'vertical', notificationOrigin + Vector2.new(2, 2), notificationSize - Vector2.new(4, 4), self._theming.surface0)
-            self:_Draw(notificationDrawId .. '_text', 'text', self._theming.text, 103, notificationOrigin + Vector2.new(self._padding, self._padding + 2), notificationText, true)
-            self:_SetOpacityStartsWith(notificationDrawId, notificationFade)
-
-            totalNotificationsHeight = totalNotificationsHeight + (notificationTextSize.y + self._padding * 3) * notificationFade
-
-            if os.clock() - 1 > notification._spawned_at + notification.time then
-                self:_RemoveDrawStartsWith(notificationDrawId)
-                table.remove(self._notifications, notifIdx)
-            else
-                notifIdx = notifIdx + 1
+            if menuKeyPressed then
+                local currentOpacity = self:_ResolveMenuFadeOpacity()
+                self._menu_fade_start_opacity = currentOpacity
+                self._menu_open = not self._menu_open
+                self._menu_toggled_at = os.clock()
+                self._menu_fade_done = false
             end
-        end
+            -- refresh multiplier after toggle (state changed)
+            local menuOpacityRefresh = self:_ResolveMenuFadeOpacity()
+            self._menu_fade_mul = menuOpacityRefresh
+            setrobloxinput(menuOpacityRefresh <= 0.001)
 
-        if self._menu_open then
-            -- drag the menu
-            if mouseHeld and self._menu_drag then
-                local mousePos = self:_GetMousePos()
-                self.x = mousePos.x - self._menu_drag.x
-                self.y = mousePos.y - self._menu_drag.y
+            -- watermark (glass pill)
+            local watermarkPos = Vector2.new(20, 20)
+            local watermarkContent = menuTitle
+            local watermarkTextSize = self:_GetTextBounds(watermarkContent)
+            local watermarkSize = Vector2.new(watermarkTextSize.x + self._padding * 2 + 14, watermarkTextSize.y + self._padding + 2)
+            if self._watermark_enabled then
+                -- body
+                self:_Draw('watermark_body', 'rect', self._theming.body, 100, watermarkPos, watermarkSize, true)
+                self:_SetOpacity('watermark_body', clamp(self._background_alpha + 0.02, 5/100, 1))
+                -- outer crust
+                self:_Draw('watermark_crust', 'rect', self._theming.crust, 101, watermarkPos, watermarkSize, false)
+                -- inner border
+                self:_Draw('watermark_border', 'rect', self._theming.border1, 101, watermarkPos + Vector2.new(1, 1), watermarkSize - Vector2.new(2, 2), false)
+                local watermarkDotCenter = watermarkPos + Vector2.new(self._padding + 1, watermarkSize.y / 2 + 1)
+                self:_Draw('watermark_dot_ring', 'circle', self._theming.border1, 102, watermarkDotCenter, 5, false, 1, 18)
+                self:_Draw('watermark_dot', 'circle', self._theming.accent, 103, watermarkDotCenter, 2, true, 1, 18)
+                -- text
+                self:_Draw('watermark_text', 'text', self._theming.text, 103, watermarkPos + Vector2.new(self._padding + 12, self._padding/2), watermarkContent, true)
             else
-                self._menu_drag = nil
+                self:_UndrawStartsWith('watermark_')
             end
 
-            -- draw the dropdown
-            local dropdown = self._active_dropdown
-            if dropdown then
-                local dropdownFade =  1 - (dropdown._spawned_at - (os.clock() - 0.25)) / 0.25
-                if dropdownFade < 1.1 then
-                    self:_SetOpacityStartsWith('dropdown_', clamp(dropdownFade, 0, 1))
+            -- notifications (glass cards, stacked)
+            local notificationsOrigin = watermarkPos + (self._watermark_enabled and Vector2.new(0, watermarkSize.y + self._padding) or Vector2.new(0, 0))
+            local totalNotificationsHeight = 0
+            local notifIdx = 1
+            while notifIdx <= #self._notifications do
+                local notification = self._notifications[notifIdx]
+                local shouldFade = os.clock() > notification._spawned_at + notification.time
+                local notificationText = notification.text
+                local notificationTextSize = self:_GetTextBounds(notificationText)
+
+                local t = math.max(0, math.min(notification._spawned_at - os.clock() + (shouldFade and notification.time + 1 or 1), 1))
+                local notificationFade = math.abs((shouldFade and 0 or 1) - (t * t * (3 - 2 * t)))
+
+                local notificationDrawId = 'notification_' .. notification._id
+                local notificationSize = Vector2.new(notificationTextSize.x + self._padding * 2 + 8, notificationTextSize.y + self._padding + 4)
+                local notificationOrigin = notificationsOrigin + Vector2.new((-notificationSize.x - 50) * (1 - notificationFade), totalNotificationsHeight)
+
+                local progressPercent = math.min((os.clock() - notification._spawned_at)/notification.time, 1)
+
+                -- body glass
+                self:_Draw(notificationDrawId .. '_body', 'rect', self._theming.body, 100, notificationOrigin, notificationSize, true)
+                -- accent stripe left
+                self:_Draw(notificationDrawId .. '_accent', 'rect', self._theming.accent, 102, notificationOrigin, Vector2.new(3, notificationSize.y), true)
+                -- outer crust
+                self:_Draw(notificationDrawId .. '_crust', 'rect', self._theming.crust, 101, notificationOrigin, notificationSize, false)
+                -- inner border
+                self:_Draw(notificationDrawId .. '_border', 'rect', self._theming.border1, 101, notificationOrigin + Vector2.new(1, 1), notificationSize - Vector2.new(2, 2), false)
+                -- progress bar bottom
+                self:_Draw(notificationDrawId .. '_progress', 'rect', self._theming.accent, 103, notificationOrigin + Vector2.new(3, notificationSize.y - 2), Vector2.new((notificationSize.x - 5) * progressPercent, 2), true)
+                -- text
+                self:_Draw(notificationDrawId .. '_text', 'text', self._theming.text, 103, notificationOrigin + Vector2.new(self._padding + 6, self._padding/2 + 1), notificationText, true)
+                self:_SetOpacityStartsWith(notificationDrawId, notificationFade)
+                -- re-apply glass body alpha on top of fade
+                self:_SetOpacity(notificationDrawId .. '_body', clamp(self._background_alpha + 0.03, 5/100, 1) * notificationFade)
+
+                totalNotificationsHeight = totalNotificationsHeight + (notificationTextSize.y + self._padding * 2 + 6) * notificationFade
+
+                if os.clock() - 1 > notification._spawned_at + notification.time then
+                    self:_RemoveDrawStartsWith(notificationDrawId)
+                    table.remove(self._notifications, notifIdx)
+                else
+                    notifIdx = notifIdx + 1
+                end
+            end
+
+            if self._menu_open then
+                -- keep menu on-screen even if window was resized while closed
+                local ssGuard = self:_GetScreenSize()
+                if self.x < -self.w + 60 then self.x = -self.w + 60 end
+                if self.x > ssGuard.x - 60 then self.x = ssGuard.x - 60 end
+                if self.y < 0 then self.y = 0 end
+                if self.y > ssGuard.y - self._topbar_h then self.y = ssGuard.y - self._topbar_h end
+
+                -- drag
+                if mouseHeld and self._menu_drag then
+                    local mousePos = self:_GetMousePos()
+                    local ss = self:_GetScreenSize()
+                    self.x = clamp(mousePos.x - self._menu_drag.x, -self.w + 60, ss.x - 60)
+                    self.y = clamp(mousePos.y - self._menu_drag.y, 0, ss.y - self._topbar_h)
+                else
+                    self._menu_drag = nil
                 end
 
-                local shouldCancel = true
-                local dropdownOrigin = dropdown.position
-                local totalHeight = self._padding
-                for i = 1, #dropdown.choices do
-                    local choice = dropdown.choices[i]
-                    local choiceFoundIndex = table.find(dropdown.value, choice)
-                    local labelSize = self:_GetTextBounds(choice)
+                -- esc closes open popups
+                if self:_IsKeyPressed('esc') then
+                    if self._active_dropdown then
+                        if self._active_dropdown._cancelCallback then self._active_dropdown._cancelCallback() end
+                        self:_RemoveDropdown()
+                    end
+                    if self._active_colorpicker then
+                        self:_RemoveColorpicker()
+                    end
+                end
 
-                    local choiceOrigin = Vector2.new(dropdownOrigin.x + self._padding, dropdownOrigin.y + totalHeight)
-                    local choiceSize = Vector2.new(dropdown.width, labelSize.y)
+                -- active dropdown popup
+                local dropdown = self._active_dropdown
+                if dropdown then
+                    local dropdownFade = 1 - (dropdown._spawned_at - (os.clock() - 0.25)) / 0.25
 
-                    local isHoveringChoice = self:_IsMouseWithinBounds(choiceOrigin, choiceSize)
-                    if isHoveringChoice and clickFrame then
-                        shouldCancel = not dropdown.multi
+                    -- cap visible items to keep popup reasonable
+                    local maxVisible = 10
+                    local totalChoices = #dropdown.choices
+                    local pageOffset = dropdown._page_offset or 0
+                    if pageOffset >= totalChoices or pageOffset < 0 then pageOffset = 0 end
+                    dropdown._page_offset = pageOffset
+                    local visibleChoices = math.min(totalChoices - pageOffset, maxVisible)
+                    local hasMorePages = totalChoices > maxVisible
 
-                        if dropdown.multi then
-                            if choiceFoundIndex then
-                                table.remove(dropdown.value, choiceFoundIndex)
+                    -- clamp popup to screen
+                    local screenSize = self:_GetScreenSize()
+                    local estimatedH = visibleChoices * (self._font_size + self._padding) + self._padding * 2 + (hasMorePages and (self._font_size + self._padding) or 0)
+                    local estimatedW = dropdown.width + self._padding * 2
+                    local clampedX = math.min(dropdown.position.x, screenSize.x - estimatedW - 4)
+                    local clampedY = math.min(dropdown.position.y, screenSize.y - estimatedH - 4)
+                    if clampedX < 4 then clampedX = 4 end
+                    if clampedY < 4 then clampedY = 4 end
+                    dropdown.position = Vector2.new(clampedX, clampedY)
+
+                    local shouldCancel = true
+                    local dropdownOrigin = dropdown.position
+                    local totalHeight = self._padding
+                    local currentHover = nil
+                    for i = 1, visibleChoices do
+                        local choice = dropdown.choices[pageOffset + i]
+                        local choiceFoundIndex = table.find(dropdown.value, choice)
+                        local choiceFont = dropdown.previewFonts and dropdown.previewFonts[choice] or nil
+                        local choicePreview = dropdown.previewColors and dropdown.previewColors[choice] or nil
+                        local labelSize = self:_GetTextBounds(choice, choiceFont)
+                        local choiceOrigin = Vector2.new(dropdownOrigin.x + self._padding, dropdownOrigin.y + totalHeight)
+                        local choiceSize = Vector2.new(dropdown.width, labelSize.y)
+                        -- expand hit area to include the padding gap for easier clicking
+                        local choiceHitOrigin = Vector2.new(choiceOrigin.x - 4, choiceOrigin.y - self._padding/2)
+                        local choiceHitSize = Vector2.new(choiceSize.x + 8, choiceSize.y + self._padding)
+
+                        local isHoveringChoice = self:_IsMouseWithinBounds(choiceHitOrigin, choiceHitSize)
+                        if isHoveringChoice then currentHover = choice end
+                        if isHoveringChoice and clickFrame then
+                            shouldCancel = not dropdown.multi
+                            if dropdown.multi then
+                                if choiceFoundIndex then
+                                    table.remove(dropdown.value, choiceFoundIndex)
+                                else
+                                    table.insert(dropdown.value, choice)
+                                end
                             else
-                                table.insert(dropdown.value, choice)
+                                dropdown.value = {choice}
                             end
-                        else
-                            dropdown.value = {choice}
+                            dropdown._committed = true
+                            if dropdown.callback then dropdown.callback(dropdown.value) end
                         end
 
-                        if dropdown.callback then
-                            dropdown.callback(dropdown.value)
+                        local choiceColor
+                        if choicePreview then
+                            -- preview mode: paint row with theme's own bg and use theme's text color
+                            self:_Draw('dropdown_preview_' .. tostring(i), 'rect', choicePreview.bg, 901, choiceHitOrigin, choiceHitSize, true)
+                            if isHoveringChoice or choiceFoundIndex then
+                                self:_Draw('dropdown_preview_brd_' .. tostring(i), 'rect', self._theming.accent, 902, choiceHitOrigin, choiceHitSize, false)
+                            else
+                                self:_Undraw('dropdown_preview_brd_' .. tostring(i))
+                            end
+                            choiceColor = choicePreview.fg
+                        else
+                            self:_Undraw('dropdown_preview_' .. tostring(i))
+                            self:_Undraw('dropdown_preview_brd_' .. tostring(i))
+                            if choiceFoundIndex then
+                                choiceColor = self._theming.accent
+                            elseif isHoveringChoice then
+                                choiceColor = self._theming.text
+                            else
+                                choiceColor = self._theming.subtext
+                            end
+                        end
+                        local truncChoice = self:_TruncateText(choice, dropdown.width - 4, choiceFont)
+                        self:_Draw('dropdown_choice_' .. tostring(i), 'text', choiceColor, 903, choiceOrigin, truncChoice, true, 'left', nil, choiceFont)
+
+                        -- thin left accent line for selected rows
+                        if choiceFoundIndex then
+                            local selLinePos = Vector2.new(choiceHitOrigin.x + 1, choiceHitOrigin.y + 2)
+                            local selLineSize = Vector2.new(1, choiceHitSize.y - 4)
+                            self:_Draw('dropdown_sel_line_' .. tostring(i), 'rect', choiceColor, 904, selLinePos, selLineSize, true)
+                        else
+                            self:_Undraw('dropdown_sel_line_' .. tostring(i))
+                        end
+
+                        totalHeight = totalHeight + labelSize.y + self._padding
+                    end
+
+                    -- pager: click to advance to next page; on last page, click wraps back to first
+                    if hasMorePages then
+                        local visibleEnd = pageOffset + visibleChoices
+                        local hasNext = visibleEnd < totalChoices
+                        local remaining = totalChoices - visibleEnd
+                        local moreText = hasNext
+                            and ('next ' .. tostring(math.min(maxVisible, remaining)) .. ' →')
+                            or '← back to start'
+                        local moreOrigin = Vector2.new(dropdownOrigin.x + self._padding, dropdownOrigin.y + totalHeight)
+                        local moreSize = self:_GetTextBounds(moreText, nil, 11)
+                        local moreHitOrigin = Vector2.new(moreOrigin.x - 4, moreOrigin.y - self._padding/2)
+                        local moreHitSize = Vector2.new(dropdown.width + 8, moreSize.y + self._padding)
+                        local isHoveringMore = self:_IsMouseWithinBounds(moreHitOrigin, moreHitSize)
+                        local moreColor = isHoveringMore and self._theming.text or self._theming.subtext
+                        self:_Draw('dropdown_more', 'text', moreColor, 902, moreOrigin, moreText, true, 'left', 11)
+                        if isHoveringMore and clickFrame then
+                            dropdown._page_offset = hasNext and visibleEnd or 0
+                            shouldCancel = false
+                            clickFrame = false
+                        end
+                        totalHeight = totalHeight + self._font_size + self._padding
+                    else
+                        self:_Undraw('dropdown_more')
+                    end
+
+                    -- cleanup stale choice drawings from larger previous lists
+                    for i = visibleChoices + 1, visibleChoices + 30 do
+                        self:_Undraw('dropdown_choice_' .. tostring(i))
+                        self:_Undraw('dropdown_preview_' .. tostring(i))
+                        self:_Undraw('dropdown_preview_brd_' .. tostring(i))
+                        self:_Undraw('dropdown_sel_line_' .. tostring(i))
+                    end
+
+                    local popSize = Vector2.new(dropdown.width + self._padding * 2, totalHeight)
+                    -- body
+                    self:_Draw('dropdown_body', 'rect', self._theming.body, 900, dropdownOrigin, popSize, true)
+                    -- crust and border
+                    self:_Draw('dropdown_crust', 'rect', self._theming.crust, 901, dropdownOrigin, popSize, false)
+                    self:_Draw('dropdown_border', 'rect', self._theming.border1, 901, dropdownOrigin + Vector2.new(1, 1), popSize - Vector2.new(2, 2), false)
+                    local dropdownFadeAlpha = clamp(dropdownFade, 0, 1)
+                    self:_SetOpacityStartsWith('dropdown_', dropdownFadeAlpha)
+                    self:_SetOpacity('dropdown_body', clamp(self._background_alpha + 0.03, 5/100, 1) * dropdownFadeAlpha)
+
+                    -- fire hover callback when the hovered row changes
+                    if currentHover ~= dropdown._last_hover then
+                        dropdown._last_hover = currentHover
+                        if dropdown._hoverCallback then dropdown._hoverCallback(currentHover) end
+                    end
+
+                    if clickFrame and shouldCancel then
+                        if not dropdown._committed and dropdown._cancelCallback then
+                            dropdown._cancelCallback()
+                        end
+                        self:_RemoveDropdown()
+                    end
+                    clickFrame = false
+                end
+
+                -- active colorpicker popup
+                local colorpicker = self._active_colorpicker
+                if colorpicker then
+                    local colorpickerFade = 1 - (colorpicker._spawned_at - (os.clock() - 0.25)) / 0.25
+
+                    -- clamp popup to screen
+                    local cpScreenSize = self:_GetScreenSize()
+                    local cpW, cpH = 220, 220
+                    local cpX = math.min(colorpicker.position.x, cpScreenSize.x - cpW - 4)
+                    local cpY = math.min(colorpicker.position.y, cpScreenSize.y - cpH - 4)
+                    if cpX < 4 then cpX = 4 end
+                    if cpY < 4 then cpY = 4 end
+                    colorpicker.position = Vector2.new(cpX, cpY)
+
+                    local shouldCancel = true
+                    local colorpickerSize = Vector2.new(cpW, cpH)
+                    local colorpickerOrigin = colorpicker.position
+                    local colorpickerTitle = tostring(colorpicker.label or 'Color')
+                    local colorpickerTitleSize = self:_GetTextBounds(colorpickerTitle)
+
+                    -- body glass
+                    self:_Draw('colorpicker_body', 'rect', self._theming.body, 900, colorpickerOrigin, colorpickerSize, true)
+                    self:_Draw('colorpicker_crust', 'rect', self._theming.crust, 901, colorpickerOrigin, colorpickerSize, false)
+                    self:_Draw('colorpicker_border', 'rect', self._theming.border1, 901, colorpickerOrigin + Vector2.new(1, 1), colorpickerSize - Vector2.new(2, 2), false)
+                    self:_Draw('colorpicker_title', 'text', self._theming.text, 902, colorpickerOrigin + Vector2.new(self._padding, self._padding/2 + 2), colorpickerTitle, true)
+
+                    local palleteContentPos = colorpickerOrigin + Vector2.new(self._padding, self._padding + colorpickerTitleSize.y + 6)
+                    local palleteContentSize = colorpickerSize - Vector2.new(self._padding * 2, self._padding * 2 + colorpickerTitleSize.y + 6)
+
+                    local mousePos = self:_GetMousePos()
+                    local palleteSize = palleteContentSize
+                    local hueSize = Vector2.new(palleteSize.x, 10)
+                    palleteSize = palleteSize - Vector2.new(0, hueSize.y + self._padding)
+                    local palletePos = palleteContentPos
+                    local huePos = palletePos + Vector2.new(0, palleteSize.y + self._padding)
+
+                    -- drag state machine: once started, continues until mouse released even when outside bounds
+                    if not mouseHeld then
+                        colorpicker._drag_target = nil
+                    end
+                    if mouseHeld and not colorpicker._drag_target then
+                        if self:_IsMouseWithinBounds(huePos, hueSize) then
+                            colorpicker._drag_target = 'hue'
+                        elseif self:_IsMouseWithinBounds(palletePos, palleteSize) then
+                            colorpicker._drag_target = 'palette'
+                        end
+                    end
+                    if colorpicker._drag_target == 'hue' and mouseHeld then
+                        local cx = clamp((mousePos.x - huePos.x) / hueSize.x, 0, 0.9999)
+                        colorpicker._h = cx
+                        shouldCancel = false
+                    elseif colorpicker._drag_target == 'palette' and mouseHeld then
+                        local sx = clamp((mousePos.x - palletePos.x) / palleteSize.x, 0, 1)
+                        local vy = clamp((mousePos.y - palletePos.y) / palleteSize.y, 0, 1)
+                        colorpicker._s = sx
+                        colorpicker._v = 1 - vy
+                        shouldCancel = false
+                    end
+                    -- also treat any click within the popup body as a non-cancel
+                    if self:_IsMouseWithinBounds(colorpickerOrigin, colorpickerSize) then
+                        shouldCancel = false
+                    end
+
+                    -- only apply opacity during fade-in (matches the v1 working colorpicker pattern).
+                    -- after fade completes each draw keeps its own last-set alpha: gradient segments
+                    -- retain their per-segment targetAlpha (set inside _Draw), non-gradient draws stay
+                    -- at the final fade value (~= 1). per-frame overriding races with Matcha's drawing
+                    -- backend and causes an intermittent black flash over the SV palette.
+                    if colorpickerFade < 1.1 then
+                        local colorpickerFadeAlpha = clamp(colorpickerFade, 0, 1)
+                        self:_SetOpacityStartsWith('colorpicker_', colorpickerFadeAlpha)
+                        self:_SetOpacity('colorpicker_body', clamp(self._background_alpha + 0.03, 5/100, 1) * colorpickerFadeAlpha)
+                    end
+
+                    local hueColor = Color3.fromHSV(colorpicker._h, 1, 1)
+                    self:_Draw('colorpicker_pallete_color', 'gradient', nil, 903, 'horizontal', palletePos, palleteSize, Color3.fromRGB(255, 255, 255), hueColor)
+                    self:_Draw('colorpicker_pallete_fade', 'gradient', nil, 904, 'vertical', palletePos, palleteSize, {R=0, G=0, B=0, A=0}, {R=0, G=0, B=0, A=1})
+                    self:_Draw('colorpicker_pallete_hue', 'gradient', nil, 903, 'horizontal', huePos, hueSize,
+                        Color3.fromRGB(255, 0, 0),
+                        Color3.fromRGB(255, 255, 0),
+                        Color3.fromRGB(0, 255, 0),
+                        Color3.fromRGB(0, 255, 255),
+                        Color3.fromRGB(0, 0, 255),
+                        Color3.fromRGB(255, 0, 255),
+                        Color3.fromRGB(255, 0, 0)
+                    )
+
+                    local newColor = Color3.fromHSV(colorpicker._h, colorpicker._s, colorpicker._v)
+                    -- only fire callback if color actually changed (avoids per-frame callback spam)
+                    local lc = colorpicker._last_color
+                    if not lc or lc.R ~= newColor.R or lc.G ~= newColor.G or lc.B ~= newColor.B then
+                        colorpicker._last_color = newColor
+                        if colorpicker.callback then colorpicker.callback(newColor) end
+                    end
+
+                    -- palette cursor (small crosshair: outer + inner squares), clamped to stay on-palette
+                    local cursorX = palletePos.x + palleteSize.x * colorpicker._s - 3
+                    local cursorY = palletePos.y + palleteSize.y * (1 - colorpicker._v) - 3
+                    if cursorX < palletePos.x then cursorX = palletePos.x end
+                    if cursorX > palletePos.x + palleteSize.x - 6 then cursorX = palletePos.x + palleteSize.x - 6 end
+                    if cursorY < palletePos.y then cursorY = palletePos.y end
+                    if cursorY > palletePos.y + palleteSize.y - 6 then cursorY = palletePos.y + palleteSize.y - 6 end
+                    self:_Draw('colorpicker_palette_cursor_out', 'rect', Color3.fromRGB(0, 0, 0), 912, Vector2.new(cursorX, cursorY), Vector2.new(6, 6), false)
+                    self:_Draw('colorpicker_palette_cursor_in', 'rect', Color3.fromRGB(255, 255, 255), 913, Vector2.new(cursorX + 1, cursorY + 1), Vector2.new(4, 4), false)
+
+                    -- hue bar marker (thin vertical line), clamped to bar bounds
+                    local hueCursorX = huePos.x + hueSize.x * colorpicker._h
+                    if hueCursorX < huePos.x + 1 then hueCursorX = huePos.x + 1 end
+                    if hueCursorX > huePos.x + hueSize.x - 1 then hueCursorX = huePos.x + hueSize.x - 1 end
+                    self:_Draw('colorpicker_hue_cursor_out', 'rect', Color3.fromRGB(0, 0, 0), 912, Vector2.new(hueCursorX - 1, huePos.y - 1), Vector2.new(3, hueSize.y + 2), false)
+                    self:_Draw('colorpicker_hue_cursor_in', 'rect', Color3.fromRGB(255, 255, 255), 913, Vector2.new(hueCursorX, huePos.y), Vector2.new(1, hueSize.y), true)
+
+                    -- current color preview swatch (top-right of popup)
+                    local previewSize = Vector2.new(24, colorpickerTitleSize.y + 2)
+                    local previewPos = Vector2.new(colorpickerOrigin.x + colorpickerSize.x - previewSize.x - self._padding, colorpickerOrigin.y + self._padding - 1)
+                    self:_Draw('colorpicker_preview', 'rect', newColor, 904, previewPos, previewSize, true)
+                    self:_Draw('colorpicker_preview_border', 'rect', self._theming.crust, 905, previewPos, previewSize, false)
+
+                    -- hex code below preview
+                    local hex = string.format('#%02X%02X%02X', math.floor(newColor.R * 255 + 0.5), math.floor(newColor.G * 255 + 0.5), math.floor(newColor.B * 255 + 0.5))
+                    local hexSize = self:_GetTextBounds(hex, nil, 11)
+                    self:_Draw('colorpicker_hex', 'text', self._theming.subtext, 905, Vector2.new(previewPos.x + previewSize.x - hexSize.x, previewPos.y + previewSize.y + 4), hex, true, 'left', 11)
+
+                    if clickFrame and shouldCancel then
+                        self:_RemoveColorpicker()
+                    end
+                    clickFrame = false
+                end
+
+                -- menu frame (glassmorphism sidebar)
+                local tooltipPending = nil
+                local sidebarW = self._sidebar_w
+                local topbarH = self._topbar_h
+
+                -- neon glow
+                local glowMode = self._glow_mode or 'Static'
+                -- clean up on mode change
+                if glowMode ~= self._glow_last_mode then
+                    self:_UndrawStartsWith('menu_glow_')
+                    self._glow_rot_count = 0
+                    self._glow_last_mode = glowMode
+                end
+                if self._glow_enabled then
+                    local glowColor = self._glow_color or self._theming.accent
+                    local mx, my, mw, mh = self.x, self.y, self.w, self.h
+                    local now = os.clock()
+
+                    if glowMode == 'Rotate' then
+                        -- smooth 360 rotation: each edge split into segments
+                        local glowPeak = (self._glow_r_intensity or 50) / 100
+                        local layers = self._glow_r_radius or 9
+                        local segs = 18
+                        local totalSegs = segs * 4
+                        local speed = self._glow_r_speed or 3
+                        local wormW = (self._glow_r_worm or 40) / 200
+                        if wormW < 0.05 then wormW = 0.05 end
+                        local phase = ((now * speed) % 6.28318) / 6.28318
+                        local segCount = 0
+
+                        for gi = 1, layers do
+                            local layerAlpha = (1 - (gi - 1) / layers) * glowPeak
+                            local edgeW = mw + gi * 2
+                            local edgeH = mh + gi * 2 - 2
+                            local segW = edgeW / segs
+                            local segH = edgeH / segs
+
+                            for edge = 0, 3 do
+                                for si = 0, segs - 1 do
+                                    segCount = segCount + 1
+                                    local t = (edge * segs + si + 0.5) / totalSegs
+                                    -- signed circular distance (positive = behind worm, negative = ahead)
+                                    local rawDiff = t - phase
+                                    if rawDiff > 0.5 then rawDiff = rawDiff - 1 end
+                                    if rawDiff < -0.5 then rawDiff = rawDiff + 1 end
+                                    -- asymmetric: leading edge sharp, trailing tail long
+                                    local diff
+                                    if rawDiff < 0 then
+                                        diff = -rawDiff / (wormW * 0.3)  -- ahead: sharp falloff
+                                    else
+                                        diff = rawDiff / wormW           -- behind: long tail
+                                    end
+                                    local bright = 0.08 + 0.92 * ((diff < 1) and (1 - diff) * (1 - diff) or 0)
+
+                                    local sx, sy, sw, sh
+                                    if edge == 0 then
+                                        sx = mx - gi + si * segW
+                                        sy = my - gi
+                                        sw = math.floor(segW + 1)
+                                        sh = 1
+                                    elseif edge == 1 then
+                                        sx = mx + mw + gi - 1
+                                        sy = my - gi + 1 + si * segH
+                                        sw = 1
+                                        sh = math.floor(segH + 1)
+                                    elseif edge == 2 then
+                                        sx = mx - gi + (segs - 1 - si) * segW
+                                        sy = my + mh + gi - 1
+                                        sw = math.floor(segW + 1)
+                                        sh = 1
+                                    else
+                                        sx = mx - gi
+                                        sy = my - gi + 1 + (segs - 1 - si) * segH
+                                        sw = 1
+                                        sh = math.floor(segH + 1)
+                                    end
+
+                                    local sid = 'menu_glow_r' .. tostring(segCount)
+                                    self:_Draw(sid, 'rect', glowColor, 0, Vector2.new(sx, sy), Vector2.new(sw, sh), true)
+                                    self:_SetOpacity(sid, layerAlpha * bright)
+                                end
+                            end
+                        end
+                        -- cleanup excess from previous frame
+                        local prevMax = self._glow_rot_count or 0
+                        for i = segCount + 1, prevMax do
+                            self:_Undraw('menu_glow_r' .. tostring(i))
+                        end
+                        self._glow_rot_count = segCount
+                    else
+                        local effectiveRadius, glowPeak, peakMul
+                        if glowMode == 'Static' then
+                            effectiveRadius = self._glow_s_radius or 10
+                            glowPeak = (self._glow_s_intensity or 50) / 100
+                            peakMul = 1
+                        elseif glowMode == 'Breathe' then
+                            effectiveRadius = self._glow_b_radius or 14
+                            glowPeak = (self._glow_b_intensity or 70) / 100
+                            local speed = self._glow_b_speed or 2
+                            local freq = (speed > 0) and (6.28318 / speed) or 1
+                            local raw = math.sin(now * freq) * 0.5 + 0.5
+                            local smooth = raw * raw * (3 - 2 * raw)
+                            peakMul = 0.3 + 0.7 * smooth
+                        elseif glowMode == 'test' then
+                            -- rounded glow using static params, no square corners
+                            effectiveRadius = self._glow_s_radius or 10
+                            glowPeak = (self._glow_s_intensity or 50) / 100
+                            peakMul = 1
+                        else
+                            effectiveRadius = 10
+                            glowPeak = 0.5
+                            peakMul = 1
+                        end
+                        if glowMode == 'test' then
+                            local testMethod = self._glow_test_method or 1
+                            local testSegCount = 0
+                            local halfpi = 1.5707963
+
+                            for gi = 1, effectiveRadius do
+                                local glowAlpha = (1 - (gi - 1) / effectiveRadius) * glowPeak * peakMul
+
+                                if testMethod == 1 then
+                                    -- METHOD 1: polyline quarter arcs + full-length edges
+                                    local eT = 'menu_glow_te' .. tostring(gi)
+                                    local eB = 'menu_glow_be' .. tostring(gi)
+                                    local eL = 'menu_glow_le' .. tostring(gi)
+                                    local eR = 'menu_glow_re' .. tostring(gi)
+                                    self:_Draw(eT, 'rect', glowColor, 0, Vector2.new(mx, my - gi),             Vector2.new(mw, 1), true)
+                                    self:_Draw(eB, 'rect', glowColor, 0, Vector2.new(mx, my + mh + gi - 1),    Vector2.new(mw, 1), true)
+                                    self:_Draw(eL, 'rect', glowColor, 0, Vector2.new(mx - gi, my),             Vector2.new(1, mh), true)
+                                    self:_Draw(eR, 'rect', glowColor, 0, Vector2.new(mx + mw + gi - 1, my),    Vector2.new(1, mh), true)
+                                    self:_SetOpacity(eT, glowAlpha)
+                                    self:_SetOpacity(eB, glowAlpha)
+                                    self:_SetOpacity(eL, glowAlpha)
+                                    self:_SetOpacity(eR, glowAlpha)
+                                    local arcSegs = math.max(4, math.floor(gi * 0.7) + 3)
+                                    for corner = 0, 3 do
+                                        local cx, cy, startTheta
+                                        if corner == 0 then       cx, cy, startTheta = mx,      my,      3.1415927
+                                        elseif corner == 1 then   cx, cy, startTheta = mx + mw, my,      -halfpi
+                                        elseif corner == 2 then   cx, cy, startTheta = mx + mw, my + mh, 0
+                                        else                       cx, cy, startTheta = mx,      my + mh, halfpi
+                                        end
+                                        local prevX = cx + math.cos(startTheta) * gi
+                                        local prevY = cy + math.sin(startTheta) * gi
+                                        for seg = 1, arcSegs do
+                                            local t = startTheta + (seg / arcSegs) * halfpi
+                                            local curX = cx + math.cos(t) * gi
+                                            local curY = cy + math.sin(t) * gi
+                                            testSegCount = testSegCount + 1
+                                            local sid = 'menu_glow_ta' .. tostring(testSegCount)
+                                            self:_Draw(sid, 'line', glowColor, 0, Vector2.new(prevX, prevY), Vector2.new(curX, curY), 1)
+                                            self:_SetOpacity(sid, glowAlpha)
+                                            prevX, prevY = curX, curY
+                                        end
+                                    end
+
+                                elseif testMethod == 2 then
+                                    -- METHOD 2: full circle outlines at each corner + full-length edges (accepts overlap)
+                                    local eT = 'menu_glow_te' .. tostring(gi)
+                                    local eB = 'menu_glow_be' .. tostring(gi)
+                                    local eL = 'menu_glow_le' .. tostring(gi)
+                                    local eR = 'menu_glow_re' .. tostring(gi)
+                                    self:_Draw(eT, 'rect', glowColor, 0, Vector2.new(mx, my - gi),             Vector2.new(mw, 1), true)
+                                    self:_Draw(eB, 'rect', glowColor, 0, Vector2.new(mx, my + mh + gi - 1),    Vector2.new(mw, 1), true)
+                                    self:_Draw(eL, 'rect', glowColor, 0, Vector2.new(mx - gi, my),             Vector2.new(1, mh), true)
+                                    self:_Draw(eR, 'rect', glowColor, 0, Vector2.new(mx + mw + gi - 1, my),    Vector2.new(1, mh), true)
+                                    self:_SetOpacity(eT, glowAlpha)
+                                    self:_SetOpacity(eB, glowAlpha)
+                                    self:_SetOpacity(eL, glowAlpha)
+                                    self:_SetOpacity(eR, glowAlpha)
+                                    local sides = math.max(12, gi * 4)
+                                    for corner = 0, 3 do
+                                        local cx, cy
+                                        if corner == 0 then       cx, cy = mx,      my
+                                        elseif corner == 1 then   cx, cy = mx + mw, my
+                                        elseif corner == 2 then   cx, cy = mx + mw, my + mh
+                                        else                       cx, cy = mx,      my + mh
+                                        end
+                                        testSegCount = testSegCount + 1
+                                        local sid = 'menu_glow_ta' .. tostring(testSegCount)
+                                        self:_Draw(sid, 'circle', glowColor, 0, Vector2.new(cx, cy), gi, false, 1, sides)
+                                        self:_SetOpacity(sid, glowAlpha)
+                                    end
+
+                                elseif testMethod == 3 then
+                                    -- METHOD 3: trimmed edges (stop before corner) + full circle outlines at corners
+                                    local trim = gi
+                                    if trim * 2 >= mw then trim = math.floor(mw / 2) - 1 end
+                                    if trim * 2 >= mh then trim = math.min(trim, math.floor(mh / 2) - 1) end
+                                    if trim < 0 then trim = 0 end
+                                    local eT = 'menu_glow_te' .. tostring(gi)
+                                    local eB = 'menu_glow_be' .. tostring(gi)
+                                    local eL = 'menu_glow_le' .. tostring(gi)
+                                    local eR = 'menu_glow_re' .. tostring(gi)
+                                    self:_Draw(eT, 'rect', glowColor, 0, Vector2.new(mx + trim, my - gi),             Vector2.new(math.max(1, mw - trim * 2), 1), true)
+                                    self:_Draw(eB, 'rect', glowColor, 0, Vector2.new(mx + trim, my + mh + gi - 1),    Vector2.new(math.max(1, mw - trim * 2), 1), true)
+                                    self:_Draw(eL, 'rect', glowColor, 0, Vector2.new(mx - gi, my + trim),             Vector2.new(1, math.max(1, mh - trim * 2)), true)
+                                    self:_Draw(eR, 'rect', glowColor, 0, Vector2.new(mx + mw + gi - 1, my + trim),    Vector2.new(1, math.max(1, mh - trim * 2)), true)
+                                    self:_SetOpacity(eT, glowAlpha)
+                                    self:_SetOpacity(eB, glowAlpha)
+                                    self:_SetOpacity(eL, glowAlpha)
+                                    self:_SetOpacity(eR, glowAlpha)
+                                    local sides = math.max(12, gi * 4)
+                                    for corner = 0, 3 do
+                                        local cx, cy
+                                        if corner == 0 then       cx, cy = mx + trim,      my + trim
+                                        elseif corner == 1 then   cx, cy = mx + mw - trim, my + trim
+                                        elseif corner == 2 then   cx, cy = mx + mw - trim, my + mh - trim
+                                        else                       cx, cy = mx + trim,      my + mh - trim
+                                        end
+                                        testSegCount = testSegCount + 1
+                                        local sid = 'menu_glow_ta' .. tostring(testSegCount)
+                                        self:_Draw(sid, 'circle', glowColor, 0, Vector2.new(cx, cy), gi + trim, false, 1, sides)
+                                        self:_SetOpacity(sid, glowAlpha)
+                                    end
+
+                                elseif testMethod == 4 then
+                                    -- METHOD 4: dotted perimeter — tiny filled circles spaced along rounded path
+                                    -- spacing scales with gi so inner layers aren't insanely dense; capped to stay under ~400 dots per layer
+                                    local perim = 2 * (mw + mh) + (6.28318 * gi)
+                                    local dotSpacing = math.max(4, gi + 2)
+                                    local dotCount = math.min(400, math.max(8, math.floor(perim / dotSpacing)))
+                                    -- walk perimeter: 4 straight edges + 4 quarter arcs
+                                    local edgeT_len = mw
+                                    local edgeR_len = mh
+                                    local arc_len = 1.5707963 * gi
+                                    local totalLen = 2 * (edgeT_len + edgeR_len) + 4 * arc_len
+                                    for d = 0, dotCount - 1 do
+                                        local distAlong = (d / dotCount) * totalLen
+                                        local px, py
+                                        -- segment order: topEdge, topRightArc, rightEdge, bottomRightArc, bottomEdge, bottomLeftArc, leftEdge, topLeftArc
+                                        if distAlong < edgeT_len then
+                                            px = mx + distAlong
+                                            py = my - gi
+                                        else distAlong = distAlong - edgeT_len
+                                            if distAlong < arc_len then
+                                                local t = -halfpi + (distAlong / arc_len) * halfpi
+                                                px = mx + mw + math.cos(t) * gi
+                                                py = my + math.sin(t) * gi
+                                            else distAlong = distAlong - arc_len
+                                                if distAlong < edgeR_len then
+                                                    px = mx + mw + gi
+                                                    py = my + distAlong
+                                                else distAlong = distAlong - edgeR_len
+                                                    if distAlong < arc_len then
+                                                        local t = 0 + (distAlong / arc_len) * halfpi
+                                                        px = mx + mw + math.cos(t) * gi
+                                                        py = my + mh + math.sin(t) * gi
+                                                    else distAlong = distAlong - arc_len
+                                                        if distAlong < edgeT_len then
+                                                            px = mx + mw - distAlong
+                                                            py = my + mh + gi
+                                                        else distAlong = distAlong - edgeT_len
+                                                            if distAlong < arc_len then
+                                                                local t = halfpi + (distAlong / arc_len) * halfpi
+                                                                px = mx + math.cos(t) * gi
+                                                                py = my + mh + math.sin(t) * gi
+                                                            else distAlong = distAlong - arc_len
+                                                                if distAlong < edgeR_len then
+                                                                    px = mx - gi
+                                                                    py = my + mh - distAlong
+                                                                else distAlong = distAlong - edgeR_len
+                                                                    local t = 3.1415927 + (distAlong / arc_len) * halfpi
+                                                                    px = mx + math.cos(t) * gi
+                                                                    py = my + math.sin(t) * gi
+                                                                end
+                                                            end
+                                                        end
+                                                    end
+                                                end
+                                            end
+                                        end
+                                        testSegCount = testSegCount + 1
+                                        local sid = 'menu_glow_ta' .. tostring(testSegCount)
+                                        self:_Draw(sid, 'circle', glowColor, 0, Vector2.new(px, py), 1, true, 1, 8)
+                                        self:_SetOpacity(sid, glowAlpha)
+                                    end
+                                end
+                            end
+                            -- cleanup leftover edges/arcs beyond effective radius
+                            for gi = effectiveRadius + 1, 20 do
+                                self:_Undraw('menu_glow_te' .. tostring(gi))
+                                self:_Undraw('menu_glow_be' .. tostring(gi))
+                                self:_Undraw('menu_glow_le' .. tostring(gi))
+                                self:_Undraw('menu_glow_re' .. tostring(gi))
+                            end
+                            local prevArcMax = self._glow_test_arc_count or 0
+                            for i = testSegCount + 1, prevArcMax do
+                                self:_Undraw('menu_glow_ta' .. tostring(i))
+                            end
+                            self._glow_test_arc_count = testSegCount
+                            -- kill square-corner remnants from other modes
+                            for gi = 1, 20 do
+                                self:_Undraw('menu_glow_' .. tostring(gi))
+                            end
+                        else
+                            -- static / breathe: concentric square outlines
+                            for gi = 1, effectiveRadius do
+                                local glowAlpha = (1 - (gi - 1) / effectiveRadius) * glowPeak * peakMul
+                                self:_Draw('menu_glow_' .. tostring(gi), 'rect', glowColor, 0, Vector2.new(mx - gi, my - gi), Vector2.new(mw + gi * 2, mh + gi * 2), false)
+                                self:_SetOpacity('menu_glow_' .. tostring(gi), glowAlpha)
+                            end
+                            for gi = effectiveRadius + 1, 20 do
+                                self:_Undraw('menu_glow_' .. tostring(gi))
+                            end
+                            -- kill test-mode remnants
+                            for gi = 1, 20 do
+                                self:_Undraw('menu_glow_te' .. tostring(gi))
+                                self:_Undraw('menu_glow_be' .. tostring(gi))
+                                self:_Undraw('menu_glow_le' .. tostring(gi))
+                                self:_Undraw('menu_glow_re' .. tostring(gi))
+                            end
+                            local prevArcMax = self._glow_test_arc_count or 0
+                            for i = 1, prevArcMax do
+                                self:_Undraw('menu_glow_ta' .. tostring(i))
+                            end
+                            self._glow_test_arc_count = 0
+                        end
+                    end
+                else
+                    self:_UndrawStartsWith('menu_glow_')
+                    self._glow_rot_count = 0
+                    self._glow_test_arc_count = 0
+                end
+
+                -- main body fill (glass)
+                self:_Draw('menu_body', 'rect', self._theming.body, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
+
+                -- overlay (glass sheen) - thin lighter layer on top of body
+                self:_Draw('menu_overlay', 'rect', self._theming.surface1, 2, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
+
+                -- outer + inner menu border
+                self:_Draw('menu_border_out', 'rect', self._theming.crust, 20, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), false)
+                self:_Draw('menu_border_in', 'rect', self._theming.border1, 20, Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, self.h - 2), false)
+                -- top accent line (2px)
+                self:_Draw('menu_accent_top', 'rect', self._theming.accent, 21, Vector2.new(self.x, self.y + 1), Vector2.new(self.w, 2), true)
+
+
+                -- topbar
+                local topbarPos = Vector2.new(self.x, self.y)
+                local topbarSize = Vector2.new(self.w, topbarH)
+                self:_Draw('menu_topbar_bg', 'rect', self._theming.surface0, 6, topbarPos, Vector2.new(self.w, topbarH), true)
+                self:_Draw('menu_topbar_div', 'rect', self._theming.border1, 7, Vector2.new(self.x, self.y + topbarH), Vector2.new(self.w, 1), true)
+                local menuDotCenter = Vector2.new(self.x + self._padding + 7, self.y + topbarH / 2 + 1)
+                self:_Draw('menu_topbar_dot_ring', 'circle', self._theming.border1, 8, menuDotCenter, 5, false, 1, 18)
+                self:_Draw('menu_topbar_dot', 'circle', self._theming.accent, 9, menuDotCenter, 2, true, 1, 18)
+                self:_Draw('menu_topbar_title', 'text', self._theming.text, 8, Vector2.new(self.x + self._padding + 20, self.y + topbarH/2 - 7), menuTitle, true)
+
+                -- sidebar
+                local sidebarPos = Vector2.new(self.x + 1, self.y + topbarH + 1)
+                local sidebarSize = Vector2.new(sidebarW - 1, self.h - topbarH - 2)
+                self:_Draw('menu_sidebar_bg', 'rect', self._theming.surface0, 6, sidebarPos, sidebarSize, true)
+                -- vertical separator between sidebar and content
+                self:_Draw('menu_sidebar_sep', 'rect', self._theming.border1, 7, Vector2.new(self.x + sidebarW, self.y + topbarH + 1), Vector2.new(1, self.h - topbarH - 2), true)
+
+                -- content area bounds
+                local contentX = self.x + sidebarW + 1
+                local contentY = self.y + topbarH + 1
+                local contentW = self.w - sidebarW - 2
+                local contentH = self.h - topbarH - 2
+                local contentPad = 14
+
+                -- sidebar tab buttons
+                local tabCount = #self._tab_order
+                local tabAreaStartY = sidebarPos.y + 12
+                local tabAreaEndY = sidebarPos.y + sidebarSize.y - 12
+                local tabBtnH = self._tab_btn_h
+                local tabBtnGap = 4
+                local tabGroupHeaderH = 16
+                local visibleTabs = {}
+                local tabCursorY = tabAreaStartY
+
+                for i = 1, tabCount do
+                    local tabName = self._tab_order[i]
+                    local tabData = self._tree[tabName]
+                    local sidebarGroup = tabData and tabData._sidebar_group or nil
+                    local prevGrouped = false
+                    local nextGrouped = false
+                    if sidebarGroup then
+                        if i > 1 then
+                            local prevTabName = self._tab_order[i - 1]
+                            local prevTabData = self._tree[prevTabName]
+                            prevGrouped = prevTabData and prevTabData._sidebar_group == sidebarGroup or false
+                        end
+                        if i < tabCount then
+                            local nextTabName = self._tab_order[i + 1]
+                            local nextTabData = self._tree[nextTabName]
+                            nextGrouped = nextTabData and nextTabData._sidebar_group == sidebarGroup or false
                         end
                     end
 
-                    local choiceColor = choiceFoundIndex and self._theming.accent or self._theming.subtext
-                    self:_Draw('dropdown_choice_' .. tostring(i), 'text', choiceColor, 102, choiceOrigin, choice, true)
+                    local groupTitle = nil
+                    local isFirstGrouped = sidebarGroup and not prevGrouped
+                    if isFirstGrouped then
+                        for groupIndex = i, tabCount do
+                            local groupTabName = self._tab_order[groupIndex]
+                            local groupTabData = self._tree[groupTabName]
+                            if not groupTabData or groupTabData._sidebar_group ~= sidebarGroup then
+                                break
+                            end
+                            if groupTabData._sidebar_group_title and groupTabData._sidebar_group_title ~= '' then
+                                groupTitle = tostring(groupTabData._sidebar_group_title)
+                                break
+                            end
+                        end
+                    end
 
-                    totalHeight = totalHeight + labelSize.y + self._padding
+                    local groupTitleText = nil
+                    local groupHeaderHeight = 0
+                    if groupTitle then
+                        groupTitleText = self:_TruncateText(groupTitle, sidebarW - 38, nil, 10)
+                        if groupTitleText and groupTitleText ~= '' then
+                            groupHeaderHeight = tabGroupHeaderH
+                        else
+                            groupTitleText = nil
+                        end
+                    end
+
+                    local btnPos = Vector2.new(sidebarPos.x + 8, tabCursorY + groupHeaderHeight)
+                    local btnSize = Vector2.new(sidebarW - 17, tabBtnH)
+                    if btnPos.y + btnSize.y > tabAreaEndY then
+                        break
+                    end
+
+                    table.insert(visibleTabs, {
+                        drawId = 'menu_tab_' .. tostring(#visibleTabs + 1),
+                        name = tabName,
+                        data = tabData,
+                        index = i,
+                        sidebarGroup = sidebarGroup,
+                        btnPos = btnPos,
+                        btnSize = btnSize,
+                        headerY = tabCursorY,
+                        headerText = groupTitleText,
+                    })
+
+                    tabCursorY = btnPos.y + btnSize.y + tabBtnGap
                 end
 
-                self:_Draw('dropdown_crust', 'rect', self._theming.crust, 100, dropdownOrigin, Vector2.new(dropdown.width, totalHeight), false)
-                self:_Draw('dropdown_body', 'rect', self._theming.surface0, 101, dropdownOrigin + Vector2.new(1, 1), Vector2.new(dropdown.width - 2, totalHeight - 2), true)
+                local visibleTabCount = #visibleTabs
+                for visibleIndex = 1, visibleTabCount do
+                    local layout = visibleTabs[visibleIndex]
+                    local tabName = layout.name
+                    local tabData = layout.data
+                    local isOpen = self._open_tab == tabName
+                    local tabDrawId = layout.drawId
+                    local btnPos = layout.btnPos
+                    local btnSize = layout.btnSize
+                    local sidebarGroup = layout.sidebarGroup
+                    local prevLayout = visibleIndex > 1 and visibleTabs[visibleIndex - 1] or nil
+                    local nextLayout = visibleIndex < visibleTabCount and visibleTabs[visibleIndex + 1] or nil
+                    local prevGrouped = prevLayout and prevLayout.sidebarGroup == sidebarGroup or false
+                    local nextGrouped = nextLayout and nextLayout.sidebarGroup == sidebarGroup or false
+                    local showGroupBracket = sidebarGroup and (prevGrouped or nextGrouped or layout.headerText ~= nil)
 
-                if clickFrame and shouldCancel then
-                    self:_RemoveDropdown()
+                    local isHoveringTab = self:_IsMouseWithinBounds(btnPos, btnSize)
+                    local tabOpenAnim = self:_StepAnim(tabDrawId .. '_open_anim', isOpen and 1 or 0, 18)
+                    local tabHoverAnim = self:_StepAnim(tabDrawId .. '_hover_anim', (isHoveringTab and not isOpen) and 1 or 0, 18)
+                    local tabBgAlpha = math.max(tabOpenAnim, tabHoverAnim * 0.9)
+                    if tabBgAlpha > 0.01 then
+                        local tabBgColor = self:_LerpColor(self._theming.border0, self._theming.surface1, tabOpenAnim)
+                        self:_Draw(tabDrawId .. '_bg', 'rect', tabBgColor, 8, btnPos, btnSize, true)
+                        self:_SetOpacity(tabDrawId .. '_bg', tabBgAlpha)
+                    else
+                        self:_Undraw(tabDrawId .. '_bg')
+                    end
+                    if tabOpenAnim > 0.01 then
+                        local stripW = math.max(1, math.floor(3 * tabOpenAnim + 0.5))
+                        self:_Draw(tabDrawId .. '_strip', 'rect', self._theming.accent, 10, btnPos, Vector2.new(stripW, btnSize.y), true)
+                        self:_SetOpacity(tabDrawId .. '_strip', tabOpenAnim)
+                        self:_Draw(tabDrawId .. '_border', 'rect', self._theming.border1, 9, btnPos, btnSize, false)
+                        self:_SetOpacity(tabDrawId .. '_border', tabOpenAnim)
+                    else
+                        self:_Undraw(tabDrawId .. '_strip')
+                        self:_Undraw(tabDrawId .. '_border')
+                    end
+
+                    local labelColor = self:_LerpColor(self._theming.subtext, self._theming.text, clamp(tabOpenAnim + tabHoverAnim * 0.85, 0, 1))
+                    if showGroupBracket then
+                        local openTabData = self._open_tab and self._tree[self._open_tab] or nil
+                        local groupActive = openTabData and openTabData._sidebar_group == sidebarGroup or false
+                        local bracketColor = isOpen and self._theming.text or (groupActive and self._theming.text or self._theming.border1)
+                        local bracketX = btnPos.x + 8
+                        local bracketTopY = layout.headerText and (layout.headerY + 7) or (btnPos.y + 6)
+                        local bracketBottomY = btnPos.y + btnSize.y - 6
+                        local verticalFromY = prevGrouped and (btnPos.y - math.floor(tabBtnGap / 2)) or bracketTopY
+                        local verticalToY = nextGrouped and (btnPos.y + btnSize.y + math.floor(tabBtnGap / 2)) or bracketBottomY
+                        self:_Draw(tabDrawId .. '_group_vert', 'line', bracketColor, 11, Vector2.new(bracketX, verticalFromY), Vector2.new(bracketX, verticalToY), 1)
+
+                        if layout.headerText then
+                            local headerTextColor = groupActive and self._theming.text or self._theming.subtext
+                            local headerTextSize = self:_GetTextBounds(layout.headerText, nil, 10)
+                            local headerTextX = bracketX + 10
+                            local headerLineLeftToX = headerTextX - 4
+                            local headerLineRightFromX = headerTextX + headerTextSize.x + 6
+                            local headerLineRightToX = btnPos.x + btnSize.x - 6
+                            self:_Draw(tabDrawId .. '_group_header_l', 'line', bracketColor, 11, Vector2.new(bracketX, bracketTopY), Vector2.new(headerLineLeftToX, bracketTopY), 1)
+                            if headerLineRightToX > headerLineRightFromX then
+                                self:_Draw(tabDrawId .. '_group_header_r', 'line', bracketColor, 11, Vector2.new(headerLineRightFromX, bracketTopY), Vector2.new(headerLineRightToX, bracketTopY), 1)
+                            else
+                                self:_Undraw(tabDrawId .. '_group_header_r')
+                            end
+                            self:_Draw(tabDrawId .. '_group_title', 'text', headerTextColor, 11, Vector2.new(headerTextX, bracketTopY - 7), layout.headerText, true, 'left', 10)
+                            self:_Undraw(tabDrawId .. '_group_top')
+                        else
+                            self:_Undraw(tabDrawId .. '_group_header_l')
+                            self:_Undraw(tabDrawId .. '_group_header_r')
+                            self:_Undraw(tabDrawId .. '_group_title')
+                            if not prevGrouped then
+                                self:_Draw(tabDrawId .. '_group_top', 'line', bracketColor, 11, Vector2.new(bracketX, bracketTopY), Vector2.new(bracketX + 5, bracketTopY), 1)
+                            else
+                                self:_Undraw(tabDrawId .. '_group_top')
+                            end
+                        end
+                        if not nextGrouped then
+                            self:_Draw(tabDrawId .. '_group_bottom', 'line', bracketColor, 11, Vector2.new(bracketX, bracketBottomY), Vector2.new(bracketX + 5, bracketBottomY), 1)
+                        else
+                            self:_Undraw(tabDrawId .. '_group_bottom')
+                        end
+                    else
+                        self:_Undraw(tabDrawId .. '_group_vert')
+                        self:_Undraw(tabDrawId .. '_group_top')
+                        self:_Undraw(tabDrawId .. '_group_bottom')
+                        self:_Undraw(tabDrawId .. '_group_header_l')
+                        self:_Undraw(tabDrawId .. '_group_header_r')
+                        self:_Undraw(tabDrawId .. '_group_title')
+                    end
+                    local labelOffsetX = showGroupBracket and 22 or 14
+                    local displayName = tabData._display_name or tabName
+                    local truncTabName = self:_TruncateText(displayName, btnSize.x - labelOffsetX - 8)
+                    self:_Draw(tabDrawId .. '_text', 'text', labelColor, 11, btnPos + Vector2.new(labelOffsetX, btnSize.y/2 - 7), truncTabName, true)
+
+                    if clickFrame and isHoveringTab then
+                        if not isOpen then
+                            self._open_tab = tabName
+                            self._tab_change_at = os.clock()
+                            self._section_fade_done = false
+                            self._input_ctx = nil
+                            self:_RemoveDropdown()
+                            self:_RemoveColorpicker()
+                        end
+                        clickFrame = false
+                    end
+                end
+                -- cleanup tabs that shouldn't render (overflow or shrunk order)
+                for i = visibleTabCount + 1, visibleTabCount + 20 do
+                    self:_UndrawStartsWith('menu_tab_' .. tostring(i) .. '_')
                 end
 
-                clickFrame = false
-            end
-
-            -- draw the colorpicker
-            local colorpicker = self._active_colorpicker
-            if colorpicker then
-                local colorpickerFade =  1 - (colorpicker._spawned_at - (os.clock() - 0.25)) / 0.25
-                if colorpickerFade < 1.1 then
-                    self:_SetOpacityStartsWith('colorpicker_', clamp(colorpickerFade, 0, 1))
-                end
-
-                local shouldCancel = true
-                local colorpickerSize = Vector2.new(200, 200)
-                local colorpickerOrigin = colorpicker.position
-
-                local colorpickerTitle = colorpicker.label
-                local colorpickerTitleSize = self:_GetTextBounds(colorpickerTitle)
-
-                self:_Draw('colorpicker_crust', 'rect', self._theming.crust, 100, colorpickerOrigin, colorpickerSize, false)
-                self:_Draw('colorpicker_body', 'rect', self._theming.surface0, 101, colorpickerOrigin + Vector2.new(1, 1), colorpickerSize - Vector2.new(2, 2), true)
-                self:_Draw('colorpicker_body_border_outer', 'rect', self._theming.border1, 103, colorpickerOrigin + Vector2.new(1, 1), colorpickerSize - Vector2.new(2, 2), false)
-                self:_Draw('colorpicker_title', 'text', self._theming.text, 104, colorpickerOrigin + Vector2.new(self._padding + 1, self._padding + 2), colorpickerTitle, true)
-                    
-                local palleteContentPos = colorpickerOrigin + Vector2.new(self._padding + 2, self._padding + colorpickerTitleSize.y + 6)
-                local palleteContentSize = colorpickerSize - Vector2.new(self._padding * 2 + 4, self._padding * 3 + colorpickerTitleSize.y)
-
-                self:_Draw('colorpicker_body_border_inner', 'rect', self._theming.border1, 103, palleteContentPos - Vector2.new(1, 1), palleteContentSize + Vector2.new(2, 2), false)
-                self:_Draw('colorpicker_body_content', 'rect', self._theming.body, 105, palleteContentPos, palleteContentSize, true)
-
-                local mousePos = self:_GetMousePos()
-                local palleteSize = palleteContentSize - Vector2.new(self._padding * 2, self._padding * 2)
-                local hueSize = Vector2.new(palleteSize.x, 10)
-                palleteSize = palleteSize - Vector2.new(0, hueSize.y + self._padding)
-                local palletePos = palleteContentPos + Vector2.new(self._padding, self._padding)
-                local huePos = palletePos + Vector2.new(0, palleteSize.y + self._padding)
-
-                -- hue interaction
-                if self:_IsMouseWithinBounds(huePos, hueSize) and mouseHeld then
-                    local x = clamp((mousePos.x - huePos.x) / hueSize.x, 0, 1)
-                    colorpicker._h = x
-
-                    shouldCancel = false
-                end
-
-                -- palette interaction
-                if self:_IsMouseWithinBounds(palletePos, palleteSize) and mouseHeld then
-                    local sx = clamp((mousePos.x - palletePos.x) / palleteSize.x, 0, 1)
-                    local vy = clamp((mousePos.y - palletePos.y) / palleteSize.y, 0, 1)
-
-                    colorpicker._s = sx
-                    colorpicker._v = 1 - vy
-
-                    shouldCancel = false
-                end
-
-                -- palette hue tint
-                local hueColor = Color3.fromHSV(colorpicker._h, 1, 1)
-                self:_Draw('colorpicker_pallete_color', 'gradient', nil, 110, 'horizontal', palletePos, palleteSize, Color3.fromRGB(255, 255, 255), hueColor)
-                self:_Draw('colorpicker_pallete_fade', 'gradient', nil, 111, 'vertical', palletePos, palleteSize, {R=0, G=0, B=0, A=0}, {R=0, G=0, B=0, A=1})
-
-                self:_Draw('colorpicker_pallete_hue', 'gradient', nil, 111, 'horizontal', huePos, hueSize,
-                    Color3.fromRGB(255, 0, 0),
-                    Color3.fromRGB(255, 255, 0),
-                    Color3.fromRGB(0, 255, 0),
-                    Color3.fromRGB(0, 255, 255),
-                    Color3.fromRGB(0, 0, 255),
-                    Color3.fromRGB(255, 0, 255),
-                    Color3.fromRGB(255, 0, 0)
-                )
-
-                local newColor = Color3.fromHSV(colorpicker._h, colorpicker._s, colorpicker._v)
-                if colorpicker.callback then
-                    colorpicker.callback(newColor)
-                end
-
-                if clickFrame and shouldCancel then
-                    self:_RemoveColorpicker()
-                end
-
-                clickFrame = false
-            end
-
-            -- menu contents
-            local menuTitleSize = self:_GetTextBounds(menuTitle)
-
-            -- body outer
-            self:_Draw('menu_crust', 'rect', self._theming.crust, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), false)
-            self:_Draw('menu_body', 'rect', self._theming.surface0, 2, Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, self.h - 2), true)
-            self:_Draw('menu_body_border_outer', 'rect', self._theming.border1, 3, Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, self.h - 2), false)
-            self:_Draw('menu_title', 'text', self._theming.text, 4, Vector2.new(self.x + self._padding + 1, self.y + self._padding + 2), menuTitle, true)
-            self:_Draw('menu_accent_gradient', 'gradient', nil, 4, 'horizontal', Vector2.new(self.x + 2, self.y + 2), Vector2.new(self.w - 4, 2), self._theming.surface0, self._theming.accent, self._theming.surface0)
-
-            -- body inner
-            local bodyContentPos = Vector2.new(self.x + self._padding + 2, self.y + self._padding + menuTitleSize.y + 6)
-            local bodyContentSize = Vector2.new(self.w - self._padding * 2 - 4, self.h - self._padding * 2 - menuTitleSize.y - 8)
-
-            self:_Draw('menu_body_border_inner', 'rect', self._theming.border1, 11, bodyContentPos - Vector2.new(1, 1), bodyContentSize + Vector2.new(2, 2), false)
-            self:_Draw('menu_body_content', 'rect', self._theming.body, 10, bodyContentPos, bodyContentSize, true)
-
-            -- tabs
-            local tabIter = 0
-            local tabCount = #self._tab_order
-            for i = 1, tabCount do
-                local tabName = self._tab_order[i]
-                local tabContent = self._tree[tabName]
-                -- tab buttons
-                local tabDrawId = 'menu_tab_' .. tostring(tabIter)
-                local tabSize = Vector2.new(bodyContentSize.x / tabCount, self._tab_h)
-                local tabPosition = Vector2.new(bodyContentPos.x + tabSize.x * tabIter, bodyContentPos.y)
-                local isOpen = self._open_tab == tabName
-
-                if not isOpen then
-                    self:_Draw(tabDrawId .. '_backdrop', 'gradient', nil, 11, 'vertical', tabPosition, tabSize, self._theming.surface1)
-                    self:_Draw(tabDrawId .. '_border_b', 'rect', self._theming.border1, 13, tabPosition + Vector2.new(0, tabSize.y), Vector2.new(tabSize.x, 1), true)
+                -- "+N more" sidebar indicator if tabs overflow
+                if tabCount > visibleTabCount then
+                    local moreText = '+' .. tostring(tabCount - visibleTabCount) .. ' more'
+                    self:_Draw('menu_sidebar_more', 'text', self._theming.subtext, 11, Vector2.new(sidebarPos.x + 14, tabAreaEndY - 4), moreText, true, 'left', 10)
                 else
-                    self:_UndrawStartsWith(tabDrawId .. '_backdrop')
-                    self:_Undraw(tabDrawId .. '_border_b')
-                end
-
-                self:_Draw(tabDrawId .. '_text', 'text', self._theming.text, 13, tabPosition + Vector2.new(tabSize.x/2, tabSize.y/2), tabName, true, 'center')
-                
-                if tabIter ~= tabCount-1 then
-                    self:_Draw(tabDrawId .. '_border_r', 'rect', self._theming.border1, 12, tabPosition + Vector2.new(tabSize.x, 0), Vector2.new(1, tabSize.y + 1), true)
-                end
-
-                if not isOpen and clickFrame and self:_IsMouseWithinBounds(tabPosition, tabSize) then
-                    self._open_tab = tabName
-                    self._tab_change_at = os.clock()
-                    self._section_fade_done = false
-                    self._input_ctx = nil
+                    self:_Undraw('menu_sidebar_more')
                 end
 
                 -- tab content fade
                 if not self._section_fade_done then
                     local st = clamp((os.clock() - self._tab_change_at) / 0.25, 0, 1)
                     self:_SetOpacityStartsWith('menu_section_', st * st * (3 - 2 * st))
+                    self:_SetOpacityStartsWith('menu_widget_', st * st * (3 - 2 * st))
                     if st >= 1 then self._section_fade_done = true end
                 end
 
-                local sectionCount = tabContent._section_count
-                local sectionIter = 0
-                local activeSectionIter = 0
-                
-                local hasSubtabs = #tabContent._subtabs > 0
-                local subtabOffset = hasSubtabs and 24 or 0
+                -- render active tab content
+                local tabContent = self._tree[self._open_tab]
+                local openTabIdx = 0
+                for i, n in ipairs(self._tab_order) do if n == self._open_tab then openTabIdx = i break end end
 
-                if isOpen and hasSubtabs then
-                    local subTabIter = 0
-                    local subTabCount = #tabContent._subtabs
-                    for _, stName in ipairs(tabContent._subtabs) do
-                        local stDrawId = 'menu_subtab_' .. tostring(tabIter) .. '_' .. tostring(subTabIter)
-                        local stSize = Vector2.new(bodyContentSize.x / subTabCount, 24)
-                        local stPosition = Vector2.new(bodyContentPos.x + stSize.x * subTabIter, bodyContentPos.y + self._tab_h)
-                        local isSubOpen = tabContent._active_subtab == stName
-
-                        if not isSubOpen then
-                            self:_Undraw(stDrawId .. '_backdrop_active')
-                            self:_Draw(stDrawId .. '_backdrop', 'rect', self._theming.surface1, 12, stPosition, stSize, true)
-                            self:_Draw(stDrawId .. '_border_b', 'rect', self._theming.border1, 13, stPosition + Vector2.new(0, stSize.y), Vector2.new(stSize.x, 1), true)
-                        else
-                            self:_Undraw(stDrawId .. '_backdrop')
-                            self:_Undraw(stDrawId .. '_border_b')
-                            self:_Draw(stDrawId .. '_backdrop_active', 'rect', self._theming.body, 12, stPosition, stSize + Vector2.new(0,1), true)
+                -- hide non-active tabs' widgets — only on tab change to avoid per-frame full-table sweep
+                if self._last_cleared_inactive_for ~= self._open_tab then
+                    for i = 1, tabCount do
+                        if i ~= openTabIdx then
+                            self:_UndrawStartsWith('menu_section_' .. tostring(i) .. '_')
+                            self:_UndrawStartsWith('menu_widget_' .. tostring(i) .. '_')
                         end
-
-                        self:_Draw(stDrawId .. '_text', 'text', isSubOpen and self._theming.accent or self._theming.subtext, 14, stPosition + Vector2.new(stSize.x/2, stSize.y/2), stName, true, 'center')
-                        if subTabIter ~= subTabCount-1 then 
-                            self:_Draw(stDrawId .. '_border_r', 'rect', self._theming.border1, 13, stPosition + Vector2.new(stSize.x, 0), Vector2.new(1, stSize.y), true) 
-                        end
-
-                        if not isSubOpen and clickFrame and self:_IsMouseWithinBounds(stPosition, stSize) then
-                            tabContent._active_subtab = stName
-                            self._tab_change_at = os.clock()
-                            self._section_fade_done = false
-                            self._input_ctx = nil
-                            clickFrame = false
-                        end
-                        subTabIter = subTabIter + 1
                     end
-                elseif not isOpen and hasSubtabs then
-                    -- Sabit: İnaktif tabların subtableri burada tam ismine göre temizleniyor
-                    local subTabCount = #tabContent._subtabs
-                    for subTabIter = 0, subTabCount - 1 do
-                        local stDrawId = 'menu_subtab_' .. tostring(tabIter) .. '_' .. tostring(subTabIter)
-                        self:_UndrawStartsWith(stDrawId)
-                    end
+                    self._last_cleared_inactive_for = self._open_tab
                 end
 
-                local activeSectionCount = 0
-                for _, sc in pairs(tabContent._items) do
-                    if not hasSubtabs or sc._subtab == tabContent._active_subtab then activeSectionCount = activeSectionCount + 1 end
-                end
+                if tabContent then
+                    local contentBottom = contentY + contentH - contentPad
+                    local columnGap = self._column_gap
+                    local totalColumns = self._columns
+                    local usableContentW = contentW - contentPad * 2 - columnGap * (totalColumns - 1)
+                    local widgetW = math.floor(usableContentW / totalColumns)
+                    local columnX = {}
+                    local columnCursorY = {}
+                    for col = 1, totalColumns do
+                        columnX[col] = contentX + contentPad + (col - 1) * (widgetW + columnGap)
+                        columnCursorY[col] = contentY + contentPad
+                    end
+                    local furthestCursorY = contentY + contentPad
 
-                local sectionWidth = bodyContentSize.x/2 - self._padding * 1.5
-                local totalSectionHeightR = self._padding * 1.5 + subtabOffset
-                local totalSectionHeightL = self._padding * 1.5 + subtabOffset
-
-                for sIdx = 1, #tabContent._section_order do
-                    local sectionName = tabContent._section_order[sIdx]
-                    local sectionContent = tabContent._items[sectionName]
-                    local sectionDrawId = 'menu_section_' .. tostring(sectionIter) .. '_' .. tostring(tabIter)
-
-                    if isOpen then
-                        if hasSubtabs and sectionContent._subtab ~= tabContent._active_subtab then
-                            self:_UndrawStartsWith(sectionDrawId)
-                            sectionIter = sectionIter + 1
-                            continue
-                        end
-
-                        local isLastSection = activeSectionIter >= activeSectionCount-2
-                        local _col = sectionContent._column
-                        local isSectionMirror
-                        if _col ~= nil then
-                            isSectionMirror = (_col == 2)
+                    for sIdx = 1, #tabContent._section_order do
+                        local sectionName = tabContent._section_order[sIdx]
+                        local sectionContent = tabContent._items[sectionName]
+                        local sectionColumn = self:_ResolveColumnValue(sectionContent._column, 1) or 1
+                        local sectionDrawId = 'menu_section_' .. tostring(openTabIdx) .. '_' .. tostring(sIdx)
+                        local sectionUsedColumns = {}
+                        local sectionVisualBottomY = {}
+                        if #sectionContent._items > 0 then
+                            for _, sectionItem in ipairs(sectionContent._items) do
+                                local itemColumn = self:_ResolveColumnValue(sectionItem._column, sectionColumn) or sectionColumn
+                                sectionUsedColumns[itemColumn] = true
+                            end
                         else
-                            isSectionMirror = (activeSectionIter % 2 == 1)
+                            sectionUsedColumns[sectionColumn] = true
                         end
 
-                        local sectionTitleSize = self:_GetTextBounds(sectionName)
-                        local sectionPos = Vector2.new(bodyContentPos.x + self._padding, bodyContentPos.y + tabSize.y)
-                        local sectionHeight = self._padding + sectionTitleSize.y/2
-
-                        if isSectionMirror then
-                            sectionPos = sectionPos + Vector2.new(sectionWidth + self._padding, totalSectionHeightR + sectionTitleSize.y/2)
-                        else
-                            sectionPos = sectionPos + Vector2.new(0, totalSectionHeightL + sectionTitleSize.y/2)
+                        -- section header: upper label + divider line
+                        local headerText = string.upper(sectionName)
+                        local headerSize = self:_GetTextBounds(headerText, nil, 11)
+                        for col = 1, totalColumns do
+                            local sectionColumnDrawId = sectionDrawId .. '_c' .. tostring(col)
+                            if sectionUsedColumns[col] then
+                                local widgetX = columnX[col]
+                                local cursorY = columnCursorY[col] + (tonumber(sectionContent._y_offset) or 0)
+                                if cursorY + headerSize.y < contentBottom then
+                                    self:_Draw(sectionColumnDrawId .. '_title', 'text', self._theming.subtext, 12, Vector2.new(widgetX, cursorY), headerText, true, 'left', 11)
+                                    local lineY = cursorY + math.floor(headerSize.y / 2) - 1
+                                    self:_Draw(sectionColumnDrawId .. '_line', 'line', self._theming.border1, 12, Vector2.new(widgetX + headerSize.x + 8, lineY), Vector2.new(widgetX + widgetW, lineY), 1)
+                                else
+                                    self:_Undraw(sectionColumnDrawId .. '_title')
+                                    self:_Undraw(sectionColumnDrawId .. '_line')
+                                end
+                                local headerEndY = cursorY + headerSize.y + 8
+                                if headerEndY > columnCursorY[col] then
+                                    columnCursorY[col] = headerEndY
+                                end
+                                sectionVisualBottomY[col] = columnCursorY[col]
+                                if columnCursorY[col] > furthestCursorY then
+                                    furthestCursorY = columnCursorY[col]
+                                end
+                            else
+                                self:_Undraw(sectionColumnDrawId .. '_title')
+                                self:_Undraw(sectionColumnDrawId .. '_line')
+                            end
                         end
 
-                        -- section items
-                        self:_Draw(sectionDrawId .. '_title', 'text', self._theming.text, 20, sectionPos + Vector2.new(self._padding, -menuTitleSize.y/2), sectionName, true)         
-
+                        -- render widgets in this section
                         for sectionItemIter, sectionItem in ipairs(sectionContent._items) do
-                            local sectionItemId = sectionDrawId .. '_item_' .. tostring(sectionItemIter)
-                            local sectionItemOrigin = Vector2.new(sectionPos.x + self._padding, sectionPos.y + sectionHeight)
+                            local sectionItemId = 'menu_widget_' .. tostring(openTabIdx) .. '_' .. tostring(sIdx) .. '_' .. tostring(sectionItemIter)
+                            -- skip hidden items (no drawing, no height)
+                            if sectionItem._hidden then
+                                self:_UndrawStartsWith(sectionItemId)
+                            else
+
                             local itemType = sectionItem.type_
                             local itemValue = sectionItem.value
                             local itemCallback = sectionItem.callback
+                            local itemColumn = self:_ResolveColumnValue(sectionItem._column, sectionColumn) or sectionColumn
+                            local flowCursorY = columnCursorY[itemColumn]
+                            local widgetX = columnX[itemColumn]
+                            local cursorY = flowCursorY + (tonumber(sectionItem._y_offset) or 0)
+                            sectionUsedColumns[itemColumn] = true
+
+                            -- skip rendering if past content bottom.
+                            -- per-type heights: toggle/button = 26, slider/dropdown/textbox = 34
+                            local overflowCheck
+                            local baseAdvance
+                            if itemType == 'toggle' or itemType == 'button' then
+                                overflowCheck = 26
+                                baseAdvance = 26
+                            else
+                                overflowCheck = 34
+                                baseAdvance = 34
+                            end
+                            if cursorY + overflowCheck > contentBottom then
+                                self:_UndrawStartsWith(sectionItemId .. '_')
+                                if contentBottom + 1 > furthestCursorY then
+                                    furthestCursorY = contentBottom + 1
+                                end
+                            else
 
                             if itemType == 'toggle' then
-                                local tickOrigin = sectionItemOrigin
-                                local tickSize = Vector2.new(self._font_size, self._font_size)
+                                local rowH = self._row_h
+                                local rowPos = Vector2.new(widgetX, cursorY)
+                                local labelPos = rowPos + Vector2.new(0, rowH/2 - 7)
 
                                 local itemKeybind = sectionItem.keybind
                                 local itemColorpicker = sectionItem.colorpicker
+
+                                -- pill switch
+                                local pillW = 26
+                                local labelCenterY = labelPos.y + 6 -- visual center of the 12-13px label row, widgets anchor here
+                                local pillH = 14
+                                local rightEdge = widgetX + widgetW
+                                local pillX = rightEdge - pillW
+                                local pillY = labelCenterY - pillH / 2
+
+                                -- keybind slot to the left of pill (if any)
                                 if itemKeybind then
-                                    local keybindText = '[' .. (itemKeybind._listening and '...' or ((itemKeybind.value or '-'):upper())) .. ']'
-                                    local keybindLabelSize = self:_GetTextBounds(keybindText, nil, 10)
+                                    local keybindText = itemKeybind._listening and '...' or (tostring(itemKeybind.value or '-')):upper()
+                                    local keybindLabelSize = self:_GetTextBounds(keybindText, nil, 11)
+                                    local kbW = keybindLabelSize.x + 8
+                                    local kbH = 14
+                                    local kbX = pillX - kbW - 8
+                                    local kbY = labelCenterY - kbH / 2
 
-                                    local keybindSize = Vector2.new(keybindLabelSize.x - 2, tickSize.y)
-                                    local keybindOrigin = sectionItemOrigin + Vector2.new(sectionWidth - keybindSize.x - self._padding * 2, 2)
-
-                                    local isHoveringKeybind = self:_IsMouseWithinBounds(keybindOrigin, keybindSize)
-                                    if isHoveringKeybind then
+                                    -- hit area padded for easier clicking
+                                    local isHoveringKb = self:_IsMouseWithinBounds(Vector2.new(kbX - 2, rowPos.y), Vector2.new(kbW + 4, rowH))
+                                    if isHoveringKb then
                                         if clickFrame then
                                             itemKeybind._listening = true
                                             itemKeybind._listening_start = os.clock()
-
                                             clickFrame = false
                                         elseif ctxFrame and itemKeybind.canChange then
                                             self:_SpawnDropdown(self:_GetMousePos(), 60, {itemKeybind.mode}, {'Hold', 'Toggle', 'Always'}, false, function(newValue)
                                                 itemKeybind.mode = newValue[1]
-
                                                 if itemKeybind.callback then
-                                                    itemKeybind.callback(self._inputs[itemKeybind.value] and self._inputs[itemKeybind.value].id or nil, newValue[1])
+                                                    -- pass key name (string) for consistency with other callback sites
+                                                    itemKeybind.callback(itemKeybind.value, newValue[1])
                                                 end
                                             end)
-                                            
                                             ctxFrame = false
                                         end
                                     end
 
                                     if itemKeybind._listening then
-                                        for keyName, key in pairs(self._inputs) do
-                                            if self:_IsKeyPressed(keyName) then
-                                                if keyName ~= 'm1' or os.clock() - itemKeybind._listening_start > 0.2 then
-                                                    local newValue = keyName ~= 'unbound' and keyName
-
-                                                    if itemKeybind.callback and self._inputs[newValue] then
-                                                        itemKeybind.callback(key.id, itemKeybind.mode)
+                                        -- auto timeout after 10 seconds of listening to avoid sticky state
+                                        if os.clock() - itemKeybind._listening_start > 10 then
+                                            itemKeybind._listening = false
+                                        else
+                                            for keyName, keyInfo in pairs(self._inputs) do
+                                                if self:_IsKeyPressed(keyName) then
+                                                    -- debounce the initial m1 click that opened the listen, and any mouse button used to initiate
+                                                    local isMouseBtn = keyName == 'm1' or keyName == 'm2' or keyName == 'mb' or keyName == 'm4' or keyName == 'm5'
+                                                    if (not isMouseBtn) or os.clock() - itemKeybind._listening_start > 0.2 then
+                                                        local newValue = keyName ~= 'unbound' and keyName or nil
+                                                        -- always pass key name (string) or nil to callback for consistency
+                                                        if itemKeybind.callback then
+                                                            itemKeybind.callback(newValue, itemKeybind.mode)
+                                                        end
+                                                        itemKeybind.value = newValue
+                                                        itemKeybind._listening = false
+                                                        break
                                                     end
-
-                                                    itemKeybind.value = newValue
-                                                    itemKeybind._listening = false
                                                 end
                                             end
                                         end
                                     end
 
-                                    local keybindColor = itemKeybind.value and self._theming.text or self._theming.subtext
-                                    self:_Draw(sectionItemId .. '_keybind', 'text', keybindColor, 20, keybindOrigin, keybindText, true, 'left', 10)
-                                elseif itemColorpicker then
-                                    local colorpickerSize = Vector2.new(tickSize.x * 2, tickSize.y)
-                                    local colorpickerOrigin = sectionItemOrigin + Vector2.new(sectionWidth - self._padding * 2 - colorpickerSize.x)
+                                    self:_Draw(sectionItemId .. '_kb_bg', 'rect', self._theming.surface0, 12, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), true)
+                                    self:_Draw(sectionItemId .. '_kb_border', 'rect', self._theming.border0, 13, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), false)
+                                    local kbColor = itemKeybind.value and self._theming.text or self._theming.subtext
+                                    -- Keybind position
+                                    local kbTextPos = Vector2.new(kbX + kbW / 2, kbY + math.floor((kbH - 11) / 2))
+                                    self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, kbTextPos, keybindText, true, 'center', 11)
+                                end
 
-                                    local isHoveringColorpicker = self:_IsMouseWithinBounds(colorpickerOrigin, colorpickerSize)
-                                    if isHoveringColorpicker then
+                                -- colorpicker swatch (left of pill, or replacing pill if overwrite)
+                                if itemColorpicker then
+                                    local swatchW = 16
+                                    local swatchH = 14
+                                    local swatchX, swatchY
+                                    if itemColorpicker.overwrite then
+                                        swatchW = 20
+                                        swatchX = rightEdge - swatchW
+                                        swatchY = labelCenterY - swatchH / 2
+                                    else
+                                        swatchX = (itemKeybind and (pillX - 26 - ((self:_GetTextBounds(itemKeybind._listening and '...' or (tostring(itemKeybind.value or '-')):upper(), nil, 11)).x + 8) - 4) or (pillX - swatchW - 8))
+                                        swatchY = labelCenterY - swatchH / 2
+                                    end
+
+                                    local isHoveringCp = self:_IsMouseWithinBounds(Vector2.new(swatchX - 2, rowPos.y), Vector2.new(swatchW + 4, rowH))
+                                    if isHoveringCp then
                                         if clickFrame then
                                             self:_SpawnColorpicker(nil, itemColorpicker.label, itemColorpicker.value, function(newValue)
                                                 itemColorpicker.value = newValue
-
-                                                if itemColorpicker.callback then
-                                                    itemColorpicker.callback(newValue)
-                                                end
+                                                if itemColorpicker.callback then itemColorpicker.callback(newValue) end
                                             end)
-
                                             clickFrame = false
                                         elseif ctxFrame then
                                             self:_SpawnDropdown(self:_GetMousePos(), 60, {}, {'Copy', 'Paste'}, false, function(newValue)
@@ -1248,275 +2678,325 @@ do
                                                 elseif newValue[1] == 'Paste' then
                                                     if self._copied_color then
                                                         itemColorpicker.value = self._copied_color
-
-                                                        if itemColorpicker.callback then
-                                                            itemColorpicker.callback(self._copied_color)
-                                                        end
+                                                        if itemColorpicker.callback then itemColorpicker.callback(self._copied_color) end
                                                     else
                                                         self:Notification('Color clipboard is empty!', 5)
                                                     end
                                                 end
                                             end)
-
                                             ctxFrame = false
                                         end
-                                    end 
-
-                                    local tickColor = itemColorpicker.value
-                                    self:_Draw(sectionItemId .. '_colorpicker', 'gradient', nil, 20, 'vertical', colorpickerOrigin + Vector2.new(1, 1), colorpickerSize - Vector2.new(2, 2), tickColor)
-                                    self:_Draw(sectionItemId .. '_colorpicker_border', 'rect', self._theming.crust, 21, colorpickerOrigin, colorpickerSize, false)
-                                end
-
-                                local labelColor = sectionItem.unsafe and self._theming.unsafe or (itemValue and self._theming.text or self._theming.subtext)
-                                if not itemColorpicker or not itemColorpicker.overwrite then
-                                    local isHoveringTick = self:_IsMouseWithinBounds(tickOrigin, tickSize)
-                                    if isHoveringTick and clickFrame then
-                                        local newValue = not itemValue
-                                        sectionItem.value = newValue
-                                        if itemCallback then
-                                            itemCallback(newValue)
-                                        end
-
-                                        clickFrame = false
                                     end
 
-                                    local tickColor = itemValue and self._theming.accent or self._theming.surface0
-                                    self:_Draw(sectionItemId .. '_tick', 'gradient', nil, 20, 'vertical', sectionItemOrigin + Vector2.new(1, 1), tickSize - Vector2.new(2, 2), tickColor)
+                                    local swatchColor = itemColorpicker.value or self._theming.accent
+                                    self:_Draw(sectionItemId .. '_cp_bg', 'rect', swatchColor, 12, Vector2.new(swatchX, swatchY), Vector2.new(swatchW, swatchH), true)
+                                    self:_Draw(sectionItemId .. '_cp_border', 'rect', self._theming.crust, 13, Vector2.new(swatchX, swatchY), Vector2.new(swatchW, swatchH), false)
+                                end
 
-                                    self:_Draw(sectionItemId .. '_border', 'rect', self._theming.crust, 21, sectionItemOrigin, tickSize, false)
+                                -- draw pill (unless colorpicker overwrite)
+                                local labelColor = sectionItem.unsafe and self._theming.unsafe or (itemValue and self._theming.text or self._theming.subtext)
+                                if not itemColorpicker or not itemColorpicker.overwrite then
+                                    -- click hit: pill area extended for comfort
+                                    local hitPos = Vector2.new(pillX - 10, rowPos.y)
+                                    local hitSize = Vector2.new(pillW + 14, rowH)
+                                    local isHoveringToggle = self:_IsMouseWithinBounds(hitPos, hitSize)
+                                    local toggleAnim = self:_StepAnim(sectionItemId .. '_toggle_anim', itemValue and 1 or 0, 18)
+                                    local toggleHoverAnim = self:_StepAnim(sectionItemId .. '_toggle_hover_anim', isHoveringToggle and 1 or 0, 18)
+
+                                    local pillBaseColor = self:_LerpColor(self._theming.surface1, self._theming.border1, toggleHoverAnim * 0.75)
+                                    local pillColor = self:_LerpColor(pillBaseColor, self._theming.accent, toggleAnim)
+                                    self:_Draw(sectionItemId .. '_pill_bg', 'rect', pillColor, 12, Vector2.new(pillX, pillY), Vector2.new(pillW, pillH), true)
+                                    self:_Draw(sectionItemId .. '_pill_border', 'rect', self._theming.crust, 13, Vector2.new(pillX, pillY), Vector2.new(pillW, pillH), false)
+                                    -- knob
+                                    local knobSize = pillH - 4
+                                    local knobTravel = pillW - knobSize - 4
+                                    local knobX = pillX + 2 + knobTravel * toggleAnim
+                                    local knobY = pillY + 2
+                                    self:_Draw(sectionItemId .. '_pill_knob', 'rect', self._theming.text, 14, Vector2.new(knobX, knobY), Vector2.new(knobSize, knobSize), true)
+
+                                    if clickFrame and isHoveringToggle then
+                                        local newValue = not itemValue
+                                        sectionItem.value = newValue
+                                        if itemCallback then itemCallback(newValue) end
+                                        clickFrame = false
+                                    end
+                                    if not sectionItem.unsafe then
+                                        labelColor = self:_LerpColor(self._theming.subtext, self._theming.text, clamp(toggleAnim + toggleHoverAnim * 0.35, 0, 1))
+                                    end
                                 else
                                     labelColor = self._theming.text
                                 end
-                                
-                                local labelSize = self:_GetTextBounds(sectionItem.label)
-                                local labelPosition = sectionItemOrigin + Vector2.new(tickSize.x + self._padding, 0)
 
+                                -- compute label available width and truncate if necessary
+                                local labelAvailW = (pillX - 10) - widgetX
+                                if itemKeybind then
+                                    local kbW = self:_GetTextBounds(itemKeybind._listening and '...' or (tostring(itemKeybind.value or '-')):upper(), nil, 11).x + 8
+                                    labelAvailW = labelAvailW - kbW - 10
+                                end
+                                if itemColorpicker and not itemColorpicker.overwrite then
+                                    labelAvailW = labelAvailW - 22
+                                end
+                                if itemColorpicker and itemColorpicker.overwrite then
+                                    labelAvailW = (widgetX + widgetW - 22) - widgetX - 4
+                                end
+                                if sectionItem.tooltip then labelAvailW = labelAvailW - 18 end
+                                local truncatedLabel = self:_TruncateText(sectionItem.label, labelAvailW)
+
+                                -- tooltip hint
+                                local labelSize = self:_GetTextBounds(truncatedLabel)
                                 if sectionItem.tooltip then
-                                    local hintSize = self:_GetTextBounds('(?)', nil, 10)
-                                    local hintPosition = labelPosition + Vector2.new(labelSize.x + hintSize.x - 4, hintSize.y / 2)
-                                    local isHoveringHint = self:_IsMouseWithinBounds(hintPosition - Vector2.new(3, 3), hintSize + Vector2.new(6, 6))
-
-                                    if isHoveringHint then
-                                        local mousePos = self:_GetMousePos()
-                                        local tooltipOrigin = Vector2.new(mousePos.x + 11, mousePos.y)
-                                        local tooltipSize = self:_GetTextBounds(sectionItem.tooltip)
-                                        self:_Draw('menu_tooltip_body', 'rect', self._theming.surface1, 1000, tooltipOrigin, tooltipSize + Vector2.new(self._padding, self._padding), true)
-                                        self:_Draw('menu_tooltip_crust', 'rect', self._theming.crust, 1001, tooltipOrigin, tooltipSize + Vector2.new(self._padding, self._padding), false)
-                                        self:_Draw('menu_tooltip_border', 'rect', self._theming.border1, 1002, tooltipOrigin + Vector2.new(1, 1), tooltipSize + Vector2.new(self._padding - 2, self._padding - 2), false)
-                                        self:_Draw('menu_tooltip_text', 'text', self._theming.text, 1003, tooltipOrigin + Vector2.new(3, tooltipSize.y / 2), sectionItem.tooltip, true)
-                                    else
-                                        self:_UndrawStartsWith('menu_tooltip')
+                                    local hintPos = Vector2.new(labelPos.x + labelSize.x + 6, labelPos.y + 1)
+                                    local hintSize = self:_GetTextBounds('?', nil, 11)
+                                    local hitboxPad = 4
+                                    local hintHit = Vector2.new(hintPos.x - hitboxPad, hintPos.y - hitboxPad)
+                                    local hintHitSize = Vector2.new(hintSize.x + hitboxPad * 2 + 6, hintSize.y + hitboxPad * 2)
+                                    if self:_IsMouseWithinBounds(hintHit, hintHitSize) then
+                                        tooltipPending = {
+                                            text = sectionItem.tooltip,
+                                            anchor = Vector2.new(hintPos.x + 14, hintPos.y - 4),
+                                        }
                                     end
-
-                                    self:_Draw(sectionItemId .. '_hint', 'text', self._theming.subtext, 21, hintPosition, '(?)', true, 'center', 10)
+                                    self:_Draw(sectionItemId .. '_hint_bg', 'rect', self._theming.surface1, 12, hintPos + Vector2.new(-2, 0), Vector2.new(hintSize.x + 4, hintSize.y + 2), true)
+                                    self:_Draw(sectionItemId .. '_hint_border', 'rect', self._theming.border0, 13, hintPos + Vector2.new(-2, 0), Vector2.new(hintSize.x + 4, hintSize.y + 2), false)
+                                    self:_Draw(sectionItemId .. '_hint', 'text', self._theming.text, 14, hintPos, '?', true, 'left', 11)
                                 end
 
-                                self:_Draw(sectionItemId .. '_label', 'text', labelColor, 20, labelPosition, sectionItem.label, true)
-                                sectionHeight = sectionHeight + self._font_size + self._padding
+                                self:_Draw(sectionItemId .. '_label', 'text', labelColor, 12, labelPos, truncatedLabel, true)
+                                cursorY = cursorY + rowH + 4
+
                             elseif itemType == 'slider' then
-                                local labelSize = self:_GetTextBounds(sectionItem.label)
+                                local rowH = 30
+                                local rowPos = Vector2.new(widgetX, cursorY)
+                                local trackH = 4
+                                local trackPos = Vector2.new(widgetX, rowPos.y + 18)
+                                local trackSize = Vector2.new(widgetW, trackH)
 
-                                local extraPadding = self._font_size
-                                local sliderOrigin = Vector2.new(sectionItemOrigin.x + extraPadding + self._padding, sectionItemOrigin.y + labelSize.y + self._padding)
-                                local sliderSize = Vector2.new(sectionWidth - extraPadding * 2 - self._padding * 3, 6)
-
+                                -- interaction
                                 local newValue = itemValue
-                                local isHoveringSlider = self:_IsMouseWithinBounds(sliderOrigin - Vector2.new(4, 4), sliderSize + Vector2.new(8, 8))
+                                local hitPos = Vector2.new(trackPos.x - 4, trackPos.y - 6)
+                                local hitSize = Vector2.new(trackSize.x + 8, trackSize.y + 12)
                                 if mouseHeld then
-                                    if isHoveringSlider and clickFrame then
+                                    if self:_IsMouseWithinBounds(hitPos, hitSize) and clickFrame then
                                         self._slider_drag = sectionItemId
                                         clickFrame = false
                                     end
-
-                                    if mouseHeld and self._slider_drag == sectionItemId then
-                                        local mouseX = self:_GetMousePos().x - sliderOrigin.x
-                                        local percent = mouseX / sliderSize.x
-                                        percent = clamp(percent, 0, 1)
-
+                                    if self._slider_drag == sectionItemId then
+                                        local mouseX = self:_GetMousePos().x - trackPos.x
+                                        local percent = clamp(mouseX / trackSize.x, 0, 1)
                                         newValue = sectionItem.min + (sectionItem.max - sectionItem.min) * percent
-                                        newValue = math.floor((newValue / sectionItem.step) + 0.5) * sectionItem.step
+                                        local sStep = sectionItem.step
+                                        if sStep and sStep > 0 then
+                                            -- snap relative to min so step grid always includes min/max boundary
+                                            newValue = sectionItem.min + math.floor(((newValue - sectionItem.min) / sStep) + 0.5) * sStep
+                                        end
                                         newValue = clamp(newValue, sectionItem.min, sectionItem.max)
                                     end
                                 else
-                                    self._slider_drag = nil
-                                end
-
-                                local buttonSize = Vector2.new(self._font_size, self._font_size)
-                                local decreaseOrigin = sliderOrigin - Vector2.new(extraPadding + self._padding, labelSize.y - self._padding - 1)
-                                local increaseOrigin = sliderOrigin + Vector2.new(sliderSize.x + self._padding - 4, -labelSize.y + self._padding + 1)
-
-                                self:_Draw(sectionItemId .. '_decrease', 'text', self._theming.text, 20, decreaseOrigin + Vector2.new(buttonSize.x/2, buttonSize.y/2), '-', true, 'center')
-                                self:_Draw(sectionItemId .. '_increase', 'text', self._theming.text, 20, increaseOrigin + Vector2.new(buttonSize.x/2, buttonSize.y/2), '+', true, 'center')
-                                if clickFrame then
-                                    if self:_IsMouseWithinBounds(decreaseOrigin, buttonSize) then
-                                        newValue = clamp(itemValue - sectionItem.step, sectionItem.min, sectionItem.max)
-                                        clickFrame = false
-                                    elseif self:_IsMouseWithinBounds(increaseOrigin, buttonSize) then
-                                        newValue = clamp(itemValue + sectionItem.step, sectionItem.min, sectionItem.max)
-                                        clickFrame = false
-                                    end
+                                    if self._slider_drag == sectionItemId then self._slider_drag = nil end
                                 end
 
                                 if newValue ~= itemValue then
                                     sectionItem.value = newValue
-
-                                    if itemCallback then
-                                        itemCallback(newValue)
-                                    end
+                                    itemValue = newValue
+                                    if itemCallback then itemCallback(newValue) end
                                 end
 
-                                local fillPercent = (itemValue - (sectionItem.min or 0)) / ((sectionItem.max or 1) - (sectionItem.min or 0))
-                                local tickColor = self._theming.accent
-                                self:_Draw(sectionItemId .. '_slider', 'gradient', nil, 20, 'vertical', sliderOrigin + Vector2.new(1, 1), Vector2.new(sliderSize.x * fillPercent - 2, sliderSize.y - 2), tickColor)
+                                -- guard against min==max (div by zero -> NaN) that would crash drawing at NaN pos
+                                local sliderRange = (sectionItem.max or 1) - (sectionItem.min or 0)
+                                local fillPercent = 0
+                                if sliderRange > 0 then
+                                    fillPercent = (itemValue - (sectionItem.min or 0)) / sliderRange
+                                end
+                                fillPercent = clamp(fillPercent, 0, 1)
+                                local animatedFillPercent
+                                if self._slider_drag == sectionItemId then
+                                    animatedFillPercent = self:_SetAnim(sectionItemId .. '_slider_fill_anim', fillPercent)
+                                else
+                                    animatedFillPercent = self:_StepAnim(sectionItemId .. '_slider_fill_anim', fillPercent, 22)
+                                end
 
-                                local displayedValue = tostring(itemValue) .. sectionItem.suffix
-                                self:_Draw(sectionItemId .. '_value', 'text', self._theming.text, 22, sliderOrigin + Vector2.new(sliderSize.x * fillPercent, sliderSize.y), displayedValue, true, 'center', 12)
+                                -- track bg
+                                self:_Draw(sectionItemId .. '_track_bg', 'rect', self._theming.surface1, 12, trackPos, trackSize, true)
+                                -- track fill
+                                if animatedFillPercent > 0.002 then
+                                    self:_Draw(sectionItemId .. '_track_fill', 'rect', self._theming.accent, 13, trackPos, Vector2.new(trackSize.x * animatedFillPercent, trackH), true)
+                                else
+                                    self:_Undraw(sectionItemId .. '_track_fill')
+                                end
+                                -- track border
+                                self:_Draw(sectionItemId .. '_track_border', 'rect', self._theming.crust, 14, trackPos, trackSize, false)
+                                -- knob (accent when dragging), clamped so it doesnt overshoot track at extremes
+                                local knobX = trackPos.x + trackSize.x * animatedFillPercent - 3
+                                if knobX < trackPos.x then knobX = trackPos.x end
+                                if knobX > trackPos.x + trackSize.x - 6 then knobX = trackPos.x + trackSize.x - 6 end
+                                local knobY = trackPos.y - 3
+                                local knobColor = (self._slider_drag == sectionItemId) and self._theming.accent or self._theming.text
+                                self:_Draw(sectionItemId .. '_knob', 'rect', knobColor, 15, Vector2.new(knobX, knobY), Vector2.new(6, 10), true)
+                                self:_Draw(sectionItemId .. '_knob_border', 'rect', self._theming.crust, 16, Vector2.new(knobX, knobY), Vector2.new(6, 10), false)
 
-                                self:_Draw(sectionItemId .. '_border', 'rect', self._theming.crust, 21, sliderOrigin, sliderSize, false)
-                                self:_Draw(sectionItemId .. '_label', 'text', self._theming.text, 20, sectionItemOrigin + Vector2.new(self._padding + extraPadding, 0), sectionItem.label, true)
+                                -- label + value
+                                local valText = formatStep(itemValue, sectionItem.step) .. (sectionItem.suffix or '')
+                                local valSize = self:_GetTextBounds(valText)
+                                local sliderLabel = self:_TruncateText(sectionItem.label, widgetW - valSize.x - 10)
+                                self:_Draw(sectionItemId .. '_label', 'text', self._theming.text, 12, Vector2.new(widgetX, rowPos.y), sliderLabel, true)
+                                self:_Draw(sectionItemId .. '_value', 'text', self._theming.accent, 12, Vector2.new(widgetX + widgetW - valSize.x, rowPos.y), valText, true)
 
-                                sectionHeight = sectionHeight + labelSize.y + sliderSize.y + self._padding * 3
+                                cursorY = cursorY + rowH + 4
+
                             elseif itemType == 'dropdown' then
-                                local labelSize = self:_GetTextBounds(sectionItem.label)
+                                local rowH = 32
+                                local rowPos = Vector2.new(widgetX, cursorY)
+                                local boxH = 18
+                                local boxPos = Vector2.new(widgetX, rowPos.y + 14)
+                                local boxSize = Vector2.new(widgetW, boxH)
 
-                                local extraPadding = self._font_size
-                                local dropdownOrigin = Vector2.new(sectionItemOrigin.x + extraPadding + self._padding, sectionItemOrigin.y + labelSize.y + self._padding)
-                                local dropdownSize = Vector2.new(sectionWidth - extraPadding * 2 - self._padding * 3, labelSize.y + self._padding)
-
-                                local isHoveringDropdown = self:_IsMouseWithinBounds(dropdownOrigin, dropdownSize)
-                                if clickFrame and isHoveringDropdown then
-                                    self:_SpawnDropdown(dropdownOrigin + Vector2.new(0, dropdownSize.y - 1), dropdownSize.x, itemValue, sectionItem.choices, sectionItem.multi, function(newValue)
+                                local isHovering = self:_IsMouseWithinBounds(boxPos, boxSize)
+                                if clickFrame and isHovering then
+                                    self:_SpawnDropdown(Vector2.new(boxPos.x, boxPos.y + boxSize.y + 2), boxSize.x - self._padding * 2 - 4, itemValue, sectionItem.choices, sectionItem.multi, function(newValue)
                                         sectionItem.value = newValue
-
-                                        if itemCallback then
-                                            itemCallback(newValue)
-                                        end
-                                    end)
-
+                                        if itemCallback then itemCallback(newValue) end
+                                    end, sectionItem.previewFonts, sectionItem.previewColors, sectionItem.hoverCallback, sectionItem.cancelCallback)
                                     clickFrame = false
                                 end
 
-                                local dropdownColor = self._theming.surface0
-                                self:_Draw(sectionItemId .. '_list', 'gradient', nil, 20, 'vertical', dropdownOrigin, dropdownSize, dropdownColor)
-                                self:_Draw(sectionItemId .. '_arrow', 'triangle', self._theming.text, 21, true,
-                                    dropdownOrigin + Vector2.new(dropdownSize.x - self._padding - 6, dropdownSize.y/2),
-                                    dropdownOrigin + Vector2.new(dropdownSize.x - self._padding, dropdownSize.y/2 + 4),
-                                    dropdownOrigin + Vector2.new(dropdownSize.x - self._padding, dropdownSize.y/2 - 4)
+                                -- box (accent border on hover)
+                                local boxBorderColor = isHovering and self._theming.accent or self._theming.border0
+                                self:_Draw(sectionItemId .. '_box_bg', 'rect', self._theming.surface0, 12, boxPos, boxSize, true)
+                                self:_Draw(sectionItemId .. '_box_border', 'rect', self._theming.crust, 13, boxPos, boxSize, false)
+                                self:_Draw(sectionItemId .. '_box_border_in', 'rect', boxBorderColor, 14, boxPos + Vector2.new(1, 1), boxSize - Vector2.new(2, 2), false)
+                                -- arrow triangle
+                                local arrowCenter = Vector2.new(boxPos.x + boxSize.x - 10, boxPos.y + boxSize.y/2)
+                                self:_Draw(sectionItemId .. '_arrow', 'triangle', self._theming.text, 14, true,
+                                    arrowCenter + Vector2.new(0, 3),
+                                    arrowCenter + Vector2.new(4, -2),
+                                    arrowCenter + Vector2.new(-4, -2)
                                 )
 
-                                local displayedValue = table.concat(itemValue, ', ')
+                                -- value text
+                                local displayedValue = table.concat(itemValue or {}, ', ')
+                                if displayedValue == '' then displayedValue = '-' end
                                 local valueSize = self:_GetTextBounds(displayedValue)
-                                if valueSize.x > dropdownSize.x - self._padding - 10 then
-                                    displayedValue = tostring(#itemValue) .. ' item' .. (#itemValue == 1 and '' or 's')
+                                if valueSize.x > boxSize.x - 24 then
+                                    local multiText = tostring(#itemValue) .. ' item' .. (#itemValue == 1 and '' or 's')
+                                    if self:_GetTextBounds(multiText).x < valueSize.x then
+                                        displayedValue = multiText
+                                    else
+                                        displayedValue = self:_TruncateText(displayedValue, boxSize.x - 24)
+                                    end
                                 end
+                                self:_Draw(sectionItemId .. '_value', 'text', self._theming.text, 14, boxPos + Vector2.new(6, boxSize.y/2 - 7), displayedValue, true)
 
-                                self:_Draw(sectionItemId .. '_value', 'text', self._theming.text, 21, dropdownOrigin + Vector2.new(4, valueSize.y/2 - 2), displayedValue, true)
+                                -- label
+                                local dropdownLabel = self:_TruncateText(sectionItem.label, widgetW - 4)
+                                self:_Draw(sectionItemId .. '_label', 'text', self._theming.text, 12, Vector2.new(widgetX, rowPos.y), dropdownLabel, true)
 
-                                self:_Draw(sectionItemId .. '_border', 'rect', self._theming.crust, 21, dropdownOrigin, dropdownSize, false)
-                                self:_Draw(sectionItemId .. '_label', 'text', self._theming.text, 20, sectionItemOrigin + Vector2.new(self._padding + extraPadding, 0), sectionItem.label, true)
+                                cursorY = cursorY + rowH + 2
 
-                                sectionHeight = sectionHeight + labelSize.y + dropdownSize.y + self._padding * 3
                             elseif itemType == 'button' then
-                                local labelSize = self:_GetTextBounds(sectionItem.label)
+                                local rowH = 22
+                                local btnPos = Vector2.new(widgetX, cursorY)
+                                local btnSize = Vector2.new(widgetW, rowH)
 
-                                local extraPadding = self._font_size
-                                local buttonOrigin = Vector2.new(sectionItemOrigin.x + extraPadding + self._padding, sectionItemOrigin.y)
-                                local buttonSize = Vector2.new(sectionWidth - extraPadding * 2 - self._padding * 3, labelSize.y + self._padding)
-
-                                local isHoveringButton = self:_IsMouseWithinBounds(buttonOrigin, buttonSize)
+                                local isHovering = self:_IsMouseWithinBounds(btnPos, btnSize)
                                 if mouseHeld then
-                                    if isHoveringButton and clickFrame then
-                                        self._slider_drag = sectionItemId
+                                    if isHovering and clickFrame then
+                                        self._button_held = sectionItemId
                                         clickFrame = false
-
-                                        if itemCallback then
-                                            itemCallback()
-                                        end
+                                        if itemCallback then itemCallback() end
                                     end
                                 else
-                                    self._slider_drag = nil
+                                    if self._button_held == sectionItemId then self._button_held = nil end
                                 end
 
-                                local isClicked = mouseHeld and self._slider_drag == sectionItemId
-                                local buttonColor = isClicked and self._theming.crust or self._theming.surface1
-                                local tintColor = isClicked and self._theming.surface1 or self._theming.crust
-                                self:_Draw(sectionItemId .. '_body', 'gradient', nil, 20, 'vertical', buttonOrigin, buttonSize, buttonColor, Color3.new(
-                                    self:_Lerp(buttonColor.R, tintColor.R, 0.5),
-                                    self:_Lerp(buttonColor.G, tintColor.G, 0.5),
-                                    self:_Lerp(buttonColor.B, tintColor.B, 0.5)
-                                ))
+                                local isPressed = self._button_held == sectionItemId
+                                local buttonHoverAnim = self:_StepAnim(sectionItemId .. '_button_hover_anim', (isHovering and not isPressed) and 1 or 0, 18)
+                                local buttonPressAnim = self:_StepAnim(sectionItemId .. '_button_press_anim', isPressed and 1 or 0, 24)
+                                local bgBaseColor = self:_LerpColor(self._theming.surface0, self._theming.surface1, buttonHoverAnim)
+                                local bgColor = self:_LerpColor(bgBaseColor, self._theming.accent, buttonPressAnim)
+                                local textColor = self:_LerpColor(self._theming.text, self._theming.body, buttonPressAnim)
+                                local borderColor = self:_LerpColor(self._theming.border1, self._theming.accent, clamp(buttonHoverAnim * 0.45 + buttonPressAnim, 0, 1))
+                                self:_Draw(sectionItemId .. '_bg', 'rect', bgColor, 12, btnPos, btnSize, true)
+                                self:_Draw(sectionItemId .. '_border', 'rect', borderColor, 13, btnPos, btnSize, false)
+                                self:_Draw(sectionItemId .. '_border_in', 'rect', self._theming.crust, 14, btnPos + Vector2.new(1, 1), btnSize - Vector2.new(2, 2), false)
+                                local btnLabel = self:_TruncateText(sectionItem.label, btnSize.x - 16)
+                                self:_Draw(sectionItemId .. '_text', 'text', textColor, 14, self:_GetCenteredTextPos(btnPos, btnSize, btnLabel), btnLabel, true, 'center')
 
-                                self:_Draw(sectionItemId .. '_border', 'rect', self._theming.crust, 21, buttonOrigin, buttonSize, false)
-                                self:_Draw(sectionItemId .. '_text', 'text', self._theming.text, 21, buttonOrigin + Vector2.new(buttonSize.x/2, buttonSize.y/2), sectionItem.label, true, 'center')
+                                cursorY = cursorY + rowH + 4
 
-                                sectionHeight = sectionHeight + buttonSize.y + self._padding * 2
                             elseif itemType == 'textbox' then
-                                local textboxOrigin = Vector2.new(sectionItemOrigin.x, sectionItemOrigin.y)
-                                local textboxSize = Vector2.new(sectionWidth - self._padding * 2, self._font_size + self._padding)
+                                local rowH = 32
+                                local rowPos = Vector2.new(widgetX, cursorY)
+                                local inputH = 18
+                                local inputPos = Vector2.new(widgetX, rowPos.y + 14)
+                                local inputSize = Vector2.new(widgetW, inputH)
 
-                                local isHoveringTextbox = self:_IsMouseWithinBounds(textboxOrigin, textboxSize)
+                                local isHovering = self:_IsMouseWithinBounds(inputPos, inputSize)
                                 local isTyping = self._input_ctx == sectionItemId
 
                                 local cursor = math.floor(os.clock() * 2) % 2 == 0 and '|' or ' '
-                                local displayedValue = isTyping and ((itemValue or '') .. cursor) or ((itemValue ~= '' and itemValue or sectionItem.label) .. ' ')
-                                local valueColor = isTyping and self._theming.text or ((itemValue and itemValue ~= '') and self._theming.text or self._theming.subtext)
+                                local raw = itemValue or ''
+                                local placeholder = '...'
+                                local displayedValue = isTyping and (raw .. cursor) or ((raw ~= '' and raw) or placeholder)
+                                local valueColor = isTyping and self._theming.text or ((raw ~= '') and self._theming.text or self._theming.subtext)
 
-                                if self:_GetTextBounds(displayedValue).x > textboxSize.x then
+                                if self:_GetTextBounds(displayedValue).x > inputSize.x - 12 then
                                     for i = 1, #displayedValue do
                                         local sub = displayedValue:sub(i)
-                                        if self:_GetTextBounds(sub).x <= textboxSize.x - 4 then
+                                        if self:_GetTextBounds(sub).x <= inputSize.x - 12 then
                                             displayedValue = sub
                                             break
                                         end
                                     end
                                 end
 
-                                local valueSize = self:_GetTextBounds(displayedValue)
-
-                                if self:_IsKeyPressed('m1') then -- force click frame
-                                    if isHoveringTextbox then
+                                if self:_IsKeyPressed('m1') then
+                                    if isHovering then
                                         self._input_ctx = sectionItemId
                                         clickFrame = false
                                     elseif isTyping then
+                                        -- close typing but let click propagate to other widgets in same frame
                                         self._input_ctx = nil
                                         self:_RemoveDropdown()
                                         isTyping = false
-                                        clickFrame = false
                                     end
                                 elseif ctxFrame then
-                                    if isHoveringTextbox then
+                                    if isHovering then
                                         self:_SpawnDropdown(self:_GetMousePos(), 60, {}, {'Copy', 'Clear'}, false, function(newValue)
                                             if newValue[1] == 'Copy' then
-                                                setclipboard(tostring(itemValue))
+                                                setclipboard(tostring(itemValue or ''))
                                                 self:Notification('Text copied to clipboard', 5)
                                             elseif newValue[1] == 'Clear' then
                                                 sectionItem.value = ''
-
-                                                if sectionItem.callback then
-                                                    sectionItem.callback('')
-                                                end
+                                                if sectionItem.callback then sectionItem.callback('') end
                                             end
                                         end)
-
                                         ctxFrame = false
                                     end
                                 end
 
                                 if isTyping then
-                                    local newValue = itemValue or ''
-                                    local shiftCtx = self:_IsKeyHeld('lshift') or self:_IsKeyHeld('rshift')
+                                    local newValue = raw
+                                    local shiftCtx = self:_IsKeyHeld('shift')
+                                    local changed = false
                                     for char, _ in pairs(self._inputs) do
                                         if self:_IsKeyPressed(char) then
                                             local mapped = _charMap[char] or char
                                             if mapped == 'enter' then
-                                                -- done/cancel input
                                                 self._input_ctx = nil
+                                                isTyping = false
+                                                break
+                                            elseif mapped == 'esc' then
+                                                -- cancel typing without modifying value
+                                                self._input_ctx = nil
+                                                isTyping = false
                                                 break
                                             elseif mapped == 'unbound' then
                                                 -- backspace
-                                                newValue = newValue:sub(1, -2)
+                                                if #newValue > 0 then
+                                                    newValue = newValue:sub(1, -2)
+                                                    changed = true
+                                                end
                                             elseif mapped then
-                                                -- input
                                                 if #mapped == 1 then
                                                     if shiftCtx and _shiftMap[mapped] then
                                                         mapped = _shiftMap[mapped]
@@ -1524,141 +3004,351 @@ do
                                                         mapped = mapped:upper()
                                                     end
                                                     newValue = newValue .. mapped
+                                                    changed = true
                                                 end
                                             end
-
-                                            if sectionItem.callback then
-                                                sectionItem.callback(newValue)
-                                            end
-
-                                            sectionItem.value = newValue
                                         end
+                                    end
+                                    if changed then
+                                        sectionItem.value = newValue
+                                        if sectionItem.callback then sectionItem.callback(newValue) end
                                     end
                                 end
 
-                                self:_Draw(sectionItemId .. '_input', 'text', valueColor, 22, textboxOrigin + Vector2.new(4, valueSize.y/2 - 2), displayedValue, true)
-                                self:_Draw(sectionItemId .. '_body', 'rect', self._theming.crust, 21, textboxOrigin, textboxSize, true)
+                                -- input box draw
+                                self:_Draw(sectionItemId .. '_input_bg', 'rect', self._theming.surface0, 12, inputPos, inputSize, true)
+                                self:_Draw(sectionItemId .. '_input_border', 'rect', self._theming.crust, 13, inputPos, inputSize, false)
+                                local borderColor
+                                if isTyping then
+                                    borderColor = self._theming.accent
+                                elseif isHovering then
+                                    borderColor = self._theming.border1
+                                else
+                                    borderColor = self._theming.border0
+                                end
+                                self:_Draw(sectionItemId .. '_input_border_in', 'rect', borderColor, 14, inputPos + Vector2.new(1, 1), inputSize - Vector2.new(2, 2), false)
+                                self:_Draw(sectionItemId .. '_input', 'text', valueColor, 14, inputPos + Vector2.new(6, inputSize.y/2 - 7), displayedValue, true)
+                                -- label
+                                local tbLabel = self:_TruncateText(sectionItem.label, widgetW - 4)
+                                self:_Draw(sectionItemId .. '_label', 'text', self._theming.text, 12, Vector2.new(widgetX, rowPos.y), tbLabel, true)
 
-                                sectionHeight = sectionHeight + textboxSize.y + self._padding
+                                cursorY = cursorY + rowH + 2
+                            end
+                            end -- overflow guard
+                            local nextFlowY = flowCursorY + baseAdvance
+                            if nextFlowY > columnCursorY[itemColumn] then
+                                columnCursorY[itemColumn] = nextFlowY
+                            end
+                            local visualEndY = cursorY
+                            if cursorY + overflowCheck <= contentBottom and visualEndY > furthestCursorY then
+                                furthestCursorY = visualEndY
+                            end
+                            if cursorY + overflowCheck <= contentBottom then
+                                local currentSectionVisualBottom = sectionVisualBottomY[itemColumn] or columnCursorY[itemColumn]
+                                if visualEndY > currentSectionVisualBottom then
+                                    sectionVisualBottomY[itemColumn] = visualEndY
+                                end
+                            end
+                            if columnCursorY[itemColumn] > furthestCursorY then
+                                furthestCursorY = columnCursorY[itemColumn]
+                            end
+
+                            end -- end _hidden else
+                        end
+
+                        for usedColumn, _ in pairs(sectionUsedColumns) do
+                            local sectionVisualBottom = sectionVisualBottomY[usedColumn]
+                            if sectionVisualBottom and sectionVisualBottom > columnCursorY[usedColumn] then
+                                columnCursorY[usedColumn] = sectionVisualBottom
+                            end
+                            columnCursorY[usedColumn] = columnCursorY[usedColumn] + 8
+                            if columnCursorY[usedColumn] > furthestCursorY then
+                                furthestCursorY = columnCursorY[usedColumn]
                             end
                         end
-
-                        if isSectionMirror then
-                            totalSectionHeightR = totalSectionHeightR + sectionHeight + sectionTitleSize.y/2
-                        else
-                            totalSectionHeightL = totalSectionHeightL + sectionHeight + sectionTitleSize.y/2
-                        end
-
-                        if isLastSection then
-                            if isSectionMirror then
-                                sectionHeight = bodyContentSize.y - totalSectionHeightR + sectionHeight - self._tab_h - self._padding
-                            else
-                                sectionHeight = bodyContentSize.y - totalSectionHeightL + sectionHeight - self._tab_h - self._padding
-                            end
-                        end
-
-                        self:_Draw(sectionDrawId .. '_backdrop', 'rect', self._theming.surface0, 11, sectionPos, Vector2.new(sectionWidth, sectionHeight), true)
-                        self:_Draw(sectionDrawId .. '_border', 'rect', self._theming.border0, 12, sectionPos, Vector2.new(sectionWidth, sectionHeight), false)
-
-                        if isSectionMirror then
-                            totalSectionHeightR = totalSectionHeightR + self._padding * 2
-                        else
-                            totalSectionHeightL = totalSectionHeightL + self._padding * 2
-                        end
-
-                        activeSectionIter = activeSectionIter + 1
-                    else
-                        self:_UndrawStartsWith(sectionDrawId)
                     end
 
-                    sectionIter = sectionIter + 1
+                    -- cleanup sections beyond the current list
+                    for sIdx = #tabContent._section_order + 1, #tabContent._section_order + 20 do
+                        self:_UndrawStartsWith('menu_section_' .. tostring(openTabIdx) .. '_' .. tostring(sIdx))
+                        self:_UndrawStartsWith('menu_widget_' .. tostring(openTabIdx) .. '_' .. tostring(sIdx) .. '_')
+                    end
+
+                    -- overflow indicator
+                    if furthestCursorY > contentBottom then
+                        local hintText = '▼ more'
+                        local hintSize = self:_GetTextBounds(hintText, nil, 10)
+                        local hintX = contentX + contentW - hintSize.x - 8
+                        local hintY = contentY + contentH - 14
+                        self:_Draw('menu_overflow_hint', 'text', self._theming.subtext, 18, Vector2.new(hintX, hintY), hintText, true, 'left', 10)
+                    else
+                        self:_Undraw('menu_overflow_hint')
+                    end
                 end
-                
-                tabIter = tabIter + 1
+
+                -- tooltip (drawn after all items so z-order is clean)
+                if tooltipPending then
+                    local tooltipText = tooltipPending.text
+                    local tooltipSize = self:_GetTextBounds(tooltipText)
+                    local tooltipBoxSize = tooltipSize + Vector2.new(self._padding * 2, self._padding - 2)
+                    local tooltipOrigin = tooltipPending.anchor
+                    -- clamp to screen bounds
+                    local screenSize = self:_GetScreenSize()
+                    if tooltipOrigin.x + tooltipBoxSize.x > screenSize.x - 4 then
+                        tooltipOrigin = Vector2.new(screenSize.x - tooltipBoxSize.x - 4, tooltipOrigin.y)
+                    end
+                    if tooltipOrigin.y + tooltipBoxSize.y > screenSize.y - 4 then
+                        tooltipOrigin = Vector2.new(tooltipOrigin.x, screenSize.y - tooltipBoxSize.y - 4)
+                    end
+                    if tooltipOrigin.x < 4 then tooltipOrigin = Vector2.new(4, tooltipOrigin.y) end
+                    if tooltipOrigin.y < 4 then tooltipOrigin = Vector2.new(tooltipOrigin.x, 4) end
+                    self:_Draw('menu_tooltip_body', 'rect', self._theming.body, 1000, tooltipOrigin, tooltipBoxSize, true)
+                    self:_SetOpacity('menu_tooltip_body', 1)
+                    self:_Draw('menu_tooltip_crust', 'rect', self._theming.crust, 1001, tooltipOrigin, tooltipBoxSize, false)
+                    self:_Draw('menu_tooltip_border', 'rect', self._theming.border1, 1002, tooltipOrigin + Vector2.new(1, 1), tooltipBoxSize - Vector2.new(2, 2), false)
+                    self:_Draw('menu_tooltip_text', 'text', self._theming.text, 1003, tooltipOrigin + Vector2.new(self._padding, self._padding/2 - 1), tooltipText, true)
+                else
+                    self:_UndrawStartsWith('menu_tooltip')
+                end
+
+                -- drag start: topbar only
+                if clickFrame and not self._menu_drag and self:_IsMouseWithinBounds(Vector2.new(self.x, self.y), Vector2.new(self.w, topbarH)) then
+                    local mousePos = self:_GetMousePos()
+                    self._menu_drag = Vector2.new(mousePos.x - self.x, mousePos.y - self.y)
+                end
+
+            else
+                self:_RemoveColorpicker()
+                self:_RemoveDropdown()
+                self._input_ctx = nil
+                self._menu_drag = nil
+                self._slider_drag = nil
+                self._button_held = nil
+                -- clear any sticky keybind listening state so menu open doesnt resume capture
+                for _, tabData in pairs(self._tree) do
+                    for _, sectionData in pairs(tabData._items) do
+                        for _, item in ipairs(sectionData._items) do
+                            if item.keybind and item.keybind._listening then
+                                item.keybind._listening = false
+                            end
+                        end
+                    end
+                end
             end
 
-            if clickFrame and not self._menu_drag and self:_IsMouseWithinBounds(Vector2.new(self.x, self.y), Vector2.new(self.w, self.h)) then
-                local mousePos = self:_GetMousePos()
-                self._menu_drag = Vector2.new(mousePos.x - self.x, mousePos.y - self.y)
+            local menuOpacity, menuFadeProgress = self:_ResolveMenuFadeOpacity()
+
+            -- set base alphas for glass elements (independent of fade)
+            if menuOpacity > 0 then
+                local bgAlpha = clamp(self._background_alpha or 1, 5/100, 1)
+                self:_SetOpacityStartsWith('menu_body', bgAlpha)
+                self:_SetOpacityStartsWith('menu_overlay', bgAlpha * 0.12)
+                self:_SetOpacityStartsWith('menu_topbar_bg', clamp(bgAlpha + 0.04, 0, 1))
+                self:_SetOpacityStartsWith('menu_sidebar_bg', clamp(bgAlpha + 0.03, 0, 1))
             end
-        else
-            self:_RemoveColorpicker()
-            self:_RemoveDropdown()
+
+            -- apply fade multiplier on top of base alphas (preserves gradients, glass, etc.)
+            if not self._menu_fade_done then
+                self:_ApplyMenuFade(menuOpacity)
+                if menuFadeProgress >= 1 then
+                    self._menu_fade_done = true
+                    self._menu_fade_start_opacity = self._menu_open and 1 or 0
+                    if not self._menu_open then
+                        self:_UndrawStartsWith('menu_')
+                    end
+                end
+            end
         end
 
-        -- fade the menu (smoothstep easing)
-        if not self._menu_fade_done then
-            local t = clamp((os.clock() - self._menu_toggled_at) / 0.3, 0, 1)
-            local eased = t * t * (3 - 2 * t)
-            local opacity = self._menu_open and eased or (1 - eased)
-            self:_SetOpacityStartsWith('menu_', opacity)
-            if t >= 1 then
-                self._menu_fade_done = true
-                if not self._menu_open then
-                    self:_UndrawStartsWith('menu_')
-                end
+        function UILib:ShowDemoMenu()
+            self:Unload()
+
+            self:SetMenuSize(Vector2.new(720, 460))
+            self:CenterMenu()
+            self:SetMenuTitle('UILib v2')
+
+            -- tab 1: toggles, keybinds, colorpickers, sliders, buttons, textbox
+            local combat = self:Tab('Combat')
+            local aimbot = combat:Section('Aimbot')
+            local enabled = aimbot:Toggle('Enabled', false, nil, false, 'Master aimbot switch')
+            local aimKey = enabled:AddKeybind('unbound', 'Hold', true)
+            local silent = aimbot:Toggle('Silent aim', true)
+            local silentColor = silent:AddColorpicker('Hit color', Color3.fromRGB(255, 80, 120))
+            local autoWall = aimbot:Toggle('Auto wall (unsafe)', false, nil, true, 'Unsafe features may get you banned')
+            autoWall:AddKeybind('v', 'Toggle', true)
+            local overwriteColor = aimbot:Toggle('Crosshair color')
+            overwriteColor:AddColorpicker('Crosshair', Color3.fromRGB(0, 255, 128), true)
+            local fov = aimbot:Slider('FOV', 90, 1, 1, 360, 'deg')
+            local smooth = aimbot:Slider('Smoothness', 2.5, 0.1, 0.1, 10, 'x')
+            local hitbox = aimbot:Dropdown('Hitbox', {'Head', 'Chest'}, {'Head', 'Neck', 'Chest', 'Stomach', 'Pelvis', 'Arms', 'Legs'}, true)
+            aimbot:Dropdown('Priority', {'Distance'}, {'Distance', 'Health', 'FOV', 'Threat'}, false)
+            aimbot:Button('Reset settings', function()
+                enabled:Set(false)
+                aimKey:Set(nil)
+                silent:Set(false)
+                silentColor:Set(Color3.fromRGB(255, 255, 255))
+                fov:Set(90)
+                smooth:Set(2.5)
+                hitbox:Set({'Head'})
+            end)
+
+            local accuracy = combat:Section('Accuracy')
+            local animOn = false
+            accuracy:Toggle('Live meter', animOn, function(v) animOn = v end)
+            local meterSlider = accuracy:Slider('Meter', 0, 1, -100, 100, '%')
+            accuracy:Slider('Prediction', 0.5, 0.05, 0, 2, 's')
+            local targetBox = accuracy:Textbox('Target filter', '')
+            accuracy:Textbox('Ignore list', '')
+            accuracy:Button('Clear filter', function() targetBox:Set('') end)
+
+            -- tab 2: esp, world, many toggles with colorpickers
+            local vis = self:Tab('Visuals')
+            local esp = vis:Section('ESP')
+            local espOn = esp:Toggle('Enabled', false)
+            espOn:AddColorpicker('Color', Color3.fromRGB(0, 200, 255))
+            espOn:AddKeybind('unbound', 'Toggle', true)
+            esp:Toggle('Box', true)
+            esp:Toggle('Name', true)
+            esp:Toggle('Health bar', false)
+            esp:Toggle('Distance', false)
+            esp:Toggle('Skeleton', false)
+            esp:Toggle('Head dot', false)
+            esp:Toggle('Tracers', false)
+            esp:Toggle('Chams', false)
+            esp:Slider('Max distance', 500, 10, 10, 2000, 'm')
+            esp:Slider('Text size', 13, 1, 8, 24, 'px')
+            -- pager test: 25 items single-select (3 pages, last page wraps to start)
+            esp:Dropdown('Style', {'Corner'}, {
+                'Corner', 'Full', 'Outline', 'Rounded', 'Dotted',
+                'Dashed', 'Thick', 'Thin', 'Double', 'Glow',
+                'Neon', 'Gradient', 'Fade', 'Pulse', 'Rainbow',
+                'Matrix', 'Retro', 'Minimal', 'Bold', 'Custom',
+                'Sketch', 'Comic', 'Cyber', 'Vapor', 'Holo'
+            }, false)
+            -- stress test: 18 items multi-select
+            esp:Dropdown('Flags', {'Armor', 'Weapon'}, {
+                'Armor', 'Weapon', 'Ammo', 'Reload', 'Scoped',
+                'Flashed', 'Defusing', 'Planting', 'Peeking', 'Lit',
+                'Bot', 'AFK', 'Lagging', 'Streaming', 'Admin',
+                'VIP', 'Suspect', 'Reported'
+            }, true)
+
+            local world = vis:Section('World')
+            local worldGlow = world:Toggle('Glow', false)
+            worldGlow:AddColorpicker('Glow color', Color3.fromRGB(255, 255, 0))
+            world:Toggle('Night mode', false)
+            world:Toggle('No fog', false)
+            world:Toggle('Fullbright', false)
+            world:Slider('FOV changer', 70, 1, 40, 120, 'deg')
+            world:Slider('View distance', 1000, 50, 100, 5000, 'm')
+            world:Dropdown('Skybox', {'Default'}, {'Default', 'Night', 'Sunset', 'Space', 'Custom'}, false)
+
+            -- tab 3: movement, automation
+            local misc = self:Tab('Misc')
+            local movement = misc:Section('Movement')
+            movement:Toggle('Bunnyhop', false)
+            movement:Toggle('Auto strafe', false)
+            movement:Toggle('Speed boost', false)
+            movement:Toggle('No fall damage', false)
+            movement:Slider('Jump height', 16, 1, 10, 100, 'u')
+            movement:Slider('Walk speed', 16, 1, 1, 50, 'u/s')
+            movement:Button('Teleport home', function() self:Notification('Teleport sent', 3) end)
+            movement:Button('Respawn', function() self:Notification('Respawning...', 2) end)
+
+            local automation = misc:Section('Automation')
+            automation:Toggle('Auto heal', false)
+            automation:Toggle('Auto reload', false)
+            automation:Toggle('Auto pickup', false)
+            automation:Slider('Heal threshold', 50, 5, 10, 100, '%')
+            automation:Dropdown('Pickup priority', {'Nearest'}, {'Nearest', 'Rarest', 'Best weapon', 'Ammo first'}, false)
+            automation:Textbox('Macro command', '')
+
+            -- tab 4: subtabs test
+            local config = self:Tab('Config')
+            local profiles = config:SubTab('Profiles')
+            local profSection = profiles:Section('Manage')
+            profSection:Textbox('Profile name', 'default')
+            profSection:Button('Save', function() self:Notification('Profile saved', 3) end)
+            profSection:Button('Load', function() self:Notification('Profile loaded', 3) end)
+            profSection:Button('Delete', function() self:Notification('Profile deleted', 3) end)
+            profSection:Dropdown('Active profile', {'default'}, {'default', 'rage', 'legit', 'hvh', 'casual'}, false)
+
+            local scripts = config:SubTab('Scripts')
+            local scriptSection = scripts:Section('Loader')
+            scriptSection:Textbox('Script URL', '')
+            scriptSection:Button('Execute', function() self:Notification('Script executed', 3) end)
+            scriptSection:Toggle('Auto-run on inject', false)
+
+            -- tab 5: sidebar groups test
+            local dbgParent = self:Tab('Debug')
+            local dbgPerf = dbgParent:SubTab('Perf')
+            local perfSection = dbgPerf:Section('Metrics')
+            local fpsSlider = perfSection:Slider('Simulated FPS', 60, 1, 1, 240, '')
+            perfSection:Toggle('Show FPS overlay', false)
+            perfSection:Toggle('Show draw count', false)
+            perfSection:Toggle('Show memory', false)
+
+            local dbgInput = dbgParent:SubTab('Input')
+            local inputSection = dbgInput:Section('Test')
+            inputSection:Toggle('Log keypresses', false)
+            inputSection:Toggle('Log mouse', false)
+            inputSection:Textbox('Last key', '')
+            inputSection:Button('Clear log', function() self:Notification('Log cleared', 2) end)
+
+            -- tab 6: column layout, y-offset, overflow test
+            local layout = self:Tab('Layout')
+            local leftRight = layout:Section('Columns')
+            local ll = leftRight:Left()
+            ll:Toggle('Left toggle 1', false)
+            ll:Toggle('Left toggle 2', true)
+            ll:Slider('Left slider', 50, 1, 0, 100, '%')
+            ll:Button('Left button', function() self:Notification('Left!', 2) end)
+            local rr = leftRight:Right()
+            rr:Toggle('Right toggle 1', true)
+            rr:Toggle('Right toggle 2', false)
+            rr:Slider('Right slider', 75, 1, 0, 100, '%')
+            rr:Dropdown('Right dropdown', {'A'}, {'A', 'B', 'C', 'D', 'E'}, false)
+
+            -- overflow: many items to trigger the overflow hint
+            local overflow = layout:Section('Overflow Test')
+            for i = 1, 15 do
+                overflow:Toggle('Item #' .. tostring(i), i % 3 == 0)
             end
+
+            -- snap demo: min=5 step=3, slider snaps to 5,8,11,14,17,20 (snap-relative-to-min fix)
+            local snapDemo = layout:Section('Snap Demo')
+            snapDemo:Slider('min=5 step=3', 5, 3, 5, 20, '')
+            snapDemo:Slider('min=10 step=7', 10, 7, 10, 80, '')
+            -- button row: short / medium / long labels — all should be center-aligned
+            snapDemo:Button('OK', function() self:Notification('OK', 2) end)
+            snapDemo:Button('Save Configuration', function() self:Notification('Saved', 2) end)
+            snapDemo:Button('A', function() self:Notification('A', 2) end)
+
+            -- settings tab
+            local _, menuSettings = self:CreateSettingsTab()
+            local shouldDie = false
+            menuSettings:Button('Unload', function() shouldDie = true end)
+            menuSettings:Button('Fire notification', function()
+                self:Notification('Test notification at ' .. tostring(math.floor(os.clock())), 5)
+            end)
+            menuSettings:Button('Fire 3 notifications', function()
+                for i = 1, 3 do
+                    self:Notification('Notification #' .. tostring(i), 4 + i)
+                end
+            end)
+
+            self:Notification('UILib v2 demo loaded', 5)
+            self:Notification('Press F1 to toggle the menu', 6)
+            self:Notification('Try the 25-item Style dropdown (Visuals tab) for the pager', 7)
+
+            while not shouldDie do
+                if animOn then
+                    meterSlider:Set(math.floor(math.sin(os.clock() * 3) * 100))
+                end
+                self:Step()
+            end
+
+            self:Unload()
+            return true
         end
     end
-
-    function UILib:ShowDemoMenu()
-        self:SetMenuSize(Vector2.new(400, 500))
-        self:CenterMenu()
-
-        local playground = self:Tab('Playground')
-        local el = playground:Section('Section 1')
-        local toggleOne = el:Toggle('Toggle #1', false, nil, true, 'This feature has a tooltip, wow!')
-        local key = toggleOne:AddKeybind()
-        local toggleTwo = el:Toggle('Toggle #2', false)
-        local color = toggleTwo:AddColorpicker('ESP Color')
-        el:Textbox('Hint', nil, nil)
-        local dragMe = el:Slider('Drag me', 10, 1, 1, 360, 'deg')
-        local pickMe = el:Dropdown('Pick me', {'1'}, {'1', '2', '3', '4', '5', 'verybigitem'}, false)
-        el:Button('Rollback', function()
-            toggleOne:Set(false)
-            key:Set(nil, nil)
-            toggleTwo:Set()
-            color:Set(Color3.fromRGB(255, 255, 255))
-            dragMe:Set(100)
-            pickMe:Set({'1'})
-        end)
-
-        local anims = playground:Section('Section 2')
-        local shouldAnimate = false
-        local animToggle = anims:Toggle('Playing', shouldAnimate, function(newValue)
-            shouldAnimate = newValue
-        end)
-        local animSlider = anims:Slider('Meter', 0, 1, -100, 100, '%')
-        anims:Button('Stop', function()
-            animToggle:Set(false)
-        end)
-
-        playground:Section('Section 3')
-        playground:Section('Section 4')
-
-        self:Tab('Another tab')
-        self:Tab('Tabs')
-
-        local shouldDie = false
-        local _, menuSettings = self:CreateSettingsTab()
-        menuSettings:Button('Unload', function()
-            shouldDie = true
-        end)
-
-        self:Notification('Done loading the script! (it took 0.03s)', 8)
-        self:Notification('Press F1 to toggle the menu', 15)
-
-        while not shouldDie do
-            if shouldAnimate then
-                animSlider:Set(math.floor(math.sin(os.clock() * 10) * 100))
-            end
-
-            self:Step()
-        end
-
-        self:Unload()
-        return true
-    end
-end
-
-return UILib
