@@ -1,4 +1,4 @@
--- test uwu
+-- testuwu
     UILib = {
         _font_face = Drawing.Fonts.UI,
         _font_size = 13,
@@ -69,7 +69,9 @@
         _glow_r_speed = 3,
         _glow_r_radius = 9,
         _glow_r_intensity = 50,
-        _glow_test_method = 1,
+        _glow_test_body_corner = 12,
+        _glow_test_radius = 10,
+        _glow_test_intensity = 50,
         _theming = {
             accent = Color3.fromRGB(203, 166, 247),
             unsafe = Color3.fromRGB(255, 215, 64),
@@ -1102,13 +1104,11 @@
             local menuSection = settingsTab:Section('Menu')
             local menuKey = menuSection:Toggle(menuKeyLabel, self._overwrite_menu_key, function(newValue)
                 self._overwrite_menu_key = newValue
-                if options.onMenuKeyChange then options.onMenuKeyChange('override', newValue) end
             end)
             settingsRefs.menuKey = menuKey
             menuKey:AddKeybind(self._menu_key, 'Hold', false, function(newValue)
                 if newValue and self._inputs[newValue] then
                     self._menu_key = newValue
-                    if options.onMenuKeyChange then options.onMenuKeyChange('key', newValue) end
                 end
             end)
             if showWatermark then
@@ -1349,31 +1349,27 @@
                 end, 'font family used across the ui', fontPreviewMap)
 
                 -- glow settings
-                local function _glowChanged(field, value)
-                    if options.onGlowChange then options.onGlowChange(field, value) end
-                end
                 local glowToggle = themingSection:Toggle('Glow', self._glow_enabled, function(newValue)
                     self._glow_enabled = newValue
-                    _glowChanged('enabled', newValue)
                 end)
                 glowColorRef = glowToggle:AddColorpicker('Glow color', self._glow_color or self._theming.accent, false, function(newValue)
                     self._glow_color = newValue
-                    _glowChanged('color', newValue)
                 end)
 
                 -- mode select sits right under the toggle
                 local glowSIntensity, glowSRadius
                 local glowBSpeed, glowBIntensity, glowBRadius
                 local glowRWorm, glowRSpeed, glowRRadius, glowRIntensity
-                local glowTestMethod
 
+                -- forward decl for 'test' mode sliders
+                local glowTestCornering, glowTestRadius, glowTestIntensity
                 local function updateGlowSliderVisibility(mode)
                     local isS = mode == 'Static'
                     local isB = mode == 'Breathe'
                     local isR = mode == 'Rotate'
                     local isT = mode == 'test'
-                    glowSIntensity:SetHidden(not (isS or isT))
-                    glowSRadius:SetHidden(not (isS or isT))
+                    glowSIntensity:SetHidden(not isS)
+                    glowSRadius:SetHidden(not isS)
                     glowBSpeed:SetHidden(not isB)
                     glowBIntensity:SetHidden(not isB)
                     glowBRadius:SetHidden(not isB)
@@ -1381,28 +1377,31 @@
                     glowRSpeed:SetHidden(not isR)
                     glowRRadius:SetHidden(not isR)
                     glowRIntensity:SetHidden(not isR)
-                    glowTestMethod:SetHidden(not isT)
+                    glowTestCornering:SetHidden(not isT)
+                    glowTestRadius:SetHidden(not isT)
+                    glowTestIntensity:SetHidden(not isT)
                 end
 
                 themingSection:Dropdown('Glow animation', {self._glow_mode}, {'Static', 'Breathe', 'Rotate', 'test'}, false, function(newValue)
                     if newValue and newValue[1] then
                         self._glow_mode = newValue[1]
                         updateGlowSliderVisibility(newValue[1])
-                        _glowChanged('mode', newValue[1])
                     end
                 end)
 
                 -- per-mode sliders (hidden/shown on mode change)
-                glowSIntensity = themingSection:Slider('Intensity', self._glow_s_intensity, 1, 1, 100, '%', function(v) self._glow_s_intensity = v; _glowChanged('s_intensity', v) end)
-                glowSRadius = themingSection:Slider('Radius', self._glow_s_radius, 1, 1, 20, 'px', function(v) self._glow_s_radius = v; _glowChanged('s_radius', v) end)
-                glowTestMethod = themingSection:Slider('test method', self._glow_test_method, 1, 1, 4, '', function(v) self._glow_test_method = v; _glowChanged('test_method', v) end)
-                glowBSpeed = themingSection:Slider('Speed', self._glow_b_speed, 1, 1, 5, 's', function(v) self._glow_b_speed = v; _glowChanged('b_speed', v) end)
-                glowBIntensity = themingSection:Slider('Max intensity', self._glow_b_intensity, 1, 1, 100, '%', function(v) self._glow_b_intensity = v; _glowChanged('b_intensity', v) end)
-                glowBRadius = themingSection:Slider('Max radius', self._glow_b_radius, 1, 1, 20, 'px', function(v) self._glow_b_radius = v; _glowChanged('b_radius', v) end)
-                glowRWorm = themingSection:Slider('Worm size', self._glow_r_worm, 1, 10, 100, '%', function(v) self._glow_r_worm = v; _glowChanged('r_worm', v) end)
-                glowRSpeed = themingSection:Slider('Speed', self._glow_r_speed, 1, 1, 10, '', function(v) self._glow_r_speed = v; _glowChanged('r_speed', v) end)
-                glowRRadius = themingSection:Slider('Glow radius', self._glow_r_radius, 1, 1, 20, 'px', function(v) self._glow_r_radius = v; _glowChanged('r_radius', v) end)
-                glowRIntensity = themingSection:Slider('Worm glow intensity', self._glow_r_intensity, 1, 1, 100, '%', function(v) self._glow_r_intensity = v; _glowChanged('r_intensity', v) end)
+                glowSIntensity = themingSection:Slider('Intensity', self._glow_s_intensity, 1, 1, 100, '%', function(v) self._glow_s_intensity = v end)
+                glowSRadius = themingSection:Slider('Radius', self._glow_s_radius, 1, 1, 20, 'px', function(v) self._glow_s_radius = v end)
+                glowBSpeed = themingSection:Slider('Speed', self._glow_b_speed, 1, 1, 5, 's', function(v) self._glow_b_speed = v end)
+                glowBIntensity = themingSection:Slider('Max intensity', self._glow_b_intensity, 1, 1, 100, '%', function(v) self._glow_b_intensity = v end)
+                glowBRadius = themingSection:Slider('Max radius', self._glow_b_radius, 1, 1, 20, 'px', function(v) self._glow_b_radius = v end)
+                glowRWorm = themingSection:Slider('Worm size', self._glow_r_worm, 1, 10, 100, '%', function(v) self._glow_r_worm = v end)
+                glowRSpeed = themingSection:Slider('Speed', self._glow_r_speed, 1, 1, 10, '', function(v) self._glow_r_speed = v end)
+                glowRRadius = themingSection:Slider('Glow radius', self._glow_r_radius, 1, 1, 20, 'px', function(v) self._glow_r_radius = v end)
+                glowRIntensity = themingSection:Slider('Worm glow intensity', self._glow_r_intensity, 1, 1, 100, '%', function(v) self._glow_r_intensity = v end)
+                glowTestCornering = themingSection:Slider('Cornering', self._glow_test_body_corner, 1, 0, 30, 'px', function(v) self._glow_test_body_corner = v end)
+                glowTestRadius = themingSection:Slider('Radius', self._glow_test_radius, 1, 1, 20, 'px', function(v) self._glow_test_radius = v end)
+                glowTestIntensity = themingSection:Slider('Intensity', self._glow_test_intensity, 1, 1, 100, '%', function(v) self._glow_test_intensity = v end)
 
                 updateGlowSliderVisibility(self._glow_mode)
 
@@ -1901,6 +1900,9 @@
                 local sidebarW = self._sidebar_w
                 local topbarH = self._topbar_h
 
+                -- body rounding: only non-zero in 'test' glow mode for now
+                local bodyCorner = (self._glow_enabled and self._glow_mode == 'test') and (self._glow_test_body_corner or 12) or 0
+
                 -- neon glow
                 local glowMode = self._glow_mode or 'Static'
                 -- clean up on mode change
@@ -2000,226 +2002,32 @@
                             local smooth = raw * raw * (3 - 2 * raw)
                             peakMul = 0.3 + 0.7 * smooth
                         elseif glowMode == 'test' then
-                            -- rounded glow using static params, no square corners
-                            effectiveRadius = self._glow_s_radius or 10
-                            glowPeak = (self._glow_s_intensity or 50) / 100
+                            -- test = Corner-based rounded glow, dedicated params
+                            effectiveRadius = self._glow_test_radius or 10
+                            glowPeak = (self._glow_test_intensity or 50) / 100
                             peakMul = 1
                         else
                             effectiveRadius = 10
                             glowPeak = 0.5
                             peakMul = 1
                         end
-                        if glowMode == 'test' then
-                            local testMethod = self._glow_test_method or 1
-                            local testSegCount = 0
-                            local halfpi = 1.5707963
-
-                            for gi = 1, effectiveRadius do
-                                local glowAlpha = (1 - (gi - 1) / effectiveRadius) * glowPeak * peakMul
-
-                                if testMethod == 1 then
-                                    -- METHOD 1: polyline quarter arcs + full-length edges
-                                    local eT = 'menu_glow_te' .. tostring(gi)
-                                    local eB = 'menu_glow_be' .. tostring(gi)
-                                    local eL = 'menu_glow_le' .. tostring(gi)
-                                    local eR = 'menu_glow_re' .. tostring(gi)
-                                    self:_Draw(eT, 'rect', glowColor, 0, Vector2.new(mx, my - gi),             Vector2.new(mw, 1), true)
-                                    self:_Draw(eB, 'rect', glowColor, 0, Vector2.new(mx, my + mh + gi - 1),    Vector2.new(mw, 1), true)
-                                    self:_Draw(eL, 'rect', glowColor, 0, Vector2.new(mx - gi, my),             Vector2.new(1, mh), true)
-                                    self:_Draw(eR, 'rect', glowColor, 0, Vector2.new(mx + mw + gi - 1, my),    Vector2.new(1, mh), true)
-                                    self:_SetOpacity(eT, glowAlpha)
-                                    self:_SetOpacity(eB, glowAlpha)
-                                    self:_SetOpacity(eL, glowAlpha)
-                                    self:_SetOpacity(eR, glowAlpha)
-                                    local arcSegs = math.max(4, math.floor(gi * 0.7) + 3)
-                                    for corner = 0, 3 do
-                                        local cx, cy, startTheta
-                                        if corner == 0 then       cx, cy, startTheta = mx,      my,      3.1415927
-                                        elseif corner == 1 then   cx, cy, startTheta = mx + mw, my,      -halfpi
-                                        elseif corner == 2 then   cx, cy, startTheta = mx + mw, my + mh, 0
-                                        else                       cx, cy, startTheta = mx,      my + mh, halfpi
-                                        end
-                                        local prevX = cx + math.cos(startTheta) * gi
-                                        local prevY = cy + math.sin(startTheta) * gi
-                                        for seg = 1, arcSegs do
-                                            local t = startTheta + (seg / arcSegs) * halfpi
-                                            local curX = cx + math.cos(t) * gi
-                                            local curY = cy + math.sin(t) * gi
-                                            testSegCount = testSegCount + 1
-                                            local sid = 'menu_glow_ta' .. tostring(testSegCount)
-                                            self:_Draw(sid, 'line', glowColor, 0, Vector2.new(prevX, prevY), Vector2.new(curX, curY), 1)
-                                            self:_SetOpacity(sid, glowAlpha)
-                                            prevX, prevY = curX, curY
-                                        end
-                                    end
-
-                                elseif testMethod == 2 then
-                                    -- METHOD 2: full circle outlines at each corner + full-length edges (accepts overlap)
-                                    local eT = 'menu_glow_te' .. tostring(gi)
-                                    local eB = 'menu_glow_be' .. tostring(gi)
-                                    local eL = 'menu_glow_le' .. tostring(gi)
-                                    local eR = 'menu_glow_re' .. tostring(gi)
-                                    self:_Draw(eT, 'rect', glowColor, 0, Vector2.new(mx, my - gi),             Vector2.new(mw, 1), true)
-                                    self:_Draw(eB, 'rect', glowColor, 0, Vector2.new(mx, my + mh + gi - 1),    Vector2.new(mw, 1), true)
-                                    self:_Draw(eL, 'rect', glowColor, 0, Vector2.new(mx - gi, my),             Vector2.new(1, mh), true)
-                                    self:_Draw(eR, 'rect', glowColor, 0, Vector2.new(mx + mw + gi - 1, my),    Vector2.new(1, mh), true)
-                                    self:_SetOpacity(eT, glowAlpha)
-                                    self:_SetOpacity(eB, glowAlpha)
-                                    self:_SetOpacity(eL, glowAlpha)
-                                    self:_SetOpacity(eR, glowAlpha)
-                                    local sides = math.max(12, gi * 4)
-                                    for corner = 0, 3 do
-                                        local cx, cy
-                                        if corner == 0 then       cx, cy = mx,      my
-                                        elseif corner == 1 then   cx, cy = mx + mw, my
-                                        elseif corner == 2 then   cx, cy = mx + mw, my + mh
-                                        else                       cx, cy = mx,      my + mh
-                                        end
-                                        testSegCount = testSegCount + 1
-                                        local sid = 'menu_glow_ta' .. tostring(testSegCount)
-                                        self:_Draw(sid, 'circle', glowColor, 0, Vector2.new(cx, cy), gi, false, 1, sides)
-                                        self:_SetOpacity(sid, glowAlpha)
-                                    end
-
-                                elseif testMethod == 3 then
-                                    -- METHOD 3: trimmed edges (stop before corner) + full circle outlines at corners
-                                    local trim = gi
-                                    if trim * 2 >= mw then trim = math.floor(mw / 2) - 1 end
-                                    if trim * 2 >= mh then trim = math.min(trim, math.floor(mh / 2) - 1) end
-                                    if trim < 0 then trim = 0 end
-                                    local eT = 'menu_glow_te' .. tostring(gi)
-                                    local eB = 'menu_glow_be' .. tostring(gi)
-                                    local eL = 'menu_glow_le' .. tostring(gi)
-                                    local eR = 'menu_glow_re' .. tostring(gi)
-                                    self:_Draw(eT, 'rect', glowColor, 0, Vector2.new(mx + trim, my - gi),             Vector2.new(math.max(1, mw - trim * 2), 1), true)
-                                    self:_Draw(eB, 'rect', glowColor, 0, Vector2.new(mx + trim, my + mh + gi - 1),    Vector2.new(math.max(1, mw - trim * 2), 1), true)
-                                    self:_Draw(eL, 'rect', glowColor, 0, Vector2.new(mx - gi, my + trim),             Vector2.new(1, math.max(1, mh - trim * 2)), true)
-                                    self:_Draw(eR, 'rect', glowColor, 0, Vector2.new(mx + mw + gi - 1, my + trim),    Vector2.new(1, math.max(1, mh - trim * 2)), true)
-                                    self:_SetOpacity(eT, glowAlpha)
-                                    self:_SetOpacity(eB, glowAlpha)
-                                    self:_SetOpacity(eL, glowAlpha)
-                                    self:_SetOpacity(eR, glowAlpha)
-                                    local sides = math.max(12, gi * 4)
-                                    for corner = 0, 3 do
-                                        local cx, cy
-                                        if corner == 0 then       cx, cy = mx + trim,      my + trim
-                                        elseif corner == 1 then   cx, cy = mx + mw - trim, my + trim
-                                        elseif corner == 2 then   cx, cy = mx + mw - trim, my + mh - trim
-                                        else                       cx, cy = mx + trim,      my + mh - trim
-                                        end
-                                        testSegCount = testSegCount + 1
-                                        local sid = 'menu_glow_ta' .. tostring(testSegCount)
-                                        self:_Draw(sid, 'circle', glowColor, 0, Vector2.new(cx, cy), gi + trim, false, 1, sides)
-                                        self:_SetOpacity(sid, glowAlpha)
-                                    end
-
-                                elseif testMethod == 4 then
-                                    -- METHOD 4: dotted perimeter — tiny filled circles spaced along rounded path
-                                    -- spacing scales with gi so inner layers aren't insanely dense; capped to stay under ~400 dots per layer
-                                    local perim = 2 * (mw + mh) + (6.28318 * gi)
-                                    local dotSpacing = math.max(4, gi + 2)
-                                    local dotCount = math.min(400, math.max(8, math.floor(perim / dotSpacing)))
-                                    -- walk perimeter: 4 straight edges + 4 quarter arcs
-                                    local edgeT_len = mw
-                                    local edgeR_len = mh
-                                    local arc_len = 1.5707963 * gi
-                                    local totalLen = 2 * (edgeT_len + edgeR_len) + 4 * arc_len
-                                    for d = 0, dotCount - 1 do
-                                        local distAlong = (d / dotCount) * totalLen
-                                        local px, py
-                                        -- segment order: topEdge, topRightArc, rightEdge, bottomRightArc, bottomEdge, bottomLeftArc, leftEdge, topLeftArc
-                                        if distAlong < edgeT_len then
-                                            px = mx + distAlong
-                                            py = my - gi
-                                        else distAlong = distAlong - edgeT_len
-                                            if distAlong < arc_len then
-                                                local t = -halfpi + (distAlong / arc_len) * halfpi
-                                                px = mx + mw + math.cos(t) * gi
-                                                py = my + math.sin(t) * gi
-                                            else distAlong = distAlong - arc_len
-                                                if distAlong < edgeR_len then
-                                                    px = mx + mw + gi
-                                                    py = my + distAlong
-                                                else distAlong = distAlong - edgeR_len
-                                                    if distAlong < arc_len then
-                                                        local t = 0 + (distAlong / arc_len) * halfpi
-                                                        px = mx + mw + math.cos(t) * gi
-                                                        py = my + mh + math.sin(t) * gi
-                                                    else distAlong = distAlong - arc_len
-                                                        if distAlong < edgeT_len then
-                                                            px = mx + mw - distAlong
-                                                            py = my + mh + gi
-                                                        else distAlong = distAlong - edgeT_len
-                                                            if distAlong < arc_len then
-                                                                local t = halfpi + (distAlong / arc_len) * halfpi
-                                                                px = mx + math.cos(t) * gi
-                                                                py = my + mh + math.sin(t) * gi
-                                                            else distAlong = distAlong - arc_len
-                                                                if distAlong < edgeR_len then
-                                                                    px = mx - gi
-                                                                    py = my + mh - distAlong
-                                                                else distAlong = distAlong - edgeR_len
-                                                                    local t = 3.1415927 + (distAlong / arc_len) * halfpi
-                                                                    px = mx + math.cos(t) * gi
-                                                                    py = my + math.sin(t) * gi
-                                                                end
-                                                            end
-                                                        end
-                                                    end
-                                                end
-                                            end
-                                        end
-                                        testSegCount = testSegCount + 1
-                                        local sid = 'menu_glow_ta' .. tostring(testSegCount)
-                                        self:_Draw(sid, 'circle', glowColor, 0, Vector2.new(px, py), 1, true, 1, 8)
-                                        self:_SetOpacity(sid, glowAlpha)
-                                    end
-                                end
-                            end
-                            -- cleanup leftover edges/arcs beyond effective radius
-                            for gi = effectiveRadius + 1, 20 do
-                                self:_Undraw('menu_glow_te' .. tostring(gi))
-                                self:_Undraw('menu_glow_be' .. tostring(gi))
-                                self:_Undraw('menu_glow_le' .. tostring(gi))
-                                self:_Undraw('menu_glow_re' .. tostring(gi))
-                            end
-                            local prevArcMax = self._glow_test_arc_count or 0
-                            for i = testSegCount + 1, prevArcMax do
-                                self:_Undraw('menu_glow_ta' .. tostring(i))
-                            end
-                            self._glow_test_arc_count = testSegCount
-                            -- kill square-corner remnants from other modes
-                            for gi = 1, 20 do
-                                self:_Undraw('menu_glow_' .. tostring(gi))
-                            end
-                        else
-                            -- static / breathe: concentric square outlines
-                            for gi = 1, effectiveRadius do
-                                local glowAlpha = (1 - (gi - 1) / effectiveRadius) * glowPeak * peakMul
-                                self:_Draw('menu_glow_' .. tostring(gi), 'rect', glowColor, 0, Vector2.new(mx - gi, my - gi), Vector2.new(mw + gi * 2, mh + gi * 2), false)
-                                self:_SetOpacity('menu_glow_' .. tostring(gi), glowAlpha)
-                            end
-                            for gi = effectiveRadius + 1, 20 do
-                                self:_Undraw('menu_glow_' .. tostring(gi))
-                            end
-                            -- kill test-mode remnants
-                            for gi = 1, 20 do
-                                self:_Undraw('menu_glow_te' .. tostring(gi))
-                                self:_Undraw('menu_glow_be' .. tostring(gi))
-                                self:_Undraw('menu_glow_le' .. tostring(gi))
-                                self:_Undraw('menu_glow_re' .. tostring(gi))
-                            end
-                            local prevArcMax = self._glow_test_arc_count or 0
-                            for i = 1, prevArcMax do
-                                self:_Undraw('menu_glow_ta' .. tostring(i))
-                            end
-                            self._glow_test_arc_count = 0
+                        for gi = 1, effectiveRadius do
+                            local glowAlpha = (1 - (gi - 1) / effectiveRadius) * glowPeak * peakMul
+                            local id = 'menu_glow_' .. tostring(gi)
+                            self:_Draw(id, 'rect', glowColor, 0, Vector2.new(mx - gi, my - gi), Vector2.new(mw + gi * 2, mh + gi * 2), false)
+                            -- parallel offset: outer layer gets inner's corner + gi. 0 when not test.
+                            local sq = self._drawings[id]
+                            local targetCorner = (glowMode == 'test') and (bodyCorner + gi) or 0
+                            if sq and sq.Corner ~= targetCorner then sq.Corner = targetCorner end
+                            self:_SetOpacity(id, glowAlpha)
+                        end
+                        for gi = effectiveRadius + 1, 20 do
+                            self:_Undraw('menu_glow_' .. tostring(gi))
                         end
                     end
                 else
                     self:_UndrawStartsWith('menu_glow_')
                     self._glow_rot_count = 0
-                    self._glow_test_arc_count = 0
                 end
 
                 -- main body fill (glass)
@@ -2231,6 +2039,21 @@
                 -- outer + inner menu border
                 self:_Draw('menu_border_out', 'rect', self._theming.crust, 20, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), false)
                 self:_Draw('menu_border_in', 'rect', self._theming.border1, 20, Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, self.h - 2), false)
+
+                -- apply body rounding (test glow mode). inner border offset 1px -> corner - 1 to stay parallel.
+                do
+                    local innerCorner = math.max(0, bodyCorner - 1)
+                    local targets = {
+                        menu_body       = bodyCorner,
+                        menu_overlay    = bodyCorner,
+                        menu_border_out = bodyCorner,
+                        menu_border_in  = innerCorner,
+                    }
+                    for id, c in pairs(targets) do
+                        local d = self._drawings[id]
+                        if d and d.Corner ~= c then d.Corner = c end
+                    end
+                end
                 -- top accent line (2px)
                 self:_Draw('menu_accent_top', 'rect', self._theming.accent, 21, Vector2.new(self.x, self.y + 1), Vector2.new(self.w, 2), true)
 
@@ -2644,9 +2467,7 @@
                                     self:_Draw(sectionItemId .. '_kb_bg', 'rect', self._theming.surface0, 12, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), true)
                                     self:_Draw(sectionItemId .. '_kb_border', 'rect', self._theming.border0, 13, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), false)
                                     local kbColor = itemKeybind.value and self._theming.text or self._theming.subtext
-                                    -- Keybind position
-                                    local kbTextPos = Vector2.new(kbX + kbW / 2, kbY + math.floor((kbH - 11) / 2))
-                                    self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, kbTextPos, keybindText, true, 'center', 11)
+                                    self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, self:_GetCenteredTextPos(Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), keybindText, nil, 11), keybindText, true, 'center', 11)
                                 end
 
                                 -- colorpicker swatch (left of pill, or replacing pill if overwrite)
