@@ -1,4 +1,4 @@
--- testuwu
+-- test
     UILib = {
         _font_face = Drawing.Fonts.UI,
         _font_size = 13,
@@ -44,7 +44,7 @@
         _custom_title_enabled = false,
         _custom_title = '',
         w = 720,
-        h = 440,
+        h = 600,
         x = 120,
         y = 120,
         _padding = 10,
@@ -55,6 +55,17 @@
         _columns = 2,
         _column_gap = 18,
         _background_alpha = 92/100,
+        -- bg image (VPHOTO test)
+        _bg_image_enabled = false, -- true when a valid image is loaded
+        _bg_image_url = '',        -- remembered url (for cache key + display)
+        _bg_image_data = nil,      -- raw bytes from httpget, fed to Drawing.Image.Data
+        _bg_image_alpha = 1.0,     -- 0..1, multiplied by _background_alpha at draw time
+        _bg_image_cache_dir = 'C:/matcha/workspace/nonzviAss/photos',
+        _bg_image_apply_token = 0, -- bumped on every Apply/Clear so stale fetches are ignored
+        _bg_image_fetching = false, -- true while an Apply HttpGet is in flight (prevents parallel fetches)
+        _bg_image_subsystem_dead = false, -- set true if Drawing.new('Image') pcall fails; stops per-frame retry
+        -- NOTE: _bg_image_data holds raw image bytes (potentially multi-MB). consumers MUST NOT serialize this field.
+        _draw_data_cache = {}, -- tracks last .Data assigned per drawId (readback unreliable)
         _glow_enabled = false,
         _glow_color = nil,
         _glow_mode = 'Static',
@@ -348,6 +359,35 @@
                 local resolvedSides = circleSides or 18
                 if draw.Thickness ~= resolvedThickness then draw.Thickness = resolvedThickness end
                 if draw.NumSides ~= resolvedSides then draw.NumSides = resolvedSides end
+            elseif drawType == 'image' then
+                if not draw then
+                    -- pcall-guard because Drawing.new('Image') is the only path we don't fully trust;
+                    -- if matcha ever breaks Image support, don't take the whole menu down with us
+                    local okCreate, newDraw = pcall(Drawing.new, 'Image')
+                    if not okCreate or not newDraw then
+                        -- permanent disable: matcha Image type broken, don't retry every frame/Apply
+                        self._bg_image_enabled = false
+                        self._bg_image_subsystem_dead = true
+                        return
+                    end
+                    self._drawings[drawId] = newDraw
+                    -- new drawing instance -> invalidate stale data cache entry
+                    self._draw_data_cache[drawId] = nil
+                    return self:_Draw(drawId, drawType, drawColor, drawZIndex, ...)
+                end
+                local imgPos, imgSize, imgData, imgRounding = ...
+                -- set data first so native image dimensions can't override our forced size
+                -- track via own cache bc matcha .Data readback is unreliable (nil-read = per-frame rewrite = lag)
+                if imgData and self._draw_data_cache[drawId] ~= imgData then
+                    draw.Data = imgData
+                    self._draw_data_cache[drawId] = imgData
+                end
+                draw.Position = imgPos
+                draw.Size = imgSize -- force stretch to ui box regardless of source ratio
+                if imgRounding and draw.Rounding ~= imgRounding then draw.Rounding = imgRounding end
+                if draw.ZIndex ~= drawZIndex then draw.ZIndex = drawZIndex end
+                if not draw.Visible then draw.Visible = true end
+                return
             elseif drawType == 'gradient' then
                 local args = {...}
                 if #args == 4 then
@@ -417,6 +457,7 @@
                 drawObject:Remove()
                 self._drawings[drawId] = nil
                 self._base_alpha[drawId] = nil
+                self._draw_data_cache[drawId] = nil
             end
         end
 
@@ -449,10 +490,12 @@
                 end
             end
             local ba = self._base_alpha
+            local dc = self._draw_data_cache
             for i = 1, #toRemove do
                 local name = toRemove[i]
                 self._drawings[name] = nil
                 ba[name] = nil
+                dc[name] = nil
             end
         end
 
@@ -480,6 +523,56 @@
                     end
                 end
             end
+        end
+
+        -- fetch + cache bg image bytes. returns ok, bytes_or_err
+        -- recursively create nested folders (matcha makefolder doesn't auto-create parents)
+        function UILib:_EnsureFolder(path)
+            if not isfolder or not makefolder then return end
+            local acc = ''
+            for segment in string.gmatch(path, '[^/]+') do
+                acc = (acc == '' and segment) or (acc .. '/' .. segment)
+                -- drive-root segments like "C:" may make isfolder/makefolder throw on matcha,
+                -- so pcall both. if we aren't certain folder exists (crash/nil/false), try to create.
+                local okExists, exists = pcall(isfolder, acc)
+                local definitelyExists = okExists and exists == true
+                if not definitelyExists then pcall(makefolder, acc) end
+            end
+        end
+
+        function UILib:_LoadBgImage(url)
+            if type(url) ~= 'string' or #url < 4 then return false, 'bad url' end
+            -- simple non-crypto hash for cache key
+            local h = 2166136261
+            for i = 1, #url do
+                h = bit32.bxor(h, string.byte(url, i))
+                h = (h * 16777619) % 4294967296
+            end
+            local cacheDir = self._bg_image_cache_dir
+            -- try to keep file extension from url so files look sane in the folder
+            -- strip query (?foo=bar) and fragment (#frag) first so cdn urls with ?width=100 still match
+            local urlNoQuery = string.match(url, '^([^?#]+)') or url
+            local ext = string.match(urlNoQuery, '%.([%w]+)$')
+            if ext then ext = string.lower(ext) end
+            if not ext or #ext > 5 then ext = 'bin' end
+            local cachePath = cacheDir .. '/' .. string.format('%x', math.floor(h)) .. '.' .. ext
+            self:_EnsureFolder(cacheDir)
+            if isfile and isfile(cachePath) then
+                local readOk, cachedBytes = pcall(readfile, cachePath)
+                if readOk and type(cachedBytes) == 'string' and #cachedBytes > 16 and #cachedBytes <= 20 * 1024 * 1024 then
+                    return true, cachedBytes
+                end
+            end
+            local ok, bytes = pcall(function() return game:HttpGet(url) end)
+            if not ok or type(bytes) ~= 'string' or #bytes < 16 then
+                return false, 'fetch failed'
+            end
+            -- cap at 20MB so a malicious/huge url can't OOM matcha
+            if #bytes > 20 * 1024 * 1024 then
+                return false, 'image too large'
+            end
+            pcall(writefile, cachePath, bytes)
+            return true, bytes
         end
 
         -- apply fade as multiplier on stored base alphas (preserves per-element alpha relationships)
@@ -716,6 +809,9 @@
             if max <= min then max = min + 1 end
             value = tonumber(value) or min
             if value < min then value = min elseif value > max then value = max end
+            -- snap initial value to step grid so drag and stored value stay consistent
+            value = min + math.floor(((value - min) / step) + 0.5) * step
+            if value > max then value = max end
             local item = {
                 type_ = 'slider',
                 label = label,
@@ -736,6 +832,11 @@
                     -- clamp to valid range
                     if newValue < it.min then newValue = it.min end
                     if newValue > it.max then newValue = it.max end
+                    -- snap to step grid to match drag behavior
+                    if it.step and it.step > 0 then
+                        newValue = it.min + math.floor(((newValue - it.min) / it.step) + 0.5) * it.step
+                        if newValue > it.max then newValue = it.max end
+                    end
                     it.value = newValue
                     if it.callback then it.callback(newValue) end
                 end
@@ -1126,6 +1227,62 @@
                 end)
             end
 
+            -- background image (VPHOTO) section
+            local showBgImage = options.backgroundImage ~= false
+            if showBgImage then
+                local bgSection = settingsTab:Section('Background Image')
+                local urlBox = bgSection:Textbox('Image URL', self._bg_image_url or '', function(newValue)
+                    self._bg_image_url = newValue or ''
+                end)
+                settingsRefs.bgImageUrl = urlBox
+                settingsRefs.bgImageAlpha = bgSection:Slider('Image opacity', math.floor((self._bg_image_alpha or 1) * 100 + 0.5), 1, 0, 100, '%', function(newValue)
+                    self._bg_image_alpha = clamp((tonumber(newValue) or 100) / 100, 0, 1)
+                    if options.onBgImageAlphaChange then options.onBgImageAlphaChange(self._bg_image_alpha) end
+                end)
+                bgSection:Button('Apply', function()
+                    local url = self._bg_image_url or ''
+                    if #url < 4 then
+                        self:Notification('URL is empty', 3)
+                        return
+                    end
+                    if self._bg_image_subsystem_dead then
+                        self:Notification('Image subsystem unavailable', 3)
+                        return
+                    end
+                    if self._bg_image_fetching then
+                        self:Notification('Fetch already in progress', 2)
+                        return
+                    end
+                    self._bg_image_apply_token = (self._bg_image_apply_token or 0) + 1
+                    local myToken = self._bg_image_apply_token
+                    self._bg_image_fetching = true
+                    task.spawn(function()
+                        local ok, bytes = self:_LoadBgImage(url)
+                        self._bg_image_fetching = false
+                        -- discard result if user clicked clear/apply-another-url while we fetched
+                        if self._bg_image_apply_token ~= myToken then return end
+                        if ok and bytes then
+                            self._bg_image_data = bytes
+                            self._bg_image_enabled = true
+                            self:Notification('Bg image loaded', 3)
+                            if options.onBgImageChange then options.onBgImageChange(url, self._bg_image_alpha) end
+                        else
+                            self:Notification('Bg image fetch failed', 4)
+                        end
+                    end)
+                end)
+                bgSection:Button('Clear', function()
+                    -- bump token so any in-flight Apply fetch is ignored when it completes
+                    self._bg_image_apply_token = (self._bg_image_apply_token or 0) + 1
+                    self._bg_image_enabled = false
+                    self._bg_image_data = nil
+                    self._draw_data_cache['menu_bg_image'] = nil
+                    self:_Undraw('menu_bg_image')
+                    if options.onBgImageChange then options.onBgImageChange('', self._bg_image_alpha) end
+                    self:Notification('Bg image cleared', 2)
+                end)
+            end
+
             local themingSection = nil
             if showTheming then
                 themingSection = settingsTab:Section('Theming')
@@ -1461,6 +1618,15 @@
             self._settings_item_refs = nil
             self._anim_state = {}
             self._base_alpha = {}
+            self._draw_data_cache = {}
+            -- bg image state: release multi-MB bytes + reset flags per Unload contract
+            self._bg_image_enabled = false
+            self._bg_image_data = nil
+            self._bg_image_url = ''
+            self._bg_image_alpha = 1.0
+            self._bg_image_apply_token = 0
+            self._bg_image_fetching = false
+            self._bg_image_subsystem_dead = false
             self._glow_last_mode = nil
             self._glow_rot_count = 0
             self._last_cleared_inactive_for = nil
@@ -2030,10 +2196,17 @@
                     self._glow_rot_count = 0
                 end
 
-                -- main body fill (glass)
-                self:_Draw('menu_body', 'rect', self._theming.body, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
+                -- main body fill (glass) - fallback layer beneath bg image
+                self:_Draw('menu_body', 'rect', self._theming.body, 0, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
 
-                -- overlay (glass sheen) - thin lighter layer on top of body
+                -- bg image layer (VPHOTO) - no rounding, matches square menu body
+                if self._bg_image_enabled and self._bg_image_data then
+                    self:_Draw('menu_bg_image', 'image', nil, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), self._bg_image_data)
+                else
+                    self:_Undraw('menu_bg_image')
+                end
+
+                -- overlay (glass sheen) - thin lighter layer on top of body/image
                 self:_Draw('menu_overlay', 'rect', self._theming.surface1, 2, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
 
                 -- outer + inner menu border
@@ -2467,7 +2640,9 @@
                                     self:_Draw(sectionItemId .. '_kb_bg', 'rect', self._theming.surface0, 12, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), true)
                                     self:_Draw(sectionItemId .. '_kb_border', 'rect', self._theming.border0, 13, Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), false)
                                     local kbColor = itemKeybind.value and self._theming.text or self._theming.subtext
-                                    self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, self:_GetCenteredTextPos(Vector2.new(kbX, kbY), Vector2.new(kbW, kbH), keybindText, nil, 11), keybindText, true, 'center', 11)
+                                    -- Matcha Drawing.Text with Center=true centers both X and Y around Position (per matchDocumentation.md)
+                                    local kbTextPos = Vector2.new(kbX + kbW / 2, kbY + kbH / 2)
+                                    self:_Draw(sectionItemId .. '_kb_text', 'text', kbColor, 14, kbTextPos, keybindText, true, 'center', 11)
                                 end
 
                                 -- colorpicker swatch (left of pill, or replacing pill if overwrite)
@@ -2966,6 +3141,10 @@
                 self:_SetOpacityStartsWith('menu_overlay', bgAlpha * 0.12)
                 self:_SetOpacityStartsWith('menu_topbar_bg', clamp(bgAlpha + 0.04, 0, 1))
                 self:_SetOpacityStartsWith('menu_sidebar_bg', clamp(bgAlpha + 0.03, 0, 1))
+                if self._bg_image_enabled and self._bg_image_data then
+                    -- independent of bg opacity so transparent menu doesn't hide the photo
+                    self:_SetOpacity('menu_bg_image', clamp(self._bg_image_alpha or 1, 0, 1))
+                end
             end
 
             -- apply fade multiplier on top of base alphas (preserves gradients, glass, etc.)
