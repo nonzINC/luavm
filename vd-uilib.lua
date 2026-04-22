@@ -55,7 +55,11 @@
         _columns = 2,
         _column_gap = 18,
         _background_alpha = 92/100,
-        -- bg image (VPHOTO test)
+        _ui_body_corner = 4, -- 0..7 px; rounds menu body + overlay + borders + topbar/sidebar bg
+        -- bg image
+        -- master kill switch. set to false and the bg-image feature behaves as if it never existed:
+        -- settings section is not created, render path is skipped, opacity pass is skipped.
+        _bg_image_feature_enabled = true,
         _bg_image_enabled = false, -- true when a valid image is loaded
         _bg_image_url = '',        -- remembered url (for cache key + display)
         _bg_image_data = nil,      -- raw bytes from httpget, fed to Drawing.Image.Data
@@ -80,9 +84,10 @@
         _glow_r_speed = 3,
         _glow_r_radius = 9,
         _glow_r_intensity = 50,
-        _glow_test_body_corner = 12,
-        _glow_test_radius = 10,
-        _glow_test_intensity = 50,
+        _glow_s_corner = 12,
+        _glow_s_smooth = 15,
+        _glow_b_corner = 12,
+        _glow_b_smooth = 15,
         _theming = {
             accent = Color3.fromRGB(203, 166, 247),
             unsafe = Color3.fromRGB(255, 215, 64),
@@ -1202,7 +1207,7 @@
             local settingsTab = self:Tab(customName or 'Menu')
             local settingsRefs = {}
 
-            local menuSection = settingsTab:Section('Menu')
+            local menuSection = settingsTab:Section('Menu', 'left')
             local menuKey = menuSection:Toggle(menuKeyLabel, self._overwrite_menu_key, function(newValue)
                 self._overwrite_menu_key = newValue
             end)
@@ -1227,52 +1232,127 @@
                 end)
             end
 
-            -- background image (VPHOTO) section
-            local showBgImage = options.backgroundImage ~= false
+            -- background image section
+            local showBgImage = options.backgroundImage ~= false and self._bg_image_feature_enabled ~= false
             if showBgImage then
-                local bgSection = settingsTab:Section('Background Image')
-                local urlBox = bgSection:Textbox('Image URL', self._bg_image_url or '', function(newValue)
-                    self._bg_image_url = newValue or ''
-                end)
-                settingsRefs.bgImageUrl = urlBox
-                settingsRefs.bgImageAlpha = bgSection:Slider('Image opacity', math.floor((self._bg_image_alpha or 1) * 100 + 0.5), 1, 0, 100, '%', function(newValue)
-                    self._bg_image_alpha = clamp((tonumber(newValue) or 100) / 100, 0, 1)
-                    if options.onBgImageAlphaChange then options.onBgImageAlphaChange(self._bg_image_alpha) end
-                end)
-                bgSection:Button('Apply', function()
-                    local url = self._bg_image_url or ''
-                    if #url < 4 then
-                        self:Notification('URL is empty', 3)
-                        return
+                local bgSection = settingsTab:Section('Background Image', 'left')
+                self:_EnsureFolder(self._bg_image_cache_dir)
+
+                -- scan cache dir for image files; returns {filename, ...} stripped of path
+                -- scan dir for image files (direct-load) AND .txt files (each holds one URL).
+                -- returns {filename, ...} stripped of path, image extensions and .txt both included.
+                local imageExts = {png=true, jpg=true, jpeg=true}
+                local function listPhotoFiles()
+                    local out = {}
+                    local ok, files = pcall(listfiles, self._bg_image_cache_dir)
+                    if not ok or type(files) ~= 'table' then return out end
+                    for i = 1, #files do
+                        local full = tostring(files[i])
+                        local name = full:match('[^/\\]+$') or full
+                        local ext = name:match('%.([%w]+)$')
+                        if ext then
+                            ext = string.lower(ext)
+                            if imageExts[ext] or ext == 'txt' then
+                                out[#out + 1] = name
+                            end
+                        end
                     end
+                    return out
+                end
+
+                local photoFiles = listPhotoFiles()
+                local noFilesLabel = '(empty — drop .png/.jpg/.jpeg or .txt with a url in ' .. self._bg_image_cache_dir .. ')'
+                if #photoFiles == 0 then photoFiles = {noFilesLabel} end
+
+                local defaultChoice = photoFiles[1]
+                local remembered = self._bg_image_url or ''
+                for i = 1, #photoFiles do
+                    if photoFiles[i] == remembered then defaultChoice = remembered break end
+                end
+
+                local photoDropdown = bgSection:Dropdown('Photo file', {defaultChoice}, photoFiles, false, function(newValue)
+                    if type(newValue) ~= 'table' or not newValue[1] then return end
+                    local filename = newValue[1]
+                    if filename == noFilesLabel then return end
                     if self._bg_image_subsystem_dead then
                         self:Notification('Image subsystem unavailable', 3)
                         return
                     end
-                    if self._bg_image_fetching then
-                        self:Notification('Fetch already in progress', 2)
-                        return
-                    end
+                    local ext = (filename:match('%.([%w]+)$') or ''):lower()
+                    self._bg_image_url = filename
                     self._bg_image_apply_token = (self._bg_image_apply_token or 0) + 1
                     local myToken = self._bg_image_apply_token
-                    self._bg_image_fetching = true
-                    task.spawn(function()
-                        local ok, bytes = self:_LoadBgImage(url)
-                        self._bg_image_fetching = false
-                        -- discard result if user clicked clear/apply-another-url while we fetched
-                        if self._bg_image_apply_token ~= myToken then return end
-                        if ok and bytes then
-                            self._bg_image_data = bytes
-                            self._bg_image_enabled = true
-                            self:Notification('Bg image loaded', 3)
-                            if options.onBgImageChange then options.onBgImageChange(url, self._bg_image_alpha) end
-                        else
-                            self:Notification('Bg image fetch failed', 4)
+                    local fullPath = self._bg_image_cache_dir .. '/' .. filename
+                    if ext == 'txt' then
+                        -- url pointer: read txt, extract first non-empty line, fetch via HttpGet
+                        if self._bg_image_fetching then
+                            self:Notification('Fetch already in progress', 2)
+                            return
                         end
-                    end)
+                        self._bg_image_fetching = true
+                        task.spawn(function()
+                            local okRead, contents = pcall(readfile, fullPath)
+                            if self._bg_image_apply_token ~= myToken then self._bg_image_fetching = false return end
+                            if not okRead or type(contents) ~= 'string' or #contents == 0 then
+                                self._bg_image_fetching = false
+                                self:Notification('Failed to read ' .. filename, 4)
+                                return
+                            end
+                            -- first non-empty, non-whitespace line
+                            local url = nil
+                            for line in contents:gmatch('[^\r\n]+') do
+                                local trimmed = line:match('^%s*(.-)%s*$')
+                                if trimmed and #trimmed >= 4 then url = trimmed break end
+                            end
+                            if not url then
+                                self._bg_image_fetching = false
+                                self:Notification(filename .. ' has no valid url', 4)
+                                return
+                            end
+                            local okLoad, bytes = self:_LoadBgImage(url)
+                            self._bg_image_fetching = false
+                            if self._bg_image_apply_token ~= myToken then return end
+                            if okLoad and bytes then
+                                self._bg_image_data = bytes
+                                self._bg_image_enabled = true
+                                self:Notification('Loaded ' .. filename .. ' (url)', 3)
+                                if options.onBgImageChange then options.onBgImageChange(filename, self._bg_image_alpha) end
+                            else
+                                self:Notification('Fetch failed for ' .. filename, 4)
+                            end
+                        end)
+                    else
+                        -- direct image file: read bytes and feed to Drawing.Image.Data
+                        task.spawn(function()
+                            local ok, bytes = pcall(readfile, fullPath)
+                            if self._bg_image_apply_token ~= myToken then return end
+                            if ok and type(bytes) == 'string' and #bytes > 0 then
+                                self._bg_image_data = bytes
+                                self._bg_image_enabled = true
+                                self:Notification('Loaded ' .. filename, 3)
+                                if options.onBgImageChange then options.onBgImageChange(filename, self._bg_image_alpha) end
+                            else
+                                self:Notification('Failed to read ' .. filename, 4)
+                            end
+                        end)
+                    end
                 end)
+                settingsRefs.bgImagePhoto = photoDropdown
+
+                settingsRefs.bgImageAlpha = bgSection:Slider('Image opacity', math.floor((self._bg_image_alpha or 1) * 100 + 0.5), 1, 0, 100, '%', function(newValue)
+                    self._bg_image_alpha = clamp((tonumber(newValue) or 100) / 100, 0, 1)
+                    if options.onBgImageAlphaChange then options.onBgImageAlphaChange(self._bg_image_alpha) end
+                end)
+
+                bgSection:Button('Refresh list', function()
+                    local updated = listPhotoFiles()
+                    local count = #updated
+                    if count == 0 then updated = {noFilesLabel} end
+                    photoDropdown:UpdateChoices(updated)
+                    self:Notification('Found ' .. tostring(count) .. ' file' .. (count == 1 and '' or 's'), 2)
+                end)
+
                 bgSection:Button('Clear', function()
-                    -- bump token so any in-flight Apply fetch is ignored when it completes
                     self._bg_image_apply_token = (self._bg_image_apply_token or 0) + 1
                     self._bg_image_enabled = false
                     self._bg_image_data = nil
@@ -1285,11 +1365,15 @@
 
             local themingSection = nil
             if showTheming then
-                themingSection = settingsTab:Section('Theming')
+                themingSection = settingsTab:Section('Theming', 'right')
                 if showBackgroundAlpha then
                     settingsRefs.backgroundAlpha = themingSection:Slider('Background opacity', math.floor(self._background_alpha * 100 + 0.5), 1, 5, 100, '%', function(newValue)
                         self._background_alpha = clamp((tonumber(newValue) or 100) / 100, 5/100, 1)
                         if options.onAlphaChange then options.onAlphaChange(self._background_alpha) end
+                    end)
+                    settingsRefs.uiCornering = themingSection:Slider('UI cornering', self._ui_body_corner or 4, 1, 0, 7, 'px', function(newValue)
+                        self._ui_body_corner = clamp(tonumber(newValue) or 0, 0, 7)
+                        if options.onCornerChange then options.onCornerChange(self._ui_body_corner) end
                     end)
                 end
                 local themes = {'Catppuccin', 'Gamesense', 'Bloodmoon', 'Seaside', 'Ember', 'Synthwave', 'Matcha', 'Femboy'}
@@ -1505,8 +1589,9 @@
                     if options.onFontChange then options.onFontChange(faceName) end
                 end, 'font family used across the ui', fontPreviewMap)
 
-                -- glow settings
-                local glowToggle = themingSection:Toggle('Glow', self._glow_enabled, function(newValue)
+                -- glow settings (left column)
+                local glowSection = settingsTab:Section('Glow', 'left')
+                local glowToggle = glowSection:Toggle('Glow', self._glow_enabled, function(newValue)
                     self._glow_enabled = newValue
                 end)
                 glowColorRef = glowToggle:AddColorpicker('Glow color', self._glow_color or self._theming.accent, false, function(newValue)
@@ -1514,32 +1599,31 @@
                 end)
 
                 -- mode select sits right under the toggle
-                local glowSIntensity, glowSRadius
-                local glowBSpeed, glowBIntensity, glowBRadius
+                local glowSIntensity, glowSRadius, glowSCorner, glowSSmooth
+                local glowBSpeed, glowBIntensity, glowBRadius, glowBCorner, glowBSmooth
                 local glowRWorm, glowRSpeed, glowRRadius, glowRIntensity
 
-                -- forward decl for 'test' mode sliders
-                local glowTestCornering, glowTestRadius, glowTestIntensity
+                -- forward decl for dynamic-visibility sliders
                 local function updateGlowSliderVisibility(mode)
                     local isS = mode == 'Static'
                     local isB = mode == 'Breathe'
                     local isR = mode == 'Rotate'
-                    local isT = mode == 'test'
                     glowSIntensity:SetHidden(not isS)
                     glowSRadius:SetHidden(not isS)
+                    glowSCorner:SetHidden(not isS)
+                    glowSSmooth:SetHidden(not isS)
                     glowBSpeed:SetHidden(not isB)
                     glowBIntensity:SetHidden(not isB)
                     glowBRadius:SetHidden(not isB)
+                    glowBCorner:SetHidden(not isB)
+                    glowBSmooth:SetHidden(not isB)
                     glowRWorm:SetHidden(not isR)
                     glowRSpeed:SetHidden(not isR)
                     glowRRadius:SetHidden(not isR)
                     glowRIntensity:SetHidden(not isR)
-                    glowTestCornering:SetHidden(not isT)
-                    glowTestRadius:SetHidden(not isT)
-                    glowTestIntensity:SetHidden(not isT)
                 end
 
-                themingSection:Dropdown('Glow animation', {self._glow_mode}, {'Static', 'Breathe', 'Rotate', 'test'}, false, function(newValue)
+                glowSection:Dropdown('Glow animation', {self._glow_mode}, {'Static', 'Breathe', 'Rotate'}, false, function(newValue)
                     if newValue and newValue[1] then
                         self._glow_mode = newValue[1]
                         updateGlowSliderVisibility(newValue[1])
@@ -1547,18 +1631,19 @@
                 end)
 
                 -- per-mode sliders (hidden/shown on mode change)
-                glowSIntensity = themingSection:Slider('Intensity', self._glow_s_intensity, 1, 1, 100, '%', function(v) self._glow_s_intensity = v end)
-                glowSRadius = themingSection:Slider('Radius', self._glow_s_radius, 1, 1, 20, 'px', function(v) self._glow_s_radius = v end)
-                glowBSpeed = themingSection:Slider('Speed', self._glow_b_speed, 1, 1, 5, 's', function(v) self._glow_b_speed = v end)
-                glowBIntensity = themingSection:Slider('Max intensity', self._glow_b_intensity, 1, 1, 100, '%', function(v) self._glow_b_intensity = v end)
-                glowBRadius = themingSection:Slider('Max radius', self._glow_b_radius, 1, 1, 20, 'px', function(v) self._glow_b_radius = v end)
-                glowRWorm = themingSection:Slider('Worm size', self._glow_r_worm, 1, 10, 100, '%', function(v) self._glow_r_worm = v end)
-                glowRSpeed = themingSection:Slider('Speed', self._glow_r_speed, 1, 1, 10, '', function(v) self._glow_r_speed = v end)
-                glowRRadius = themingSection:Slider('Glow radius', self._glow_r_radius, 1, 1, 20, 'px', function(v) self._glow_r_radius = v end)
-                glowRIntensity = themingSection:Slider('Worm glow intensity', self._glow_r_intensity, 1, 1, 100, '%', function(v) self._glow_r_intensity = v end)
-                glowTestCornering = themingSection:Slider('Cornering', self._glow_test_body_corner, 1, 0, 30, 'px', function(v) self._glow_test_body_corner = v end)
-                glowTestRadius = themingSection:Slider('Radius', self._glow_test_radius, 1, 1, 20, 'px', function(v) self._glow_test_radius = v end)
-                glowTestIntensity = themingSection:Slider('Intensity', self._glow_test_intensity, 1, 1, 100, '%', function(v) self._glow_test_intensity = v end)
+                glowSIntensity = glowSection:Slider('Intensity', self._glow_s_intensity, 1, 1, 100, '%', function(v) self._glow_s_intensity = v end)
+                glowSRadius = glowSection:Slider('Radius', self._glow_s_radius, 1, 1, 20, 'px', function(v) self._glow_s_radius = v end)
+                glowSCorner = glowSection:Slider('Cornering', self._glow_s_corner, 1, 0, 30, 'px', function(v) self._glow_s_corner = v end)
+                glowSSmooth = glowSection:Slider('Corner Smoothing', self._glow_s_smooth, 1, 1, 30, '', function(v) self._glow_s_smooth = v end)
+                glowBSpeed = glowSection:Slider('Speed', self._glow_b_speed, 1, 1, 5, 's', function(v) self._glow_b_speed = v end)
+                glowBIntensity = glowSection:Slider('Max intensity', self._glow_b_intensity, 1, 1, 100, '%', function(v) self._glow_b_intensity = v end)
+                glowBRadius = glowSection:Slider('Max radius', self._glow_b_radius, 1, 1, 20, 'px', function(v) self._glow_b_radius = v end)
+                glowBCorner = glowSection:Slider('Cornering', self._glow_b_corner, 1, 0, 30, 'px', function(v) self._glow_b_corner = v end)
+                glowBSmooth = glowSection:Slider('Corner Smoothing', self._glow_b_smooth, 1, 1, 30, '', function(v) self._glow_b_smooth = v end)
+                glowRWorm = glowSection:Slider('Worm size', self._glow_r_worm, 1, 10, 100, '%', function(v) self._glow_r_worm = v end)
+                glowRSpeed = glowSection:Slider('Speed', self._glow_r_speed, 1, 1, 10, '', function(v) self._glow_r_speed = v end)
+                glowRRadius = glowSection:Slider('Glow radius', self._glow_r_radius, 1, 1, 20, 'px', function(v) self._glow_r_radius = v end)
+                glowRIntensity = glowSection:Slider('Worm glow intensity', self._glow_r_intensity, 1, 1, 100, '%', function(v) self._glow_r_intensity = v end)
 
                 updateGlowSliderVisibility(self._glow_mode)
 
@@ -2066,8 +2151,17 @@
                 local sidebarW = self._sidebar_w
                 local topbarH = self._topbar_h
 
-                -- body rounding: only non-zero in 'test' glow mode for now
-                local bodyCorner = (self._glow_enabled and self._glow_mode == 'test') and (self._glow_test_body_corner or 12) or 0
+                -- UI body rounding (always active via slider) + optional extra from static/breathe glow
+                local uiCorner = math.max(0, math.min(self._ui_body_corner or 0, 7))
+                local glowExtraCorner = 0
+                if self._glow_enabled then
+                    if self._glow_mode == 'Static' then
+                        glowExtraCorner = self._glow_s_corner or 12
+                    elseif self._glow_mode == 'Breathe' then
+                        glowExtraCorner = self._glow_b_corner or 12
+                    end
+                end
+                local bodyCorner = uiCorner + glowExtraCorner
 
                 -- neon glow
                 local glowMode = self._glow_mode or 'Static'
@@ -2154,36 +2248,35 @@
                         end
                         self._glow_rot_count = segCount
                     else
-                        local effectiveRadius, glowPeak, peakMul
+                        local effectiveRadius, glowPeak, peakMul, cornerSmooth
                         if glowMode == 'Static' then
                             effectiveRadius = self._glow_s_radius or 10
                             glowPeak = (self._glow_s_intensity or 50) / 100
                             peakMul = 1
+                            cornerSmooth = self._glow_s_smooth or 15
                         elseif glowMode == 'Breathe' then
                             effectiveRadius = self._glow_b_radius or 14
                             glowPeak = (self._glow_b_intensity or 70) / 100
+                            cornerSmooth = self._glow_b_smooth or 15
                             local speed = self._glow_b_speed or 2
                             local freq = (speed > 0) and (6.28318 / speed) or 1
                             local raw = math.sin(now * freq) * 0.5 + 0.5
                             local smooth = raw * raw * (3 - 2 * raw)
                             peakMul = 0.3 + 0.7 * smooth
-                        elseif glowMode == 'test' then
-                            -- test = Corner-based rounded glow, dedicated params
-                            effectiveRadius = self._glow_test_radius or 10
-                            glowPeak = (self._glow_test_intensity or 50) / 100
-                            peakMul = 1
                         else
                             effectiveRadius = 10
                             glowPeak = 0.5
                             peakMul = 1
+                            cornerSmooth = 15
                         end
+                        local cornerStep = (cornerSmooth or 15) / 15
                         for gi = 1, effectiveRadius do
                             local glowAlpha = (1 - (gi - 1) / effectiveRadius) * glowPeak * peakMul
                             local id = 'menu_glow_' .. tostring(gi)
                             self:_Draw(id, 'rect', glowColor, 0, Vector2.new(mx - gi, my - gi), Vector2.new(mw + gi * 2, mh + gi * 2), false)
-                            -- parallel offset: outer layer gets inner's corner + gi. 0 when not test.
+                            -- glow rings follow body rounding (bodyCorner) with parallel offset per layer
                             local sq = self._drawings[id]
-                            local targetCorner = (glowMode == 'test') and (bodyCorner + gi) or 0
+                            local targetCorner = bodyCorner > 0 and math.floor(bodyCorner + gi * cornerStep + 0.5) or 0
                             if sq and sq.Corner ~= targetCorner then sq.Corner = targetCorner end
                             self:_SetOpacity(id, glowAlpha)
                         end
@@ -2199,9 +2292,9 @@
                 -- main body fill (glass) - fallback layer beneath bg image
                 self:_Draw('menu_body', 'rect', self._theming.body, 0, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
 
-                -- bg image layer (VPHOTO) - no rounding, matches square menu body
-                if self._bg_image_enabled and self._bg_image_data then
-                    self:_Draw('menu_bg_image', 'image', nil, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), self._bg_image_data)
+                -- bg image layer - follows bodyCorner rounding
+                if self._bg_image_feature_enabled and self._bg_image_enabled and self._bg_image_data then
+                    self:_Draw('menu_bg_image', 'image', nil, 1, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), self._bg_image_data, bodyCorner)
                 else
                     self:_Undraw('menu_bg_image')
                 end
@@ -2213,14 +2306,21 @@
                 self:_Draw('menu_border_out', 'rect', self._theming.crust, 20, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), false)
                 self:_Draw('menu_border_in', 'rect', self._theming.border1, 20, Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, self.h - 2), false)
 
-                -- apply body rounding (test glow mode). inner border offset 1px -> corner - 1 to stay parallel.
+                -- apply UI cornering to body + overlay + borders + topbar/sidebar bg (all body-colored fills).
+                -- topbar_bg and sidebar_bg get rounded too so their square corners don't poke past the rounded body.
+                -- corner must not exceed half of min dimension or Matcha Drawing.Square can render broken.
+                -- inner border offset 1px -> corner - 1 to stay parallel.
                 do
                     local innerCorner = math.max(0, bodyCorner - 1)
+                    local topbarCap  = math.max(0, math.floor(topbarH / 2))
+                    local sidebarCap = math.max(0, math.floor((sidebarW - 1) / 2))
                     local targets = {
                         menu_body       = bodyCorner,
                         menu_overlay    = bodyCorner,
                         menu_border_out = bodyCorner,
                         menu_border_in  = innerCorner,
+                        menu_topbar_bg  = math.min(bodyCorner, topbarCap),
+                        menu_sidebar_bg = math.min(bodyCorner, sidebarCap),
                     }
                     for id, c in pairs(targets) do
                         local d = self._drawings[id]
@@ -2915,7 +3015,9 @@
                                 self:_Draw(sectionItemId .. '_border', 'rect', borderColor, 13, btnPos, btnSize, false)
                                 self:_Draw(sectionItemId .. '_border_in', 'rect', self._theming.crust, 14, btnPos + Vector2.new(1, 1), btnSize - Vector2.new(2, 2), false)
                                 local btnLabel = self:_TruncateText(sectionItem.label, btnSize.x - 16)
-                                self:_Draw(sectionItemId .. '_text', 'text', textColor, 14, self:_GetCenteredTextPos(btnPos, btnSize, btnLabel), btnLabel, true, 'center')
+                                -- Center=true centers around Position on both axes, so pass raw rect center (matches keybind fix)
+                                local btnTextPos = Vector2.new(btnPos.x + btnSize.x / 2, btnPos.y + btnSize.y / 2)
+                                self:_Draw(sectionItemId .. '_text', 'text', textColor, 14, btnTextPos, btnLabel, true, 'center')
 
                                 cursorY = cursorY + rowH + 4
 
@@ -2957,10 +3059,19 @@
                                     end
                                 elseif ctxFrame then
                                     if isHovering then
-                                        self:_SpawnDropdown(self:_GetMousePos(), 60, {}, {'Copy', 'Clear'}, false, function(newValue)
+                                        self:_SpawnDropdown(self:_GetMousePos(), 70, {}, {'Copy', 'Paste', 'Clear'}, false, function(newValue)
                                             if newValue[1] == 'Copy' then
                                                 setclipboard(tostring(itemValue or ''))
                                                 self:Notification('Text copied to clipboard', 5)
+                                            elseif newValue[1] == 'Paste' then
+                                                local ok, clip = pcall(function() return getclipboard and getclipboard() end)
+                                                if ok and type(clip) == 'string' and #clip > 0 then
+                                                    sectionItem.value = clip
+                                                    if sectionItem.callback then sectionItem.callback(clip) end
+                                                    self:Notification('Pasted from clipboard', 3)
+                                                else
+                                                    self:Notification('Clipboard empty or unavailable', 4)
+                                                end
                                             elseif newValue[1] == 'Clear' then
                                                 sectionItem.value = ''
                                                 if sectionItem.callback then sectionItem.callback('') end
@@ -3141,7 +3252,7 @@
                 self:_SetOpacityStartsWith('menu_overlay', bgAlpha * 0.12)
                 self:_SetOpacityStartsWith('menu_topbar_bg', clamp(bgAlpha + 0.04, 0, 1))
                 self:_SetOpacityStartsWith('menu_sidebar_bg', clamp(bgAlpha + 0.03, 0, 1))
-                if self._bg_image_enabled and self._bg_image_data then
+                if self._bg_image_feature_enabled and self._bg_image_enabled and self._bg_image_data then
                     -- independent of bg opacity so transparent menu doesn't hide the photo
                     self:_SetOpacity('menu_bg_image', clamp(self._bg_image_alpha or 1, 0, 1))
                 end
