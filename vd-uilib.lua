@@ -2321,20 +2321,22 @@
                 -- topbar divider: fade in/out at corners to match bodyCorner rounding
                 do
                     local divY = self.y + topbarH
-                    local divW = self.w
-                    local fadeW = math.min(bodyCorner * 4, divW * 0.2) -- fade zone width
+                    local inset = bodyCorner      -- kırpma: sol+sag kenardan bodyCorner px içeri
+                    local divX = self.x + inset
+                    local divW = self.w - inset * 2
+                    local fadeW = math.min(bodyCorner * 3, divW * 0.15) -- fade zone width
                     local bc = self._theming.border1
                     local cFull  = {R=bc.R, G=bc.G, B=bc.B, A=1}
                     local cFade  = {R=bc.R, G=bc.G, B=bc.B, A=0}
                     -- left fade
                     self:_Draw('menu_topbar_div_l', 'gradient', nil, 7, 'horizontal',
-                        Vector2.new(self.x, divY), Vector2.new(fadeW, 1), cFade, cFull)
+                        Vector2.new(divX, divY), Vector2.new(fadeW, 1), cFade, cFull)
                     -- center solid
                     self:_Draw('menu_topbar_div_c', 'rect', bc, 7,
-                        Vector2.new(self.x + fadeW, divY), Vector2.new(divW - fadeW * 2, 1), true)
+                        Vector2.new(divX + fadeW, divY), Vector2.new(divW - fadeW * 2, 1), true)
                     -- right fade
                     self:_Draw('menu_topbar_div_r', 'gradient', nil, 7, 'horizontal',
-                        Vector2.new(self.x + divW - fadeW, divY), Vector2.new(fadeW, 1), cFull, cFade)
+                        Vector2.new(divX + divW - fadeW, divY), Vector2.new(fadeW, 1), cFull, cFade)
                 end
                 local menuDotCenter = Vector2.new(self.x + self._padding + 7, self.y + topbarH / 2 + 1)
                 self:_Draw('menu_topbar_dot_ring', 'circle', self._theming.border1, 8, menuDotCenter, 5, false, 1, 18)
