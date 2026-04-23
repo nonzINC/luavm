@@ -55,7 +55,7 @@
         _columns = 2,
         _column_gap = 18,
         _background_alpha = 92/100,
-        _ui_body_corner = 3, -- hardcoded 3px, not user-adjustable
+        _ui_body_corner = 5, -- hardcoded 5px, not user-adjustable
         -- bg image
         -- master kill switch. set to false and the bg-image feature behaves as if it never existed:
         -- settings section is not created, render path is skipped, opacity pass is skipped.
@@ -2142,17 +2142,9 @@
                 local sidebarW = self._sidebar_w
                 local topbarH = self._topbar_h
 
-                -- UI body rounding (always active via slider) + optional extra from static/breathe glow
-                local uiCorner = 3 -- hardcoded
-                local glowExtraCorner = 0
-                if self._glow_enabled then
-                    if self._glow_mode == 'Static' then
-                        glowExtraCorner = 5 -- hardcoded
-                    elseif self._glow_mode == 'Breathe' then
-                        glowExtraCorner = 5 -- hardcoded
-                    end
-                end
-                local bodyCorner = uiCorner + glowExtraCorner
+                -- UI body rounding: hardcoded 5px, glow does NOT affect menu corner
+                local uiCorner = 5 -- hardcoded
+                local bodyCorner = uiCorner -- glow extra corner removed to prevent visual jump
 
                 -- neon glow
                 local glowMode = self._glow_mode or 'Static'
