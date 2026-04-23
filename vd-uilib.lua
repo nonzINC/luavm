@@ -2332,7 +2332,16 @@
                 -- topbar
                 local topbarPos = Vector2.new(self.x, self.y)
                 local topbarSize = Vector2.new(self.w, topbarH)
-                self:_Draw('menu_topbar_bg', 'rect', self._theming.surface0, 6, topbarPos, Vector2.new(self.w, topbarH), true)
+                -- topbar: yukarıdan başlayıp aşağıya bodyCorner kadar taşır
+                -- alt rounded köşeler menü body'sinin içinde gömülü kalır (ZIndex 3 ile örtülür)
+                self:_Draw('menu_topbar_bg', 'rect', self._theming.surface0, 6,
+                    Vector2.new(self.x, self.y),
+                    Vector2.new(self.w, topbarH + bodyCorner), true)
+                -- alt köşeleri ört: body rengiyle aynı ZIndex 3 rect
+                self:_Draw('menu_topbar_bg_cover', 'rect', self._theming.body, 3,
+                    Vector2.new(self.x + 1, self.y + topbarH),
+                    Vector2.new(self.w - 2, bodyCorner), true)
+
                 -- topbar divider: fade in/out at corners to match bodyCorner rounding
                 do
                     local divY = self.y + topbarH
@@ -2358,7 +2367,19 @@
                 -- sidebar
                 local sidebarPos = Vector2.new(self.x + 1, self.y + topbarH + 1)
                 local sidebarSize = Vector2.new(sidebarW - 1, self.h - topbarH - 2)
-                self:_Draw('menu_sidebar_bg', 'rect', self._theming.surface0, 6, sidebarPos, sidebarSize, true)
+                -- sidebar: sağa ve yukarıya bodyCorner kadar taşır
+                -- rounded köşeler body dışına taşar, body overlay tarafından kapatılır
+                self:_Draw('menu_sidebar_bg', 'rect', self._theming.surface0, 6,
+                    Vector2.new(sidebarPos.x, sidebarPos.y - bodyCorner),
+                    Vector2.new(sidebarSize.x + bodyCorner, sidebarSize.y + bodyCorner), true)
+                -- taşan kısmı ört
+                self:_Draw('menu_sidebar_bg_cover', 'rect', self._theming.body, 3,
+                    Vector2.new(sidebarPos.x + sidebarSize.x, sidebarPos.y - bodyCorner),
+                    Vector2.new(bodyCorner + 1, sidebarSize.y + bodyCorner), true)
+                self:_Draw('menu_sidebar_bg_cover_top', 'rect', self._theming.body, 3,
+                    Vector2.new(sidebarPos.x, sidebarPos.y - bodyCorner),
+                    Vector2.new(sidebarSize.x + bodyCorner, bodyCorner), true)
+
                 -- vertical separator between sidebar and content
                 self:_Draw('menu_sidebar_sep', 'rect', self._theming.border1, 7, Vector2.new(self.x + sidebarW, self.y + topbarH + 1), Vector2.new(1, self.h - topbarH - 2), true)
 
