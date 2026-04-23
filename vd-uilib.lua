@@ -2310,8 +2310,23 @@
                         if d and d.Corner ~= c then d.Corner = c end
                     end
                 end
-                -- top accent line (2px)
-                self:_Draw('menu_accent_top', 'rect', self._theming.accent, 21, Vector2.new(self.x, self.y + 1), Vector2.new(self.w, 2), true)
+                -- top accent line: inset + fade at corners to match body rounding
+                do
+                    local acY    = self.y + 1
+                    local inset  = bodyCorner + 1
+                    local acX    = self.x + inset
+                    local acW    = self.w - inset * 2
+                    local fadeW  = math.min(bodyCorner * 3, acW * 0.15)
+                    local ac     = self._theming.accent
+                    local cFull  = {R=ac.R, G=ac.G, B=ac.B, A=1}
+                    local cFade  = {R=ac.R, G=ac.G, B=ac.B, A=0}
+                    self:_Draw('menu_accent_top_l', 'gradient', nil, 21, 'horizontal',
+                        Vector2.new(acX, acY), Vector2.new(fadeW, 2), cFade, cFull)
+                    self:_Draw('menu_accent_top_c', 'rect', ac, 21,
+                        Vector2.new(acX + fadeW, acY), Vector2.new(acW - fadeW * 2, 2), true)
+                    self:_Draw('menu_accent_top_r', 'gradient', nil, 21, 'horizontal',
+                        Vector2.new(acX + acW - fadeW, acY), Vector2.new(fadeW, 2), cFull, cFade)
+                end
 
 
                 -- topbar
