@@ -3274,7 +3274,7 @@
         function UILib:ShowDemoMenu()
             self:Unload()
 
-            self:SetMenuSize(Vector2.new(750, 620))
+            self:SetMenuSize(Vector2.new(800, 800))
             self:CenterMenu()
             self:SetMenuTitle('UILib v2 — Full Demo')
 
