@@ -49,7 +49,7 @@
         y = 120,
         _padding = 10,
         _sidebar_w = 140,
-        _topbar_h = 36,
+        _topbar_h = 34,
         _tab_btn_h = 32,
         _row_h = 22,
         _columns = 2,
@@ -3335,7 +3335,7 @@
 
             local misc = self:Tab('Misc')
             local movement = misc:Section('Movement')
-            movement:Toggle('Bunnyhop', false); movement:Toggle('Auto strafe', false); movement:Toggle('Speed boost', false)
+            movement:Toggle('Bunnyhop', false); movement:Toggle('Auto strafe', false)
             movement:Slider('Jump height', 16, 1, 10, 100, 'u')
             movement:Slider('Walk speed', 16, 1, 1, 50, 'u/s')
             movement:Button('Teleport home', function() self:Notification('Teleport sent', 3) end)
@@ -3370,10 +3370,10 @@
             local _, menuSettings = self:CreateSettingsTab('Settings', {
                 watermark = true, backgroundAlpha = true, customTitle = true,
                 backgroundImage = true, theming = true,
-                onAlphaChange    = function(a) self:Notification(string.format('BG opacity: %d%%', math.floor(a*100)), 2) end,
-                onBgImageChange  = function(f) self:Notification(f ~= '' and 'Foto: '..f or 'Foto temizlendi', 3) end,
-                onPresetChange   = function(t) self:Notification('Tema: '..t, 3) end,
-                onFontChange     = function(f) self:Notification('Font: '..f, 3) end,
+                onAlphaChange   = function(a) self:Notification(string.format('BG opacity: %d%%', math.floor(a*100)), 2) end,
+                onBgImageChange = function(f) self:Notification(f ~= '' and 'Foto: '..f or 'Foto temizlendi', 3) end,
+                onPresetChange  = function(t) self:Notification('Tema: '..t, 3) end,
+                onFontChange    = function(f) self:Notification('Font: '..f, 3) end,
             })
 
             local shouldDie = false
