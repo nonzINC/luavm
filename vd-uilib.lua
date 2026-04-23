@@ -2286,8 +2286,8 @@
                 self:_Draw('menu_overlay', 'rect', self._theming.surface1, 2, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
 
                 -- outer + inner menu border
-                self:_Draw('menu_border_out', 'rect', self._theming.crust, 20, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), false)
-                self:_Draw('menu_border_in', 'rect', self._theming.border1, 20, Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, self.h - 2), false)
+                self:_Draw('menu_border_out', 'rect', self._theming.crust, 20, Vector2.new(self.x - 1, self.y - 1), Vector2.new(self.w + 2, self.h + 2), false)
+                self:_Draw('menu_border_in', 'rect', self._theming.border1, 20, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), false)
 
                 -- apply UI cornering to body + overlay + borders + topbar/sidebar bg (all body-colored fills).
                 -- topbar_bg and sidebar_bg get rounded too so their square corners don't poke past the rounded body.
