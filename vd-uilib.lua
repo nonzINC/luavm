@@ -2318,7 +2318,24 @@
                 local topbarPos = Vector2.new(self.x, self.y)
                 local topbarSize = Vector2.new(self.w, topbarH)
                 self:_Draw('menu_topbar_bg', 'rect', self._theming.surface0, 6, topbarPos, Vector2.new(self.w, topbarH), true)
-                self:_Draw('menu_topbar_div', 'rect', self._theming.border1, 7, Vector2.new(self.x, self.y + topbarH), Vector2.new(self.w, 1), true)
+                -- topbar divider: fade in/out at corners to match bodyCorner rounding
+                do
+                    local divY = self.y + topbarH
+                    local divW = self.w
+                    local fadeW = math.min(bodyCorner * 4, divW * 0.2) -- fade zone width
+                    local bc = self._theming.border1
+                    local cFull  = {R=bc.R, G=bc.G, B=bc.B, A=1}
+                    local cFade  = {R=bc.R, G=bc.G, B=bc.B, A=0}
+                    -- left fade
+                    self:_Draw('menu_topbar_div_l', 'gradient', nil, 7, 'horizontal',
+                        Vector2.new(self.x, divY), Vector2.new(fadeW, 1), cFade, cFull)
+                    -- center solid
+                    self:_Draw('menu_topbar_div_c', 'rect', bc, 7,
+                        Vector2.new(self.x + fadeW, divY), Vector2.new(divW - fadeW * 2, 1), true)
+                    -- right fade
+                    self:_Draw('menu_topbar_div_r', 'gradient', nil, 7, 'horizontal',
+                        Vector2.new(self.x + divW - fadeW, divY), Vector2.new(fadeW, 1), cFull, cFade)
+                end
                 local menuDotCenter = Vector2.new(self.x + self._padding + 7, self.y + topbarH / 2 + 1)
                 self:_Draw('menu_topbar_dot_ring', 'circle', self._theming.border1, 8, menuDotCenter, 5, false, 1, 18)
                 self:_Draw('menu_topbar_dot', 'circle', self._theming.accent, 9, menuDotCenter, 2, true, 1, 18)
