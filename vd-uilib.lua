@@ -1,4 +1,4 @@
--- improved version of nulares ui lib for personal usage
+-- test
     UILib = {
         _font_face = Drawing.Fonts.UI,
         _font_size = 13,
@@ -1371,7 +1371,7 @@
                         self._background_alpha = clamp((tonumber(newValue) or 100) / 100, 5/100, 1)
                         if options.onAlphaChange then options.onAlphaChange(self._background_alpha) end
                     end)
-                    -- UI cornering: hardcoded 3px, slider removed
+                    -- UI cornering: hardcoded 5px, slider removed
                 end
                 local themes = {'Catppuccin', 'Gamesense', 'Bloodmoon', 'Seaside', 'Ember', 'Synthwave', 'Matcha', 'Femboy'}
                 -- per-theme bg+fg color preview so each dropdown row looks like that theme
@@ -1607,11 +1607,9 @@
                     local isR = mode == 'Rotate'
                     glowSIntensity:SetHidden(not isS)
                     glowSRadius:SetHidden(not isS)
-
                     glowBSpeed:SetHidden(not isB)
                     glowBIntensity:SetHidden(not isB)
                     glowBRadius:SetHidden(not isB)
-
                     glowRWorm:SetHidden(not isR)
                     glowRSpeed:SetHidden(not isR)
                     glowRRadius:SetHidden(not isR)
@@ -2142,9 +2140,9 @@
                 local sidebarW = self._sidebar_w
                 local topbarH = self._topbar_h
 
-                -- UI body rounding: hardcoded 5px, glow does NOT affect menu corner
-                local uiCorner = 5 -- hardcoded
-                local bodyCorner = uiCorner -- glow extra corner removed to prevent visual jump
+                -- UI body rounding (always active via slider) + optional extra from static/breathe glow
+                local uiCorner = 5
+                local bodyCorner = 5 -- hardcoded, glow does not affect menu corner
 
                 -- neon glow
                 local glowMode = self._glow_mode or 'Static'
@@ -2236,11 +2234,11 @@
                             effectiveRadius = self._glow_s_radius or 10
                             glowPeak = (self._glow_s_intensity or 50) / 100
                             peakMul = 1
-                            cornerSmooth = 15 -- hardcoded
+                            cornerSmooth = self._glow_s_smooth or 15
                         elseif glowMode == 'Breathe' then
                             effectiveRadius = self._glow_b_radius or 14
                             glowPeak = (self._glow_b_intensity or 70) / 100
-                            cornerSmooth = 15 -- hardcoded
+                            cornerSmooth = self._glow_b_smooth or 15
                             local speed = self._glow_b_speed or 2
                             local freq = (speed > 0) and (6.28318 / speed) or 1
                             local raw = math.sin(now * freq) * 0.5 + 0.5
@@ -2302,24 +2300,25 @@
                         menu_overlay    = bodyCorner,
                         menu_border_out = bodyCorner,
                         menu_border_in  = innerCorner,
-                        menu_topbar_bg  = 0, -- no corner: body rounding already handles it
-                        menu_sidebar_bg = 0, -- no corner: body rounding already handles it
+                        menu_topbar_bg  = math.min(bodyCorner, topbarCap),
+                        menu_sidebar_bg = math.min(bodyCorner, sidebarCap),
                     }
                     for id, c in pairs(targets) do
                         local d = self._drawings[id]
                         if d and d.Corner ~= c then d.Corner = c end
                     end
                 end
-                -- top accent line: inset + fade at corners to match body rounding
+                -- top accent line (2px)
+                -- top accent line: inset + fade at corners
                 do
-                    local acY    = self.y + 1
-                    local inset  = bodyCorner + 1
-                    local acX    = self.x + inset
-                    local acW    = self.w - inset * 2
-                    local fadeW  = math.min(bodyCorner * 3, acW * 0.15)
-                    local ac     = self._theming.accent
-                    local cFull  = {R=ac.R, G=ac.G, B=ac.B, A=1}
-                    local cFade  = {R=ac.R, G=ac.G, B=ac.B, A=0}
+                    local acY   = self.y + 1
+                    local inset = bodyCorner + 1
+                    local acX   = self.x + inset
+                    local acW   = self.w - inset * 2
+                    local fadeW = math.min(bodyCorner * 3, acW * 0.15)
+                    local ac    = self._theming.accent
+                    local cFull = {R=ac.R, G=ac.G, B=ac.B, A=1}
+                    local cFade = {R=ac.R, G=ac.G, B=ac.B, A=0}
                     self:_Draw('menu_accent_top_l', 'gradient', nil, 21, 'horizontal',
                         Vector2.new(acX, acY), Vector2.new(fadeW, 2), cFade, cFull)
                     self:_Draw('menu_accent_top_c', 'rect', ac, 21,
@@ -2332,18 +2331,15 @@
                 -- topbar
                 local topbarPos = Vector2.new(self.x, self.y)
                 local topbarSize = Vector2.new(self.w, topbarH)
-                -- topbar: 1px içeriden başla, body border içinde kalır, köşe taşması olmaz
-                self:_Draw('menu_topbar_bg', 'rect', self._theming.surface0, 6,
-                    Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, topbarH - 1), true)
-
-                -- topbar divider: fade in/out at corners to match bodyCorner rounding
+                self:_Draw('menu_topbar_bg', 'rect', self._theming.surface0, 6, topbarPos, Vector2.new(self.w, topbarH), true)
+                -- topbar divider: fade at corners
                 do
-                    local divY = self.y + topbarH
-                    local inset = bodyCorner * 2 + 2  -- köşe rounding'in görünür alanını tam kapat
-                    local divX = self.x + inset
-                    local divW = self.w - inset * 2
+                    local divY  = self.y + topbarH
+                    local inset = bodyCorner * 2 + 2
+                    local divX  = self.x + inset
+                    local divW  = self.w - inset * 2
                     local fadeW = math.min(bodyCorner * 4, divW * 0.18)
-                    local bc = self._theming.border1
+                    local bc    = self._theming.border1
                     local cFull = {R=bc.R, G=bc.G, B=bc.B, A=1}
                     local cFade = {R=bc.R, G=bc.G, B=bc.B, A=0}
                     self:_Draw('menu_topbar_div_l', 'gradient', nil, 7, 'horizontal',
@@ -2361,9 +2357,7 @@
                 -- sidebar
                 local sidebarPos = Vector2.new(self.x + 1, self.y + topbarH + 1)
                 local sidebarSize = Vector2.new(sidebarW - 1, self.h - topbarH - 2)
-                self:_Draw('menu_sidebar_bg', 'rect', self._theming.surface0, 6,
-                    sidebarPos, sidebarSize, true)
-
+                self:_Draw('menu_sidebar_bg', 'rect', self._theming.surface0, 6, sidebarPos, sidebarSize, true)
                 -- vertical separator between sidebar and content
                 self:_Draw('menu_sidebar_sep', 'rect', self._theming.border1, 7, Vector2.new(self.x + sidebarW, self.y + topbarH + 1), Vector2.new(1, self.h - topbarH - 2), true)
 
@@ -3293,7 +3287,7 @@
         function UILib:ShowDemoMenu()
             self:Unload()
 
-            self:SetMenuSize(Vector2.new(850, 800))
+            self:SetMenuSize(Vector2.new(720, 480))
             self:CenterMenu()
             self:SetMenuTitle('UILib v2 — Full Demo')
 
@@ -3343,23 +3337,21 @@
             esp:Toggle('Health bar', false)
             esp:Toggle('Distance', false)
             esp:Toggle('Skeleton', false)
-            esp:Toggle('Head dot', false)
             esp:Toggle('Tracers', false)
             esp:Toggle('Chams', false)
             esp:Slider('Max distance', 500, 10, 10, 2000, 'm')
             esp:Slider('Text size', 13, 1, 8, 24, 'px')
             esp:Dropdown('Style', {'Corner'}, {
-                'Corner', 'Full', 'Outline', 'Rounded', 'Dotted',
-                'Dashed', 'Thick', 'Thin', 'Double', 'Glow',
-                'Neon', 'Gradient', 'Fade', 'Pulse', 'Rainbow',
-                'Matrix', 'Retro', 'Minimal', 'Bold', 'Custom',
-                'Sketch', 'Comic', 'Cyber', 'Vapor', 'Holo'
+                'Corner','Full','Outline','Rounded','Dotted',
+                'Dashed','Thick','Thin','Double','Glow',
+                'Neon','Gradient','Fade','Pulse','Rainbow',
+                'Minimal','Bold','Custom','Cyber','Holo'
             }, false)
-            esp:Dropdown('Flags', {'Armor', 'Weapon'}, {
-                'Armor', 'Weapon', 'Ammo', 'Reload', 'Scoped',
-                'Flashed', 'Defusing', 'Planting', 'Peeking', 'Lit',
-                'Bot', 'AFK', 'Lagging', 'Streaming', 'Admin',
-                'VIP', 'Suspect', 'Reported'
+            esp:Dropdown('Flags', {'Armor','Weapon'}, {
+                'Armor','Weapon','Ammo','Reload','Scoped',
+                'Flashed','Defusing','Planting','Peeking','Lit',
+                'Bot','AFK','Lagging','Streaming','Admin',
+                'VIP','Suspect','Reported'
             }, true)
 
             local world = vis:Section('World')
@@ -3370,7 +3362,7 @@
             world:Toggle('Fullbright', false)
             world:Slider('FOV changer', 70, 1, 40, 120, 'deg')
             world:Slider('View distance', 1000, 50, 100, 5000, 'm')
-            world:Dropdown('Skybox', {'Default'}, {'Default', 'Night', 'Sunset', 'Space', 'Custom'}, false)
+            world:Dropdown('Skybox', {'Default'}, {'Default','Night','Sunset','Space','Custom'}, false)
 
             -- tab 3: Misc
             local misc = self:Tab('Misc')
@@ -3389,7 +3381,7 @@
             automation:Toggle('Auto reload', false)
             automation:Toggle('Auto pickup', false)
             automation:Slider('Heal threshold', 50, 5, 10, 100, '%')
-            automation:Dropdown('Pickup priority', {'Nearest'}, {'Nearest', 'Rarest', 'Best weapon', 'Ammo first'}, false)
+            automation:Dropdown('Pickup priority', {'Nearest'}, {'Nearest','Rarest','Best weapon','Ammo first'}, false)
             automation:Textbox('Macro command', '')
 
             -- tab 4: Config (subtabs)
@@ -3400,7 +3392,7 @@
             profSection:Button('Save', function() self:Notification('Profile saved', 3) end)
             profSection:Button('Load', function() self:Notification('Profile loaded', 3) end)
             profSection:Button('Delete', function() self:Notification('Profile deleted', 3) end)
-            profSection:Dropdown('Active profile', {'default'}, {'default', 'rage', 'legit', 'hvh', 'casual'}, false)
+            profSection:Dropdown('Active profile', {'default'}, {'default','rage','legit','hvh','casual'}, false)
 
             local scripts = config:SubTab('Scripts')
             local scriptSection = scripts:Section('Loader')
@@ -3408,23 +3400,7 @@
             scriptSection:Button('Execute', function() self:Notification('Script executed', 3) end)
             scriptSection:Toggle('Auto-run on inject', false)
 
-            -- tab 5: Debug (subtabs)
-            local dbgParent = self:Tab('Debug')
-            local dbgPerf = dbgParent:SubTab('Perf')
-            local perfSection = dbgPerf:Section('Metrics')
-            perfSection:Slider('Simulated FPS', 60, 1, 1, 240, '')
-            perfSection:Toggle('Show FPS overlay', false)
-            perfSection:Toggle('Show draw count', false)
-            perfSection:Toggle('Show memory', false)
-
-            local dbgInput = dbgParent:SubTab('Input')
-            local inputSection = dbgInput:Section('Test')
-            inputSection:Toggle('Log keypresses', false)
-            inputSection:Toggle('Log mouse', false)
-            inputSection:Textbox('Last key', '')
-            inputSection:Button('Clear log', function() self:Notification('Log cleared', 2) end)
-
-            -- tab 6: Layout
+            -- tab 5: Layout
             local layout = self:Tab('Layout')
             local leftRight = layout:Section('Columns')
             local ll = leftRight:Left()
@@ -3436,65 +3412,41 @@
             rr:Toggle('Right toggle 1', true)
             rr:Toggle('Right toggle 2', false)
             rr:Slider('Right slider', 75, 1, 0, 100, '%')
-            rr:Dropdown('Right dropdown', {'A'}, {'A', 'B', 'C', 'D', 'E'}, false)
+            rr:Dropdown('Right dropdown', {'A'}, {'A','B','C','D','E'}, false)
 
             local overflow = layout:Section('Overflow Test')
             for i = 1, 15 do
                 overflow:Toggle('Item #' .. tostring(i), i % 3 == 0)
             end
 
-            local snapDemo = layout:Section('Snap Demo')
-            snapDemo:Slider('min=5 step=3', 5, 3, 5, 20, '')
-            snapDemo:Slider('min=10 step=7', 10, 7, 10, 80, '')
-            snapDemo:Button('OK', function() self:Notification('OK', 2) end)
-            snapDemo:Button('Save Configuration', function() self:Notification('Saved', 2) end)
-            snapDemo:Button('A', function() self:Notification('A', 2) end)
-
-            -- Settings tab: tüm özellikler açık
-            -- backgroundImage=true  → foto yükleme (dir: _bg_image_cache_dir)
-            -- theming=true          → tema preset + renk pickers + font picker
-            -- backgroundAlpha=true  → Background opacity slider + UI cornering slider
-            -- customTitle=true      → özel başlık textbox
-            -- watermark=true        → watermark toggle
-            local _, menuSettings, _, _ = self:CreateSettingsTab('Settings', {
+            -- Settings tab: tüm özellikler aktif
+            local _, menuSettings = self:CreateSettingsTab('Settings', {
                 watermark       = true,
                 backgroundAlpha = true,
                 customTitle     = true,
                 backgroundImage = true,
                 theming         = true,
-                menuKeyLabel    = 'Menu key (F1)',
                 onAlphaChange = function(alpha)
                     self:Notification(string.format('BG opacity: %d%%', math.floor(alpha * 100)), 2)
                 end,
-                onCornerChange = function(corner)
-                    self:Notification(string.format('UI cornering: %dpx', corner), 2)
-                end,
-                onBgImageChange = function(filename, alpha)
+                onBgImageChange = function(filename)
                     if filename and filename ~= '' then
-                        self:Notification('Foto yuklendi: ' .. tostring(filename), 4)
+                        self:Notification('Foto yuklendi: ' .. filename, 4)
                     else
                         self:Notification('Foto temizlendi', 3)
                     end
                 end,
-                onBgImageAlphaChange = function(alpha)
-                    self:Notification(string.format('Foto opakligi: %d%%', math.floor(alpha * 100)), 2)
-                end,
                 onPresetChange = function(theme)
-                    self:Notification('Tema: ' .. tostring(theme), 3)
-                end,
-                onColorChange = function(key, color)
-                    -- renk degisiklikleri zaten aninda gorukuyor, bildirim gerekmiyor
+                    self:Notification('Tema: ' .. theme, 3)
                 end,
                 onFontChange = function(fontName)
-                    self:Notification('Font: ' .. tostring(fontName), 3)
+                    self:Notification('Font: ' .. fontName, 3)
                 end,
             })
 
-            -- Demo kontrol butonlari (Settings tabinin menu section'ina ekleniyor)
+            -- Demo controls
             local shouldDie = false
-            menuSettings:Button('Unload', function()
-                shouldDie = true
-            end)
+            menuSettings:Button('Unload', function() shouldDie = true end)
             menuSettings:Button('Fire notification', function()
                 self:Notification('Test: ' .. tostring(math.floor(os.clock())), 5)
             end)
@@ -3508,48 +3460,16 @@
                 self:Notification('Menu ortalandi', 2)
             end)
 
-            -- Baslangic bildirimleri
-            self:Notification('UILib v2 tam demo yuklendi', 5)
-            self:Notification('F1 = menu ac/kapat', 5)
-            self:Notification('Settings > Background Image: foto yukle', 6)
-            self:Notification('Settings > Theming: cornering + tema + font', 7)
+            self:Notification('UILib v2 demo yuklendi', 5)
 
-            local shouldReload = false
-            while not shouldDie and not shouldReload do
+            while not shouldDie do
                 if animOn then
                     meterSlider:Set(math.floor(math.sin(os.clock() * 3) * 100))
-                end
-                -- F3: unload ve GitHub'dan yeniden yukle
-                if self:_IsKeyPressed('f3') then
-                    shouldReload = true
                 end
                 self:Step()
             end
 
             self:Unload()
-
-            if shouldReload then
-                local RAW_URL   = 'https://raw.githubusercontent.com/nonzINC/luavm/main/vd-uilib.lua'
-                local CACHE_PATH = 'C:/matcha/workspace/nonzviAss/modules/vd-uilib.lua'
-                local ok, fetched = pcall(function()
-                    return game:HttpGet(RAW_URL .. '?t=' .. tostring(os.time()))
-                end)
-                if ok and fetched and #fetched > 100 then
-                    pcall(writefile, CACHE_PATH, fetched)
-                    local chunk, loadErr = loadstring(fetched)
-                    if chunk then
-                        pcall(chunk)
-                        UILib:ShowDemoMenu()
-                    end
-                else
-                    notifymsg('F3 reload basarisiz: GitHub erisilemedi', 'UILib', 4)
-                end
-                return true
-            end
-
             return true
-
         end
     end
--- auto-run demo on load
-UILib:ShowDemoMenu()
