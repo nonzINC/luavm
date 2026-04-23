@@ -55,7 +55,7 @@
         _columns = 2,
         _column_gap = 18,
         _background_alpha = 92/100,
-        _ui_body_corner = 4, -- 0..7 px; rounds menu body + overlay + borders + topbar/sidebar bg
+        _ui_body_corner = 3, -- hardcoded 3px, not user-adjustable
         -- bg image
         -- master kill switch. set to false and the bg-image feature behaves as if it never existed:
         -- settings section is not created, render path is skipped, opacity pass is skipped.
@@ -84,9 +84,9 @@
         _glow_r_speed = 3,
         _glow_r_radius = 9,
         _glow_r_intensity = 50,
-        _glow_s_corner = 12,
+        _glow_s_corner = 5,
         _glow_s_smooth = 15,
-        _glow_b_corner = 12,
+        _glow_b_corner = 5,
         _glow_b_smooth = 15,
         _theming = {
             accent = Color3.fromRGB(203, 166, 247),
@@ -1371,10 +1371,7 @@
                         self._background_alpha = clamp((tonumber(newValue) or 100) / 100, 5/100, 1)
                         if options.onAlphaChange then options.onAlphaChange(self._background_alpha) end
                     end)
-                    settingsRefs.uiCornering = themingSection:Slider('UI cornering', self._ui_body_corner or 4, 1, 0, 7, 'px', function(newValue)
-                        self._ui_body_corner = clamp(tonumber(newValue) or 0, 0, 7)
-                        if options.onCornerChange then options.onCornerChange(self._ui_body_corner) end
-                    end)
+                    -- UI cornering: hardcoded 3px, slider removed
                 end
                 local themes = {'Catppuccin', 'Gamesense', 'Bloodmoon', 'Seaside', 'Ember', 'Synthwave', 'Matcha', 'Femboy'}
                 -- per-theme bg+fg color preview so each dropdown row looks like that theme
@@ -1599,8 +1596,8 @@
                 end)
 
                 -- mode select sits right under the toggle
-                local glowSIntensity, glowSRadius, glowSCorner, glowSSmooth
-                local glowBSpeed, glowBIntensity, glowBRadius, glowBCorner, glowBSmooth
+                local glowSIntensity, glowSRadius
+                local glowBSpeed, glowBIntensity, glowBRadius
                 local glowRWorm, glowRSpeed, glowRRadius, glowRIntensity
 
                 -- forward decl for dynamic-visibility sliders
@@ -1610,13 +1607,11 @@
                     local isR = mode == 'Rotate'
                     glowSIntensity:SetHidden(not isS)
                     glowSRadius:SetHidden(not isS)
-                    glowSCorner:SetHidden(not isS)
-                    glowSSmooth:SetHidden(not isS)
+
                     glowBSpeed:SetHidden(not isB)
                     glowBIntensity:SetHidden(not isB)
                     glowBRadius:SetHidden(not isB)
-                    glowBCorner:SetHidden(not isB)
-                    glowBSmooth:SetHidden(not isB)
+
                     glowRWorm:SetHidden(not isR)
                     glowRSpeed:SetHidden(not isR)
                     glowRRadius:SetHidden(not isR)
@@ -1633,13 +1628,9 @@
                 -- per-mode sliders (hidden/shown on mode change)
                 glowSIntensity = glowSection:Slider('Intensity', self._glow_s_intensity, 1, 1, 100, '%', function(v) self._glow_s_intensity = v end)
                 glowSRadius = glowSection:Slider('Radius', self._glow_s_radius, 1, 1, 20, 'px', function(v) self._glow_s_radius = v end)
-                glowSCorner = glowSection:Slider('Cornering', self._glow_s_corner, 1, 0, 30, 'px', function(v) self._glow_s_corner = v end)
-                glowSSmooth = glowSection:Slider('Corner Smoothing', self._glow_s_smooth, 1, 1, 30, '', function(v) self._glow_s_smooth = v end)
                 glowBSpeed = glowSection:Slider('Speed', self._glow_b_speed, 1, 1, 5, 's', function(v) self._glow_b_speed = v end)
                 glowBIntensity = glowSection:Slider('Max intensity', self._glow_b_intensity, 1, 1, 100, '%', function(v) self._glow_b_intensity = v end)
                 glowBRadius = glowSection:Slider('Max radius', self._glow_b_radius, 1, 1, 20, 'px', function(v) self._glow_b_radius = v end)
-                glowBCorner = glowSection:Slider('Cornering', self._glow_b_corner, 1, 0, 30, 'px', function(v) self._glow_b_corner = v end)
-                glowBSmooth = glowSection:Slider('Corner Smoothing', self._glow_b_smooth, 1, 1, 30, '', function(v) self._glow_b_smooth = v end)
                 glowRWorm = glowSection:Slider('Worm size', self._glow_r_worm, 1, 10, 100, '%', function(v) self._glow_r_worm = v end)
                 glowRSpeed = glowSection:Slider('Speed', self._glow_r_speed, 1, 1, 10, '', function(v) self._glow_r_speed = v end)
                 glowRRadius = glowSection:Slider('Glow radius', self._glow_r_radius, 1, 1, 20, 'px', function(v) self._glow_r_radius = v end)
@@ -2152,13 +2143,13 @@
                 local topbarH = self._topbar_h
 
                 -- UI body rounding (always active via slider) + optional extra from static/breathe glow
-                local uiCorner = math.max(0, math.min(self._ui_body_corner or 0, 7))
+                local uiCorner = 3 -- hardcoded
                 local glowExtraCorner = 0
                 if self._glow_enabled then
                     if self._glow_mode == 'Static' then
-                        glowExtraCorner = self._glow_s_corner or 12
+                        glowExtraCorner = 5 -- hardcoded
                     elseif self._glow_mode == 'Breathe' then
-                        glowExtraCorner = self._glow_b_corner or 12
+                        glowExtraCorner = 5 -- hardcoded
                     end
                 end
                 local bodyCorner = uiCorner + glowExtraCorner
@@ -2253,11 +2244,11 @@
                             effectiveRadius = self._glow_s_radius or 10
                             glowPeak = (self._glow_s_intensity or 50) / 100
                             peakMul = 1
-                            cornerSmooth = self._glow_s_smooth or 15
+                            cornerSmooth = 15 -- hardcoded
                         elseif glowMode == 'Breathe' then
                             effectiveRadius = self._glow_b_radius or 14
                             glowPeak = (self._glow_b_intensity or 70) / 100
-                            cornerSmooth = self._glow_b_smooth or 15
+                            cornerSmooth = 15 -- hardcoded
                             local speed = self._glow_b_speed or 2
                             local freq = (speed > 0) and (6.28318 / speed) or 1
                             local raw = math.sin(now * freq) * 0.5 + 0.5
