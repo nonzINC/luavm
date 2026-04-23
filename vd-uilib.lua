@@ -2338,7 +2338,7 @@
                     Vector2.new(self.x, self.y),
                     Vector2.new(self.w, topbarH + bodyCorner), true)
                 -- alt köşeleri ört: body rengiyle aynı ZIndex 3 rect
-                self:_Draw('menu_topbar_bg_cover', 'rect', self._theming.body, 3,
+                self:_Draw('menu_body_topbar_cover', 'rect', self._theming.body, 3,
                     Vector2.new(self.x + 1, self.y + topbarH),
                     Vector2.new(self.w - 2, bodyCorner), true)
 
@@ -2373,10 +2373,10 @@
                     Vector2.new(sidebarPos.x, sidebarPos.y - bodyCorner),
                     Vector2.new(sidebarSize.x + bodyCorner, sidebarSize.y + bodyCorner), true)
                 -- taşan kısmı ört
-                self:_Draw('menu_sidebar_bg_cover', 'rect', self._theming.body, 3,
+                self:_Draw('menu_body_sidebar_cover_r', 'rect', self._theming.body, 3,
                     Vector2.new(sidebarPos.x + sidebarSize.x, sidebarPos.y - bodyCorner),
                     Vector2.new(bodyCorner + 1, sidebarSize.y + bodyCorner), true)
-                self:_Draw('menu_sidebar_bg_cover_top', 'rect', self._theming.body, 3,
+                self:_Draw('menu_body_sidebar_cover_top', 'rect', self._theming.body, 3,
                     Vector2.new(sidebarPos.x, sidebarPos.y - bodyCorner),
                     Vector2.new(sidebarSize.x + bodyCorner, bodyCorner), true)
 
