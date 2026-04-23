@@ -3274,7 +3274,7 @@
         function UILib:ShowDemoMenu()
             self:Unload()
 
-            self:SetMenuSize(Vector2.new(800, 800))
+            self:SetMenuSize(Vector2.new(750, 620))
             self:CenterMenu()
             self:SetMenuTitle('UILib v2 — Full Demo')
 
@@ -3495,14 +3495,39 @@
             self:Notification('Settings > Background Image: foto yukle', 6)
             self:Notification('Settings > Theming: cornering + tema + font', 7)
 
-            while not shouldDie do
+            local shouldReload = false
+            while not shouldDie and not shouldReload do
                 if animOn then
                     meterSlider:Set(math.floor(math.sin(os.clock() * 3) * 100))
+                end
+                -- F3: unload ve GitHub'dan yeniden yukle
+                if self:_IsKeyPressed('f3') then
+                    shouldReload = true
                 end
                 self:Step()
             end
 
             self:Unload()
+
+            if shouldReload then
+                local RAW_URL   = 'https://raw.githubusercontent.com/nonzINC/luavm/main/vd-uilib.lua'
+                local CACHE_PATH = 'C:/matcha/workspace/nonzviAss/modules/vd-uilib.lua'
+                local ok, fetched = pcall(function()
+                    return game:HttpGet(RAW_URL .. '?t=' .. tostring(os.time()))
+                end)
+                if ok and fetched and #fetched > 100 then
+                    pcall(writefile, CACHE_PATH, fetched)
+                    local chunk, loadErr = loadstring(fetched)
+                    if chunk then
+                        pcall(chunk)
+                        UILib:ShowDemoMenu()
+                    end
+                else
+                    notifymsg('F3 reload basarisiz: GitHub erisilemedi', 'UILib', 4)
+                end
+                return true
+            end
+
             return true
 
         end
