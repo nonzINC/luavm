@@ -55,7 +55,7 @@
         _columns = 2,
         _column_gap = 18,
         _background_alpha = 92/100,
-        _ui_body_corner = 5, -- hardcoded 5px, not user-adjustable
+        _ui_body_corner = 5, -- hardcoded 5px
         -- bg image
         -- master kill switch. set to false and the bg-image feature behaves as if it never existed:
         -- settings section is not created, render path is skipped, opacity pass is skipped.
@@ -1371,7 +1371,7 @@
                         self._background_alpha = clamp((tonumber(newValue) or 100) / 100, 5/100, 1)
                         if options.onAlphaChange then options.onAlphaChange(self._background_alpha) end
                     end)
-                    -- UI cornering: hardcoded 5px, slider removed
+                    -- UI cornering: hardcoded 5px
                 end
                 local themes = {'Catppuccin', 'Gamesense', 'Bloodmoon', 'Seaside', 'Ember', 'Synthwave', 'Matcha', 'Femboy'}
                 -- per-theme bg+fg color preview so each dropdown row looks like that theme
@@ -2142,7 +2142,7 @@
 
                 -- UI body rounding (always active via slider) + optional extra from static/breathe glow
                 local uiCorner = 5
-                local bodyCorner = 5 -- hardcoded, glow does not affect menu corner
+                local bodyCorner = 5
 
                 -- neon glow
                 local glowMode = self._glow_mode or 'Static'
@@ -2300,8 +2300,8 @@
                         menu_overlay    = bodyCorner,
                         menu_border_out = bodyCorner,
                         menu_border_in  = innerCorner,
-                        menu_topbar_bg  = math.min(bodyCorner, topbarCap),
-                        menu_sidebar_bg = math.min(bodyCorner, sidebarCap),
+                        menu_topbar_bg  = 0,
+                        menu_sidebar_bg = 0,
                     }
                     for id, c in pairs(targets) do
                         local d = self._drawings[id]
@@ -2309,7 +2309,6 @@
                     end
                 end
                 -- top accent line (2px)
-                -- top accent line: inset + fade at corners
                 do
                     local acY   = self.y + 1
                     local inset = bodyCorner + 1
@@ -2332,7 +2331,6 @@
                 local topbarPos = Vector2.new(self.x, self.y)
                 local topbarSize = Vector2.new(self.w, topbarH)
                 self:_Draw('menu_topbar_bg', 'rect', self._theming.surface0, 6, topbarPos, Vector2.new(self.w, topbarH), true)
-                -- topbar divider: fade at corners
                 do
                     local divY  = self.y + topbarH
                     local inset = bodyCorner * 2 + 2
@@ -3286,18 +3284,16 @@
 
         function UILib:ShowDemoMenu()
             self:Unload()
-
             self:SetMenuSize(Vector2.new(720, 480))
             self:CenterMenu()
             self:SetMenuTitle('UILib v2 — Full Demo')
 
-            -- tab 1: Combat
             local combat = self:Tab('Combat')
             local aimbot = combat:Section('Aimbot')
             local enabled = aimbot:Toggle('Enabled', false, nil, false, 'Master aimbot switch')
             local aimKey = enabled:AddKeybind('unbound', 'Hold', true)
             local silent = aimbot:Toggle('Silent aim', true)
-            local silentColor = silent:AddColorpicker('Hit color', Color3.fromRGB(255, 80, 120))
+            silent:AddColorpicker('Hit color', Color3.fromRGB(255, 80, 120))
             local autoWall = aimbot:Toggle('Auto wall (unsafe)', false, nil, true, 'Unsafe features may get you banned')
             autoWall:AddKeybind('v', 'Toggle', true)
             local overwriteColor = aimbot:Toggle('Crosshair color')
@@ -3307,165 +3303,92 @@
             local hitbox = aimbot:Dropdown('Hitbox', {'Head', 'Chest'}, {'Head', 'Neck', 'Chest', 'Stomach', 'Pelvis', 'Arms', 'Legs'}, true)
             aimbot:Dropdown('Priority', {'Distance'}, {'Distance', 'Health', 'FOV', 'Threat'}, false)
             aimbot:Button('Reset settings', function()
-                enabled:Set(false)
-                aimKey:Set(nil)
-                silent:Set(false)
-                silentColor:Set(Color3.fromRGB(255, 255, 255))
-                fov:Set(90)
-                smooth:Set(2.5)
-                hitbox:Set({'Head'})
+                enabled:Set(false); silent:Set(false); fov:Set(90); smooth:Set(2.5); hitbox:Set({'Head'})
                 self:Notification('Settings reset', 3)
             end)
 
             local accuracy = combat:Section('Accuracy')
             local animOn = false
-            accuracy:Toggle('Live meter', animOn, function(v) animOn = v end)
+            accuracy:Toggle('Live meter', false, function(v) animOn = v end)
             local meterSlider = accuracy:Slider('Meter', 0, 1, -100, 100, '%')
             accuracy:Slider('Prediction', 0.5, 0.05, 0, 2, 's')
             local targetBox = accuracy:Textbox('Target filter', '')
             accuracy:Textbox('Ignore list', '')
             accuracy:Button('Clear filter', function() targetBox:Set('') end)
 
-            -- tab 2: Visuals
             local vis = self:Tab('Visuals')
             local esp = vis:Section('ESP')
             local espOn = esp:Toggle('Enabled', false)
             espOn:AddColorpicker('Color', Color3.fromRGB(0, 200, 255))
             espOn:AddKeybind('unbound', 'Toggle', true)
-            esp:Toggle('Box', true)
-            esp:Toggle('Name', true)
-            esp:Toggle('Health bar', false)
-            esp:Toggle('Distance', false)
-            esp:Toggle('Skeleton', false)
-            esp:Toggle('Tracers', false)
-            esp:Toggle('Chams', false)
+            esp:Toggle('Box', true); esp:Toggle('Name', true); esp:Toggle('Health bar', false)
+            esp:Toggle('Distance', false); esp:Toggle('Skeleton', false); esp:Toggle('Tracers', false)
             esp:Slider('Max distance', 500, 10, 10, 2000, 'm')
             esp:Slider('Text size', 13, 1, 8, 24, 'px')
-            esp:Dropdown('Style', {'Corner'}, {
-                'Corner','Full','Outline','Rounded','Dotted',
-                'Dashed','Thick','Thin','Double','Glow',
-                'Neon','Gradient','Fade','Pulse','Rainbow',
-                'Minimal','Bold','Custom','Cyber','Holo'
-            }, false)
-            esp:Dropdown('Flags', {'Armor','Weapon'}, {
-                'Armor','Weapon','Ammo','Reload','Scoped',
-                'Flashed','Defusing','Planting','Peeking','Lit',
-                'Bot','AFK','Lagging','Streaming','Admin',
-                'VIP','Suspect','Reported'
-            }, true)
+            esp:Dropdown('Style', {'Corner'}, {'Corner','Full','Outline','Rounded','Glow','Neon','Minimal','Cyber'}, false)
+            esp:Dropdown('Flags', {'Armor','Weapon'}, {'Armor','Weapon','Ammo','Reload','Scoped','Bot','AFK','VIP'}, true)
 
             local world = vis:Section('World')
-            local worldGlow = world:Toggle('Glow', false)
-            worldGlow:AddColorpicker('Glow color', Color3.fromRGB(255, 255, 0))
-            world:Toggle('Night mode', false)
-            world:Toggle('No fog', false)
-            world:Toggle('Fullbright', false)
+            world:Toggle('Night mode', false); world:Toggle('No fog', false); world:Toggle('Fullbright', false)
             world:Slider('FOV changer', 70, 1, 40, 120, 'deg')
-            world:Slider('View distance', 1000, 50, 100, 5000, 'm')
             world:Dropdown('Skybox', {'Default'}, {'Default','Night','Sunset','Space','Custom'}, false)
 
-            -- tab 3: Misc
             local misc = self:Tab('Misc')
             local movement = misc:Section('Movement')
-            movement:Toggle('Bunnyhop', false)
-            movement:Toggle('Auto strafe', false)
-            movement:Toggle('Speed boost', false)
-            movement:Toggle('No fall damage', false)
+            movement:Toggle('Bunnyhop', false); movement:Toggle('Auto strafe', false); movement:Toggle('Speed boost', false)
             movement:Slider('Jump height', 16, 1, 10, 100, 'u')
             movement:Slider('Walk speed', 16, 1, 1, 50, 'u/s')
             movement:Button('Teleport home', function() self:Notification('Teleport sent', 3) end)
-            movement:Button('Respawn', function() self:Notification('Respawning...', 2) end)
 
             local automation = misc:Section('Automation')
-            automation:Toggle('Auto heal', false)
-            automation:Toggle('Auto reload', false)
-            automation:Toggle('Auto pickup', false)
+            automation:Toggle('Auto heal', false); automation:Toggle('Auto reload', false)
             automation:Slider('Heal threshold', 50, 5, 10, 100, '%')
             automation:Dropdown('Pickup priority', {'Nearest'}, {'Nearest','Rarest','Best weapon','Ammo first'}, false)
-            automation:Textbox('Macro command', '')
 
-            -- tab 4: Config (subtabs)
             local config = self:Tab('Config')
             local profiles = config:SubTab('Profiles')
             local profSection = profiles:Section('Manage')
             profSection:Textbox('Profile name', 'default')
             profSection:Button('Save', function() self:Notification('Profile saved', 3) end)
             profSection:Button('Load', function() self:Notification('Profile loaded', 3) end)
-            profSection:Button('Delete', function() self:Notification('Profile deleted', 3) end)
             profSection:Dropdown('Active profile', {'default'}, {'default','rage','legit','hvh','casual'}, false)
 
-            local scripts = config:SubTab('Scripts')
-            local scriptSection = scripts:Section('Loader')
-            scriptSection:Textbox('Script URL', '')
-            scriptSection:Button('Execute', function() self:Notification('Script executed', 3) end)
-            scriptSection:Toggle('Auto-run on inject', false)
-
-            -- tab 5: Layout
             local layout = self:Tab('Layout')
             local leftRight = layout:Section('Columns')
             local ll = leftRight:Left()
-            ll:Toggle('Left toggle 1', false)
-            ll:Toggle('Left toggle 2', true)
+            ll:Toggle('Left toggle 1', false); ll:Toggle('Left toggle 2', true)
             ll:Slider('Left slider', 50, 1, 0, 100, '%')
             ll:Button('Left button', function() self:Notification('Left!', 2) end)
             local rr = leftRight:Right()
-            rr:Toggle('Right toggle 1', true)
-            rr:Toggle('Right toggle 2', false)
+            rr:Toggle('Right toggle 1', true); rr:Toggle('Right toggle 2', false)
             rr:Slider('Right slider', 75, 1, 0, 100, '%')
             rr:Dropdown('Right dropdown', {'A'}, {'A','B','C','D','E'}, false)
 
             local overflow = layout:Section('Overflow Test')
-            for i = 1, 15 do
-                overflow:Toggle('Item #' .. tostring(i), i % 3 == 0)
-            end
+            for i = 1, 15 do overflow:Toggle('Item #' .. tostring(i), i % 3 == 0) end
 
-            -- Settings tab: tüm özellikler aktif
             local _, menuSettings = self:CreateSettingsTab('Settings', {
-                watermark       = true,
-                backgroundAlpha = true,
-                customTitle     = true,
-                backgroundImage = true,
-                theming         = true,
-                onAlphaChange = function(alpha)
-                    self:Notification(string.format('BG opacity: %d%%', math.floor(alpha * 100)), 2)
-                end,
-                onBgImageChange = function(filename)
-                    if filename and filename ~= '' then
-                        self:Notification('Foto yuklendi: ' .. filename, 4)
-                    else
-                        self:Notification('Foto temizlendi', 3)
-                    end
-                end,
-                onPresetChange = function(theme)
-                    self:Notification('Tema: ' .. theme, 3)
-                end,
-                onFontChange = function(fontName)
-                    self:Notification('Font: ' .. fontName, 3)
-                end,
+                watermark = true, backgroundAlpha = true, customTitle = true,
+                backgroundImage = true, theming = true,
+                onAlphaChange    = function(a) self:Notification(string.format('BG opacity: %d%%', math.floor(a*100)), 2) end,
+                onBgImageChange  = function(f) self:Notification(f ~= '' and 'Foto: '..f or 'Foto temizlendi', 3) end,
+                onPresetChange   = function(t) self:Notification('Tema: '..t, 3) end,
+                onFontChange     = function(f) self:Notification('Font: '..f, 3) end,
             })
 
-            -- Demo controls
             local shouldDie = false
             menuSettings:Button('Unload', function() shouldDie = true end)
             menuSettings:Button('Fire notification', function()
-                self:Notification('Test: ' .. tostring(math.floor(os.clock())), 5)
-            end)
-            menuSettings:Button('Fire 3 notifications', function()
-                for i = 1, 3 do
-                    self:Notification('Notification #' .. tostring(i), 4 + i)
-                end
+                self:Notification('Test: '..tostring(math.floor(os.clock())), 5)
             end)
             menuSettings:Button('Center menu', function()
-                self:CenterMenu()
-                self:Notification('Menu ortalandi', 2)
+                self:CenterMenu(); self:Notification('Menu ortalandi', 2)
             end)
 
             self:Notification('UILib v2 demo yuklendi', 5)
 
             while not shouldDie do
-                if animOn then
-                    meterSlider:Set(math.floor(math.sin(os.clock() * 3) * 100))
-                end
+                if animOn then meterSlider:Set(math.floor(math.sin(os.clock() * 3) * 100)) end
                 self:Step()
             end
 
