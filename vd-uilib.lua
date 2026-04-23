@@ -1,4 +1,4 @@
--- test
+-- improved version of nulares ui lib for personal usage
     UILib = {
         _font_face = Drawing.Fonts.UI,
         _font_size = 13,
@@ -3274,11 +3274,11 @@
         function UILib:ShowDemoMenu()
             self:Unload()
 
-            self:SetMenuSize(Vector2.new(720, 460))
+            self:SetMenuSize(Vector2.new(720, 480))
             self:CenterMenu()
-            self:SetMenuTitle('UILib v2')
+            self:SetMenuTitle('UILib v2 — Full Demo')
 
-            -- tab 1: toggles, keybinds, colorpickers, sliders, buttons, textbox
+            -- tab 1: Combat
             local combat = self:Tab('Combat')
             local aimbot = combat:Section('Aimbot')
             local enabled = aimbot:Toggle('Enabled', false, nil, false, 'Master aimbot switch')
@@ -3301,6 +3301,7 @@
                 fov:Set(90)
                 smooth:Set(2.5)
                 hitbox:Set({'Head'})
+                self:Notification('Settings reset', 3)
             end)
 
             local accuracy = combat:Section('Accuracy')
@@ -3312,7 +3313,7 @@
             accuracy:Textbox('Ignore list', '')
             accuracy:Button('Clear filter', function() targetBox:Set('') end)
 
-            -- tab 2: esp, world, many toggles with colorpickers
+            -- tab 2: Visuals
             local vis = self:Tab('Visuals')
             local esp = vis:Section('ESP')
             local espOn = esp:Toggle('Enabled', false)
@@ -3328,7 +3329,6 @@
             esp:Toggle('Chams', false)
             esp:Slider('Max distance', 500, 10, 10, 2000, 'm')
             esp:Slider('Text size', 13, 1, 8, 24, 'px')
-            -- pager test: 25 items single-select (3 pages, last page wraps to start)
             esp:Dropdown('Style', {'Corner'}, {
                 'Corner', 'Full', 'Outline', 'Rounded', 'Dotted',
                 'Dashed', 'Thick', 'Thin', 'Double', 'Glow',
@@ -3336,7 +3336,6 @@
                 'Matrix', 'Retro', 'Minimal', 'Bold', 'Custom',
                 'Sketch', 'Comic', 'Cyber', 'Vapor', 'Holo'
             }, false)
-            -- stress test: 18 items multi-select
             esp:Dropdown('Flags', {'Armor', 'Weapon'}, {
                 'Armor', 'Weapon', 'Ammo', 'Reload', 'Scoped',
                 'Flashed', 'Defusing', 'Planting', 'Peeking', 'Lit',
@@ -3354,7 +3353,7 @@
             world:Slider('View distance', 1000, 50, 100, 5000, 'm')
             world:Dropdown('Skybox', {'Default'}, {'Default', 'Night', 'Sunset', 'Space', 'Custom'}, false)
 
-            -- tab 3: movement, automation
+            -- tab 3: Misc
             local misc = self:Tab('Misc')
             local movement = misc:Section('Movement')
             movement:Toggle('Bunnyhop', false)
@@ -3374,7 +3373,7 @@
             automation:Dropdown('Pickup priority', {'Nearest'}, {'Nearest', 'Rarest', 'Best weapon', 'Ammo first'}, false)
             automation:Textbox('Macro command', '')
 
-            -- tab 4: subtabs test
+            -- tab 4: Config (subtabs)
             local config = self:Tab('Config')
             local profiles = config:SubTab('Profiles')
             local profSection = profiles:Section('Manage')
@@ -3390,11 +3389,11 @@
             scriptSection:Button('Execute', function() self:Notification('Script executed', 3) end)
             scriptSection:Toggle('Auto-run on inject', false)
 
-            -- tab 5: sidebar groups test
+            -- tab 5: Debug (subtabs)
             local dbgParent = self:Tab('Debug')
             local dbgPerf = dbgParent:SubTab('Perf')
             local perfSection = dbgPerf:Section('Metrics')
-            local fpsSlider = perfSection:Slider('Simulated FPS', 60, 1, 1, 240, '')
+            perfSection:Slider('Simulated FPS', 60, 1, 1, 240, '')
             perfSection:Toggle('Show FPS overlay', false)
             perfSection:Toggle('Show draw count', false)
             perfSection:Toggle('Show memory', false)
@@ -3406,7 +3405,7 @@
             inputSection:Textbox('Last key', '')
             inputSection:Button('Clear log', function() self:Notification('Log cleared', 2) end)
 
-            -- tab 6: column layout, y-offset, overflow test
+            -- tab 6: Layout
             local layout = self:Tab('Layout')
             local leftRight = layout:Section('Columns')
             local ll = leftRight:Left()
@@ -3420,37 +3419,81 @@
             rr:Slider('Right slider', 75, 1, 0, 100, '%')
             rr:Dropdown('Right dropdown', {'A'}, {'A', 'B', 'C', 'D', 'E'}, false)
 
-            -- overflow: many items to trigger the overflow hint
             local overflow = layout:Section('Overflow Test')
             for i = 1, 15 do
                 overflow:Toggle('Item #' .. tostring(i), i % 3 == 0)
             end
 
-            -- snap demo: min=5 step=3, slider snaps to 5,8,11,14,17,20 (snap-relative-to-min fix)
             local snapDemo = layout:Section('Snap Demo')
             snapDemo:Slider('min=5 step=3', 5, 3, 5, 20, '')
             snapDemo:Slider('min=10 step=7', 10, 7, 10, 80, '')
-            -- button row: short / medium / long labels — all should be center-aligned
             snapDemo:Button('OK', function() self:Notification('OK', 2) end)
             snapDemo:Button('Save Configuration', function() self:Notification('Saved', 2) end)
             snapDemo:Button('A', function() self:Notification('A', 2) end)
 
-            -- settings tab
-            local _, menuSettings = self:CreateSettingsTab()
+            -- Settings tab: tüm özellikler açık
+            -- backgroundImage=true  → foto yükleme (dir: _bg_image_cache_dir)
+            -- theming=true          → tema preset + renk pickers + font picker
+            -- backgroundAlpha=true  → Background opacity slider + UI cornering slider
+            -- customTitle=true      → özel başlık textbox
+            -- watermark=true        → watermark toggle
+            local _, menuSettings, _, _ = self:CreateSettingsTab('Settings', {
+                watermark       = true,
+                backgroundAlpha = true,
+                customTitle     = true,
+                backgroundImage = true,
+                theming         = true,
+                menuKeyLabel    = 'Menu key (F1)',
+                onAlphaChange = function(alpha)
+                    self:Notification(string.format('BG opacity: %d%%', math.floor(alpha * 100)), 2)
+                end,
+                onCornerChange = function(corner)
+                    self:Notification(string.format('UI cornering: %dpx', corner), 2)
+                end,
+                onBgImageChange = function(filename, alpha)
+                    if filename and filename ~= '' then
+                        self:Notification('Foto yuklendi: ' .. tostring(filename), 4)
+                    else
+                        self:Notification('Foto temizlendi', 3)
+                    end
+                end,
+                onBgImageAlphaChange = function(alpha)
+                    self:Notification(string.format('Foto opakligi: %d%%', math.floor(alpha * 100)), 2)
+                end,
+                onPresetChange = function(theme)
+                    self:Notification('Tema: ' .. tostring(theme), 3)
+                end,
+                onColorChange = function(key, color)
+                    -- renk degisiklikleri zaten aninda gorukuyor, bildirim gerekmiyor
+                end,
+                onFontChange = function(fontName)
+                    self:Notification('Font: ' .. tostring(fontName), 3)
+                end,
+            })
+
+            -- Demo kontrol butonlari (Settings tabinin menu section'ina ekleniyor)
             local shouldDie = false
-            menuSettings:Button('Unload', function() shouldDie = true end)
+            menuSettings:Button('Unload', function()
+                shouldDie = true
+            end)
             menuSettings:Button('Fire notification', function()
-                self:Notification('Test notification at ' .. tostring(math.floor(os.clock())), 5)
+                self:Notification('Test: ' .. tostring(math.floor(os.clock())), 5)
             end)
             menuSettings:Button('Fire 3 notifications', function()
                 for i = 1, 3 do
                     self:Notification('Notification #' .. tostring(i), 4 + i)
                 end
             end)
+            menuSettings:Button('Center menu', function()
+                self:CenterMenu()
+                self:Notification('Menu ortalandi', 2)
+            end)
 
-            self:Notification('UILib v2 demo loaded', 5)
-            self:Notification('Press F1 to toggle the menu', 6)
-            self:Notification('Try the 25-item Style dropdown (Visuals tab) for the pager', 7)
+            -- Baslangic bildirimleri
+            self:Notification('UILib v2 tam demo yuklendi', 5)
+            self:Notification('F1 = menu ac/kapat', 5)
+            self:Notification('Settings > Background Image: foto yukle', 6)
+            self:Notification('Settings > Theming: cornering + tema + font', 7)
 
             while not shouldDie do
                 if animOn then
@@ -3461,5 +3504,8 @@
 
             self:Unload()
             return true
+
         end
     end
+-- auto-run demo on load
+UILib:ShowDemoMenu()
