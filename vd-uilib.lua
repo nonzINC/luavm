@@ -2332,8 +2332,9 @@
                 -- topbar
                 local topbarPos = Vector2.new(self.x, self.y)
                 local topbarSize = Vector2.new(self.w, topbarH)
+                -- topbar: 1px içeriden başla, body border içinde kalır, köşe taşması olmaz
                 self:_Draw('menu_topbar_bg', 'rect', self._theming.surface0, 6,
-                    Vector2.new(self.x, self.y), Vector2.new(self.w, topbarH), true)
+                    Vector2.new(self.x + 1, self.y + 1), Vector2.new(self.w - 2, topbarH - 1), true)
 
                 -- topbar divider: fade in/out at corners to match bodyCorner rounding
                 do
