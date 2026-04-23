@@ -2284,8 +2284,8 @@
                 self:_Draw('menu_overlay', 'rect', self._theming.surface1, 2, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), true)
 
                 -- outer + inner menu border
-                self:_Draw('menu_border_out', 'rect', self._theming.crust, 20, Vector2.new(self.x - 1, self.y - 1), Vector2.new(self.w + 2, self.h + 2), false)
-                self:_Draw('menu_border_in', 'rect', self._theming.border1, 20, Vector2.new(self.x, self.y), Vector2.new(self.w, self.h), false)
+                self:_Draw('menu_border_out', 'rect', self._theming.crust, 20, Vector2.new(self.x - 2, self.y - 2), Vector2.new(self.w + 4, self.h + 4), false)
+                self:_Draw('menu_border_in', 'rect', self._theming.border1, 20, Vector2.new(self.x - 1, self.y - 1), Vector2.new(self.w + 2, self.h + 2), false)
 
                 -- apply UI cornering to body + overlay + borders + topbar/sidebar bg (all body-colored fills).
                 -- topbar_bg and sidebar_bg get rounded too so their square corners don't poke past the rounded body.
@@ -3291,7 +3291,7 @@
             local combat = self:Tab('Combat')
             local aimbot = combat:Section('Aimbot')
             local enabled = aimbot:Toggle('Enabled', false, nil, false, 'Master aimbot switch')
-            local aimKey = enabled:AddKeybind('unbound', 'Hold', true)
+            enabled:AddKeybind('unbound', 'Hold', true)
             local silent = aimbot:Toggle('Silent aim', true)
             silent:AddColorpicker('Hit color', Color3.fromRGB(255, 80, 120))
             local autoWall = aimbot:Toggle('Auto wall (unsafe)', false, nil, true, 'Unsafe features may get you banned')
@@ -3300,8 +3300,8 @@
             overwriteColor:AddColorpicker('Crosshair', Color3.fromRGB(0, 255, 128), true)
             local fov = aimbot:Slider('FOV', 90, 1, 1, 360, 'deg')
             local smooth = aimbot:Slider('Smoothness', 2.5, 0.1, 0.1, 10, 'x')
-            local hitbox = aimbot:Dropdown('Hitbox', {'Head', 'Chest'}, {'Head', 'Neck', 'Chest', 'Stomach', 'Pelvis', 'Arms', 'Legs'}, true)
-            aimbot:Dropdown('Priority', {'Distance'}, {'Distance', 'Health', 'FOV', 'Threat'}, false)
+            local hitbox = aimbot:Dropdown('Hitbox', {'Head','Chest'}, {'Head','Neck','Chest','Stomach','Pelvis','Arms','Legs'}, true)
+            aimbot:Dropdown('Priority', {'Distance'}, {'Distance','Health','FOV','Threat'}, false)
             aimbot:Button('Reset settings', function()
                 enabled:Set(false); silent:Set(false); fov:Set(90); smooth:Set(2.5); hitbox:Set({'Head'})
                 self:Notification('Settings reset', 3)
@@ -3365,13 +3365,13 @@
             rr:Dropdown('Right dropdown', {'A'}, {'A','B','C','D','E'}, false)
 
             local overflow = layout:Section('Overflow Test')
-            for i = 1, 15 do overflow:Toggle('Item #' .. tostring(i), i % 3 == 0) end
+            for i = 1, 15 do overflow:Toggle('Item #'..tostring(i), i%3==0) end
 
             local _, menuSettings = self:CreateSettingsTab('Settings', {
                 watermark = true, backgroundAlpha = true, customTitle = true,
                 backgroundImage = true, theming = true,
                 onAlphaChange   = function(a) self:Notification(string.format('BG opacity: %d%%', math.floor(a*100)), 2) end,
-                onBgImageChange = function(f) self:Notification(f ~= '' and 'Foto: '..f or 'Foto temizlendi', 3) end,
+                onBgImageChange = function(f) self:Notification(f~='' and 'Foto: '..f or 'Foto temizlendi', 3) end,
                 onPresetChange  = function(t) self:Notification('Tema: '..t, 3) end,
                 onFontChange    = function(f) self:Notification('Font: '..f, 3) end,
             })
@@ -3388,7 +3388,7 @@
             self:Notification('UILib v2 demo yuklendi', 5)
 
             while not shouldDie do
-                if animOn then meterSlider:Set(math.floor(math.sin(os.clock() * 3) * 100)) end
+                if animOn then meterSlider:Set(math.floor(math.sin(os.clock()*3)*100)) end
                 self:Step()
             end
 
