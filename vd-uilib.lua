@@ -1,4 +1,4 @@
--- test
+-- improved version of nulares ui lib for personal usage
     UILib = {
         _font_face = Drawing.Fonts.UI,
         _font_size = 13,
@@ -55,7 +55,7 @@
         _columns = 2,
         _column_gap = 18,
         _background_alpha = 92/100,
-        _ui_body_corner = 5, -- hardcoded 5px
+        _ui_body_corner = 5, 
         -- bg image
         -- master kill switch. set to false and the bg-image feature behaves as if it never existed:
         -- settings section is not created, render path is skipped, opacity pass is skipped.
@@ -84,10 +84,9 @@
         _glow_r_speed = 3,
         _glow_r_radius = 9,
         _glow_r_intensity = 50,
-        _glow_s_corner = 5,
         _glow_s_smooth = 15,
-        _glow_b_corner = 5,
         _glow_b_smooth = 15,
+        _text_outline_enabled = false, -- library-wide Drawing.Text outline flag
         _theming = {
             accent = Color3.fromRGB(203, 166, 247),
             unsafe = Color3.fromRGB(255, 215, 64),
@@ -326,7 +325,8 @@
                 end
                 draw.Position = textPosition
                 if draw.Text ~= textContent then draw.Text = textContent end
-                if draw.Outline ~= false then draw.Outline = false end
+                local wantOutline = self._text_outline_enabled == true
+                if draw.Outline ~= wantOutline then draw.Outline = wantOutline end
                 local resolvedFont = textFontFace or self._font_face
                 if draw.Font ~= resolvedFont then draw.Font = resolvedFont end
                 local resolvedSize = textSize or self._font_size
@@ -562,9 +562,10 @@
             if not ext or #ext > 5 then ext = 'bin' end
             local cachePath = cacheDir .. '/' .. string.format('%x', math.floor(h)) .. '.' .. ext
             self:_EnsureFolder(cacheDir)
+            local MAX_BYTES = 10 * 1024 * 1024
             if isfile and isfile(cachePath) then
                 local readOk, cachedBytes = pcall(readfile, cachePath)
-                if readOk and type(cachedBytes) == 'string' and #cachedBytes > 16 and #cachedBytes <= 20 * 1024 * 1024 then
+                if readOk and type(cachedBytes) == 'string' and #cachedBytes > 16 and #cachedBytes <= MAX_BYTES then
                     return true, cachedBytes
                 end
             end
@@ -572,9 +573,9 @@
             if not ok or type(bytes) ~= 'string' or #bytes < 16 then
                 return false, 'fetch failed'
             end
-            -- cap at 20MB so a malicious/huge url can't OOM matcha
-            if #bytes > 20 * 1024 * 1024 then
-                return false, 'image too large'
+            -- cap at 10MB - bigger images trigger long sync decode on draw.Data assign -> ui freeze
+            if #bytes > MAX_BYTES then
+                return false, string.format('image too large (%.1f MB, max 10 MB)', #bytes / 1048576)
             end
             pcall(writefile, cachePath, bytes)
             return true, bytes
@@ -928,6 +929,22 @@
             return handle
         end
 
+        -- non-interactive status/info text; Set() rewrites the label in place
+        function UILib:_Label(tabName, sectionName, label)
+            local itemId = #self._tree[tabName]._items[sectionName]._items + 1
+            local item = {
+                type_ = 'label',
+                label = tostring(label or ''),
+                _y_offset = 0,
+            }
+            table.insert(self._tree[tabName]._items[sectionName]._items, item)
+            local handle = self:_MakeItemHandle(tabName, sectionName, itemId, {})
+            handle.Set = function(_, newLabel)
+                self._tree[tabName]._items[sectionName]._items[itemId].label = tostring(newLabel or '')
+            end
+            return handle
+        end
+
         function UILib:_Section(tabName, sectionName, _subTabName, column)
             local tabData = self._tree[tabName]
             local sectionData = tabData._items[sectionName]
@@ -1020,6 +1037,7 @@
                 end,
                 Button = function(_, ...) return self:_Button(tabName, sectionName, ...) end,
                 Textbox = function(_, ...) return self:_Textbox(tabName, sectionName, ...) end,
+                Label = function(_, ...) return self:_Label(tabName, sectionName, ...) end,
                 SetColumn = function(_, newColumn)
                     local ref = self:_GetSectionRef(tabName, sectionName)
                     if ref then
@@ -1238,10 +1256,7 @@
                 local bgSection = settingsTab:Section('Background Image', 'left')
                 self:_EnsureFolder(self._bg_image_cache_dir)
 
-                -- scan cache dir for image files; returns {filename, ...} stripped of path
-                -- scan dir for image files (direct-load) AND .txt files (each holds one URL).
-                -- returns {filename, ...} stripped of path, image extensions and .txt both included.
-                local imageExts = {png=true, jpg=true, jpeg=true}
+                -- scan dir for .txt files — each holds one image url
                 local function listPhotoFiles()
                     local out = {}
                     local ok, files = pcall(listfiles, self._bg_image_cache_dir)
@@ -1250,18 +1265,15 @@
                         local full = tostring(files[i])
                         local name = full:match('[^/\\]+$') or full
                         local ext = name:match('%.([%w]+)$')
-                        if ext then
-                            ext = string.lower(ext)
-                            if imageExts[ext] or ext == 'txt' then
-                                out[#out + 1] = name
-                            end
+                        if ext and string.lower(ext) == 'txt' then
+                            out[#out + 1] = name
                         end
                     end
                     return out
                 end
 
                 local photoFiles = listPhotoFiles()
-                local noFilesLabel = '(empty — drop .png/.jpg/.jpeg or .txt with a url in ' .. self._bg_image_cache_dir .. ')'
+                local noFilesLabel = '(empty — drop a .txt with an image url in ' .. self._bg_image_cache_dir .. ')'
                 if #photoFiles == 0 then photoFiles = {noFilesLabel} end
 
                 local defaultChoice = photoFiles[1]
@@ -1278,64 +1290,69 @@
                         self:Notification('Image subsystem unavailable', 3)
                         return
                     end
+                    -- validate BEFORE mutating state so a bad pick doesn't cancel an in-flight fetch
                     local ext = (filename:match('%.([%w]+)$') or ''):lower()
+                    if ext ~= 'txt' then
+                        self:Notification('Only .txt url pointers supported — got .' .. ext, 4)
+                        return
+                    end
+                    if self._bg_image_fetching then
+                        self:Notification('Fetch already in progress', 2)
+                        return
+                    end
+                    -- commit state only after all guards pass
                     self._bg_image_url = filename
                     self._bg_image_apply_token = (self._bg_image_apply_token or 0) + 1
                     local myToken = self._bg_image_apply_token
                     local fullPath = self._bg_image_cache_dir .. '/' .. filename
-                    if ext == 'txt' then
-                        -- url pointer: read txt, extract first non-empty line, fetch via HttpGet
-                        if self._bg_image_fetching then
-                            self:Notification('Fetch already in progress', 2)
+                    self._bg_image_fetching = true
+                    -- watchdog: if fetch hasn't finished in 20s, free the lock so the user isn't stuck
+                    task.delay(20, function()
+                        if self._bg_image_apply_token == myToken and self._bg_image_fetching then
+                            self._bg_image_apply_token = (self._bg_image_apply_token or 0) + 1
+                            self._bg_image_fetching = false
+                            self:Notification('Fetch timed out for ' .. filename .. ' (20s)', 4)
+                        end
+                    end)
+                    task.spawn(function()
+                        local okRead, contents = pcall(readfile, fullPath)
+                        if self._bg_image_apply_token ~= myToken then self._bg_image_fetching = false return end
+                        if not okRead or type(contents) ~= 'string' or #contents == 0 then
+                            self._bg_image_fetching = false
+                            self:Notification('Failed to read ' .. filename, 4)
                             return
                         end
-                        self._bg_image_fetching = true
-                        task.spawn(function()
-                            local okRead, contents = pcall(readfile, fullPath)
-                            if self._bg_image_apply_token ~= myToken then self._bg_image_fetching = false return end
-                            if not okRead or type(contents) ~= 'string' or #contents == 0 then
-                                self._bg_image_fetching = false
-                                self:Notification('Failed to read ' .. filename, 4)
-                                return
-                            end
-                            -- first non-empty, non-whitespace line
-                            local url = nil
-                            for line in contents:gmatch('[^\r\n]+') do
-                                local trimmed = line:match('^%s*(.-)%s*$')
-                                if trimmed and #trimmed >= 4 then url = trimmed break end
-                            end
-                            if not url then
-                                self._bg_image_fetching = false
-                                self:Notification(filename .. ' has no valid url', 4)
-                                return
-                            end
-                            local okLoad, bytes = self:_LoadBgImage(url)
+                        -- first non-empty, non-whitespace line
+                        local url = nil
+                        for line in contents:gmatch('[^\r\n]+') do
+                            local trimmed = line:match('^%s*(.-)%s*$')
+                            if trimmed and #trimmed >= 4 then url = trimmed break end
+                        end
+                        if not url then
                             self._bg_image_fetching = false
+                            self:Notification(filename .. ' has no valid url', 4)
+                            return
+                        end
+                        pcall(notify, 'Photo loading...', 'meoware', 3)
+                        local t0 = os.clock()
+                        local okLoad, bytes = self:_LoadBgImage(url)
+                        self._bg_image_fetching = false
+                        if self._bg_image_apply_token ~= myToken then return end
+                        if okLoad and bytes then
+                            local elapsed = os.clock() - t0
+                            self:Notification(string.format('Loaded %s in %.1fs (%d KB)', filename, elapsed, math.floor(#bytes / 1024)), 3)
+                            -- yield one frame so notification paints before synchronous draw.Data decode hitch
+                            task.wait()
                             if self._bg_image_apply_token ~= myToken then return end
-                            if okLoad and bytes then
-                                self._bg_image_data = bytes
-                                self._bg_image_enabled = true
-                                self:Notification('Loaded ' .. filename .. ' (url)', 3)
-                                if options.onBgImageChange then options.onBgImageChange(filename, self._bg_image_alpha) end
-                            else
-                                self:Notification('Fetch failed for ' .. filename, 4)
-                            end
-                        end)
-                    else
-                        -- direct image file: read bytes and feed to Drawing.Image.Data
-                        task.spawn(function()
-                            local ok, bytes = pcall(readfile, fullPath)
-                            if self._bg_image_apply_token ~= myToken then return end
-                            if ok and type(bytes) == 'string' and #bytes > 0 then
-                                self._bg_image_data = bytes
-                                self._bg_image_enabled = true
-                                self:Notification('Loaded ' .. filename, 3)
-                                if options.onBgImageChange then options.onBgImageChange(filename, self._bg_image_alpha) end
-                            else
-                                self:Notification('Failed to read ' .. filename, 4)
-                            end
-                        end)
-                    end
+                            -- assign AFTER post-yield token recheck so stale/aborted fetches leave _bg_image_data untouched
+                            self._bg_image_data = bytes
+                            self._bg_image_enabled = true
+                            if options.onBgImageChange then options.onBgImageChange(filename, self._bg_image_alpha) end
+                        else
+                            local reason = (type(bytes) == 'string' and bytes) or 'unknown error'
+                            self:Notification('Fetch failed for ' .. filename .. ' (' .. reason .. ')', 4)
+                        end
+                    end)
                 end)
                 settingsRefs.bgImagePhoto = photoDropdown
 
@@ -1356,8 +1373,9 @@
                     self._bg_image_apply_token = (self._bg_image_apply_token or 0) + 1
                     self._bg_image_enabled = false
                     self._bg_image_data = nil
+                    self._bg_image_url = ''
                     self._draw_data_cache['menu_bg_image'] = nil
-                    self:_Undraw('menu_bg_image')
+                    self:_RemoveDraw('menu_bg_image')
                     if options.onBgImageChange then options.onBgImageChange('', self._bg_image_alpha) end
                     self:Notification('Bg image cleared', 2)
                 end)
@@ -1371,7 +1389,7 @@
                         self._background_alpha = clamp((tonumber(newValue) or 100) / 100, 5/100, 1)
                         if options.onAlphaChange then options.onAlphaChange(self._background_alpha) end
                     end)
-                    -- UI cornering: hardcoded 5px
+                    -- UI cornering
                 end
                 local themes = {'Catppuccin', 'Gamesense', 'Bloodmoon', 'Seaside', 'Ember', 'Synthwave', 'Matcha', 'Femboy'}
                 -- per-theme bg+fg color preview so each dropdown row looks like that theme
@@ -1399,6 +1417,7 @@
                         surface0 = self._theming.surface0,
                         surface1 = self._theming.surface1,
                         crust    = self._theming.crust,
+                        glow     = self._glow_color,
                     }
                 end
                 local function restoreSnapshot(snap)
@@ -1412,6 +1431,7 @@
                     themingSurface0Color:Set(snap.surface0)
                     themingSurface1Color:Set(snap.surface1)
                     themingCrustColor:Set(snap.crust)
+                    if glowColorRef and snap.glow then glowColorRef:Set(snap.glow) end
                 end
                 local function applyTheme(theme)
                     local gc = glowColorRef
@@ -1586,6 +1606,11 @@
                     if options.onFontChange then options.onFontChange(faceName) end
                 end, 'font family used across the ui', fontPreviewMap)
 
+                local themingOutline = themingSection:Toggle('Text outline', self._text_outline_enabled, function(newValue)
+                    self._text_outline_enabled = newValue == true
+                    if options.onOutlineChange then options.onOutlineChange(self._text_outline_enabled) end
+                end, false, 'dark outline behind all library text for readability')
+
                 -- glow settings (left column)
                 local glowSection = settingsTab:Section('Glow', 'left')
                 local glowToggle = glowSection:Toggle('Glow', self._glow_enabled, function(newValue)
@@ -1638,6 +1663,7 @@
 
                 settingsRefs.font = themingFont
                 settingsRefs.theme = themingTheme
+                settingsRefs.textOutline = themingOutline
                 settingsRefs.themingColors = {
                     text     = themingTextColor,
                     body     = themingBodyColor,
@@ -1649,7 +1675,9 @@
                     surface1 = themingSurface1Color,
                     crust    = themingCrustColor,
                 }
-                themingTheme:Set({'Catppuccin'})
+                -- no themingTheme:Set here; dropdown already shows Catppuccin and
+                -- self._theming is already seeded with Catppuccin defaults. firing
+                -- :Set would stomp consumer-restored config via the callback chain
             end
             -- cache refs so CreateSettingsTab re-entry returns the same objects
             self._settings_tab_ref = settingsTab
@@ -1706,6 +1734,43 @@
             self._last_cleared_inactive_for = nil
             self._last_step_at = 0
             self._frame_dt = 16/1000
+            -- user-configurable state reset so reload loaders don't carry ghost values
+            self._copied_color = nil
+            self._overwrite_menu_key = false
+            self._menu_key = 'f1'
+            self._watermark_enabled = true
+            self._menu_fade_mul = nil
+            self._background_alpha = 92/100
+            self._glow_enabled = false
+            self._glow_color = nil
+            self._glow_mode = 'Static'
+            self._glow_s_intensity = 50
+            self._glow_s_radius = 10
+            self._glow_s_smooth = 15
+            self._glow_b_speed = 2
+            self._glow_b_intensity = 70
+            self._glow_b_radius = 14
+            self._glow_b_smooth = 15
+            self._glow_r_worm = 40
+            self._glow_r_speed = 3
+            self._glow_r_radius = 9
+            self._glow_r_intensity = 50
+            self._font_face = Drawing.Fonts.UI
+            self._font_name = 'UI'
+            self._font_size = 13
+            self._text_outline_enabled = false
+            self._theming = {
+                accent   = Color3.fromRGB(203, 166, 247),
+                unsafe   = Color3.fromRGB(255, 215, 64),
+                body     = Color3.fromRGB(17, 17, 27),
+                text     = Color3.fromRGB(205, 214, 244),
+                subtext  = Color3.fromRGB(127, 132, 156),
+                border1  = Color3.fromRGB(69, 71, 90),
+                border0  = Color3.fromRGB(49, 50, 68),
+                surface1 = Color3.fromRGB(49, 50, 68),
+                surface0 = Color3.fromRGB(30, 30, 46),
+                crust    = Color3.fromRGB(11, 11, 18),
+            }
             setrobloxinput(true)
         end
 
@@ -2669,6 +2734,9 @@
                             if itemType == 'toggle' or itemType == 'button' then
                                 overflowCheck = 26
                                 baseAdvance = 26
+                            elseif itemType == 'label' then
+                                overflowCheck = 20
+                                baseAdvance = 20
                             else
                                 overflowCheck = 34
                                 baseAdvance = 34
@@ -2984,7 +3052,8 @@
                                 if displayedValue == '' then displayedValue = '-' end
                                 local valueSize = self:_GetTextBounds(displayedValue)
                                 if valueSize.x > boxSize.x - 24 then
-                                    local multiText = tostring(#itemValue) .. ' item' .. (#itemValue == 1 and '' or 's')
+                                    local valueLen = (type(itemValue) == 'table') and #itemValue or 0
+                                    local multiText = tostring(valueLen) .. ' item' .. (valueLen == 1 and '' or 's')
                                     if self:_GetTextBounds(multiText).x < valueSize.x then
                                         displayedValue = multiText
                                     else
@@ -3150,6 +3219,12 @@
                                 local tbLabel = self:_TruncateText(sectionItem.label, widgetW - 4)
                                 self:_Draw(sectionItemId .. '_label', 'text', self._theming.text, 12, Vector2.new(widgetX, rowPos.y), tbLabel, true)
 
+                                cursorY = cursorY + rowH + 2
+
+                            elseif itemType == 'label' then
+                                local rowH = 18
+                                local lblText = self:_TruncateText(tostring(sectionItem.label or ''), widgetW)
+                                self:_Draw(sectionItemId .. '_text', 'text', self._theming.subtext, 12, Vector2.new(widgetX, cursorY + 2), lblText, true)
                                 cursorY = cursorY + rowH + 2
                             end
                             end -- overflow guard
