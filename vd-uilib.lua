@@ -20,6 +20,13 @@
         _menu_open = true,
         _menu_toggled_at = 0,
         _watermark_enabled = true,
+        _indicator_enabled = false,
+        _indicator_label   = "",
+        _indicator_active  = false,
+        _indicator_pos     = nil,  -- Vector2 or nil (nil = top-center default)
+        _indicator_drag    = nil,  -- offset Vector2 while dragging
+        _indicator_drag_origin = nil,  -- pos at drag-start, used to detect real-move vs bare-click
+        _indicator_drag_end_cb = nil,  -- fn(pos) called after drag release with movement
         _notifications = {},
         _notifications_spawned = 0,
         _open_tab = nil,
@@ -1087,6 +1094,33 @@
             self._watermark_enabled = value
         end
 
+        -- screen-locked status indicator pill (top-center). pulls theme colors only.
+        -- caller pushes state every frame; lib handles draw + cleanup + drag
+        function UILib:UpdateIndicator(enabled, label, active)
+            self._indicator_enabled = enabled == true
+            self._indicator_label   = label or ""
+            self._indicator_active  = active == true
+        end
+
+        -- pos: Vector2 / {x,y} table / nil (nil = reset to top-center default)
+        function UILib:SetIndicatorPosition(pos)
+            if pos == nil then
+                self._indicator_pos = nil
+                return
+            end
+            if type(pos) == 'table' then
+                local x = pos.X or pos.x
+                local y = pos.Y or pos.y
+                if type(x) == 'number' and type(y) == 'number' then
+                    self._indicator_pos = Vector2.new(x, y)
+                end
+            end
+        end
+
+        function UILib:OnIndicatorDragEnd(cb)
+            self._indicator_drag_end_cb = cb
+        end
+
         function UILib:SetMenuTitle(newTitle)
             self.title = newTitle
         end
@@ -1706,6 +1740,10 @@
             self._button_held = nil
             self._active_dropdown = nil
             self._active_colorpicker = nil
+            self._indicator_enabled = false
+            self._indicator_drag = nil
+            self._indicator_drag_origin = nil
+            self._indicator_drag_end_cb = nil
             self._menu_open = true
             self._menu_toggled_at = 0
             self._menu_fade_done = false
@@ -1844,6 +1882,76 @@
                 self:_Draw('watermark_text', 'text', self._theming.text, 103, watermarkPos + Vector2.new(self._padding + 12, self._padding/2), watermarkContent, true)
             else
                 self:_UndrawStartsWith('watermark_')
+            end
+
+            -- screen-locked status indicator pill (theme-colored, draggable)
+            if self._indicator_enabled then
+                local indLabel = self._indicator_label ~= '' and self._indicator_label or 'STATUS'
+                local indActive = self._indicator_active
+                local indTextSize = self:_GetTextBounds(indLabel, nil, 13)
+                local indW = indTextSize.x + self._padding * 2 + 14
+                local indH = indTextSize.y + self._padding + 2
+                local indScreen = self:_GetScreenSize()
+                local indMaxX = indScreen.x - indW
+                local indMaxY = indScreen.y - indH
+
+                -- resolve position: saved (clamped to current screen) or default top-center
+                local indPos
+                if self._indicator_pos then
+                    indPos = Vector2.new(
+                        clamp(self._indicator_pos.x, 0, indMaxX),
+                        clamp(self._indicator_pos.y, 0, indMaxY)
+                    )
+                else
+                    indPos = Vector2.new(math.floor(indMaxX / 2), 8)
+                end
+
+                -- drag handling (start when clicked inside, no other drag active)
+                local indMousePos = self:_GetMousePos()
+                local indMouseHeld = self:_IsKeyHeld('m1')
+                local indClickFrame = self:_IsKeyPressed('m1')
+                if indClickFrame and not self._indicator_drag and not self._menu_drag and not self._slider_drag
+                   and self:_IsMouseWithinBounds(indPos, Vector2.new(indW, indH)) then
+                    -- cache start pos so drag-end can detect a real move vs a bare click
+                    self._indicator_drag = Vector2.new(indMousePos.x - indPos.x, indMousePos.y - indPos.y)
+                    self._indicator_drag_origin = indPos
+                end
+                if indMouseHeld and self._indicator_drag then
+                    local nx = clamp(indMousePos.x - self._indicator_drag.x, 0, indMaxX)
+                    local ny = clamp(indMousePos.y - self._indicator_drag.y, 0, indMaxY)
+                    self._indicator_pos = Vector2.new(nx, ny)
+                    indPos = self._indicator_pos
+                elseif self._indicator_drag and not indMouseHeld then
+                    local origin = self._indicator_drag_origin
+                    self._indicator_drag = nil
+                    self._indicator_drag_origin = nil
+                    -- only fire callback if the pill actually moved
+                    if self._indicator_drag_end_cb and self._indicator_pos and origin
+                       and (self._indicator_pos.x ~= origin.x or self._indicator_pos.y ~= origin.y) then
+                        pcall(self._indicator_drag_end_cb, self._indicator_pos)
+                    end
+                end
+
+                local indBorderCol = indActive and self._theming.accent or self._theming.border1
+                local indDotCol    = indActive and self._theming.accent or self._theming.subtext
+                local indTextCol   = indActive and self._theming.text   or self._theming.subtext
+                -- body
+                self:_Draw('indicator_body', 'rect', self._theming.body, 105, indPos, Vector2.new(indW, indH), true)
+                self:_SetOpacity('indicator_body', clamp(self._background_alpha + 0.02, 5/100, 1))
+                -- outer crust
+                self:_Draw('indicator_crust', 'rect', self._theming.crust, 106, indPos, Vector2.new(indW, indH), false)
+                -- inner border (state-colored)
+                self:_Draw('indicator_border', 'rect', indBorderCol, 106, indPos + Vector2.new(1, 1), Vector2.new(indW, indH) - Vector2.new(2, 2), false)
+                -- state dot
+                local indDotCenter = indPos + Vector2.new(self._padding + 1, indH / 2 + 1)
+                self:_Draw('indicator_dot_ring', 'circle', self._theming.border1, 107, indDotCenter, 5, false, 1, 18)
+                self:_Draw('indicator_dot', 'circle', indDotCol, 108, indDotCenter, 2, true, 1, 18)
+                -- label
+                self:_Draw('indicator_text', 'text', indTextCol, 108, indPos + Vector2.new(self._padding + 12, self._padding/2), indLabel, true, nil, 13)
+            else
+                self:_UndrawStartsWith('indicator_')
+                self._indicator_drag = nil
+                self._indicator_drag_origin = nil
             end
 
             -- notifications (glass cards, stacked)
@@ -2766,7 +2874,7 @@
 
                                 -- keybind slot to the left of pill (if any)
                                 if itemKeybind then
-                                    local keybindText = itemKeybind._listening and '...' or (tostring(itemKeybind.value or '-')):upper()
+                                    local keybindText = itemKeybind._listening and '...' or (tostring(itemKeybind.value or '...')):upper()
                                     local keybindLabelSize = self:_GetTextBounds(keybindText, nil, 11)
                                     local kbW = keybindLabelSize.x + 8
                                     local kbH = 14
@@ -2809,6 +2917,12 @@
                                                         end
                                                         itemKeybind.value = newValue
                                                         itemKeybind._listening = false
+                                                        -- consume the click so consumer code reading the same key this
+                                                        -- frame doesn't also fire (e.g. autoparry Toggle mode would flip
+                                                        -- on the bind press otherwise)
+                                                        if self._inputs[keyName] then
+                                                            self._inputs[keyName].click = false
+                                                        end
                                                         break
                                                     end
                                                 end
@@ -2834,7 +2948,7 @@
                                         swatchX = rightEdge - swatchW
                                         swatchY = labelCenterY - swatchH / 2
                                     else
-                                        swatchX = (itemKeybind and (pillX - 26 - ((self:_GetTextBounds(itemKeybind._listening and '...' or (tostring(itemKeybind.value or '-')):upper(), nil, 11)).x + 8) - 4) or (pillX - swatchW - 8))
+                                        swatchX = (itemKeybind and (pillX - 26 - ((self:_GetTextBounds(itemKeybind._listening and '...' or (tostring(itemKeybind.value or '...')):upper(), nil, 11)).x + 8) - 4) or (pillX - swatchW - 8))
                                         swatchY = labelCenterY - swatchH / 2
                                     end
 
@@ -2905,7 +3019,7 @@
                                 -- compute label available width and truncate if necessary
                                 local labelAvailW = (pillX - 10) - widgetX
                                 if itemKeybind then
-                                    local kbW = self:_GetTextBounds(itemKeybind._listening and '...' or (tostring(itemKeybind.value or '-')):upper(), nil, 11).x + 8
+                                    local kbW = self:_GetTextBounds(itemKeybind._listening and '...' or (tostring(itemKeybind.value or '...')):upper(), nil, 11).x + 8
                                     labelAvailW = labelAvailW - kbW - 10
                                 end
                                 if itemColorpicker and not itemColorpicker.overwrite then
@@ -3304,8 +3418,8 @@
                     self:_UndrawStartsWith('menu_tooltip')
                 end
 
-                -- drag start: topbar only
-                if clickFrame and not self._menu_drag and self:_IsMouseWithinBounds(Vector2.new(self.x, self.y), Vector2.new(self.w, topbarH)) then
+                -- drag start: topbar only (indicator captures first if overlap)
+                if clickFrame and not self._menu_drag and not self._indicator_drag and self:_IsMouseWithinBounds(Vector2.new(self.x, self.y), Vector2.new(self.w, topbarH)) then
                     local mousePos = self:_GetMousePos()
                     self._menu_drag = Vector2.new(mousePos.x - self.x, mousePos.y - self.y)
                 end
