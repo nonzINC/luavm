@@ -33,6 +33,8 @@
         _tab_change_at = 0,
         _inputs = {['m1']={id=0x01,held=false,click=false},['m2']={id=0x02,held=false,click=false},['mb']={id=0x04,held=false,click=false},['unbound']={id=0x08,held=false,click=false},['tab']={id=0x09,held=false,click=false},['enter']={id=0x0D,held=false,click=false},['shift']={id=0x10,held=false,click=false},['ctrl']={id=0x11,held=false,click=false},['alt']={id=0x12,held=false,click=false},['pause']={id=0x13,held=false,click=false},['capslock']={id=0x14,held=false,click=false},['esc']={id=0x1B,held=false,click=false},['space']={id=0x20,held=false,click=false},['pageup']={id=0x21,held=false,click=false},['pagedown']={id=0x22,held=false,click=false},['end']={id=0x23,held=false,click=false},['home']={id=0x24,held=false,click=false},['left']={id=0x25,held=false,click=false},['up']={id=0x26,held=false,click=false},['right']={id=0x27,held=false,click=false},['down']={id=0x28,held=false,click=false},['insert']={id=0x2D,held=false,click=false},['delete']={id=0x2E,held=false,click=false},['0']={id=0x30,held=false,click=false},['1']={id=0x31,held=false,click=false},['2']={id=0x32,held=false,click=false},['3']={id=0x33,held=false,click=false},['4']={id=0x34,held=false,click=false},['5']={id=0x35,held=false,click=false},['6']={id=0x36,held=false,click=false},['7']={id=0x37,held=false,click=false},['8']={id=0x38,held=false,click=false},['9']={id=0x39,held=false,click=false},['a']={id=0x41,held=false,click=false},['b']={id=0x42,held=false,click=false},['c']={id=0x43,held=false,click=false},['d']={id=0x44,held=false,click=false},['e']={id=0x45,held=false,click=false},['f']={id=0x46,held=false,click=false},['g']={id=0x47,held=false,click=false},['h']={id=0x48,held=false,click=false},['i']={id=0x49,held=false,click=false},['j']={id=0x4A,held=false,click=false},['k']={id=0x4B,held=false,click=false},['l']={id=0x4C,held=false,click=false},['m']={id=0x4D,held=false,click=false},['n']={id=0x4E,held=false,click=false},['o']={id=0x4F,held=false,click=false},['p']={id=0x50,held=false,click=false},['q']={id=0x51,held=false,click=false},['r']={id=0x52,held=false,click=false},['s']={id=0x53,held=false,click=false},['t']={id=0x54,held=false,click=false},['u']={id=0x55,held=false,click=false},['v']={id=0x56,held=false,click=false},['w']={id=0x57,held=false,click=false},['x']={id=0x58,held=false,click=false},['y']={id=0x59,held=false,click=false},['z']={id=0x5A,held=false,click=false},['numpad0']={id=0x60,held=false,click=false},['numpad1']={id=0x61,held=false,click=false},['numpad2']={id=0x62,held=false,click=false},['numpad3']={id=0x63,held=false,click=false},['numpad4']={id=0x64,held=false,click=false},['numpad5']={id=0x65,held=false,click=false},['numpad6']={id=0x66,held=false,click=false},['numpad7']={id=0x67,held=false,click=false},['numpad8']={id=0x68,held=false,click=false},['numpad9']={id=0x69,held=false,click=false},['multiply']={id=0x6A,held=false,click=false},['add']={id=0x6B,held=false,click=false},['separator']={id=0x6C,held=false,click=false},['subtract']={id=0x6D,held=false,click=false},['decimal']={id=0x6E,held=false,click=false},['divide']={id=0x6F,held=false,click=false},['f1']={id=0x70,held=false,click=false},['f2']={id=0x71,held=false,click=false},['f3']={id=0x72,held=false,click=false},['f4']={id=0x73,held=false,click=false},['f5']={id=0x74,held=false,click=false},['f6']={id=0x75,held=false,click=false},['f7']={id=0x76,held=false,click=false},['f8']={id=0x77,held=false,click=false},['f9']={id=0x78,held=false,click=false},['f10']={id=0x79,held=false,click=false},['f11']={id=0x7A,held=false,click=false},['f12']={id=0x7B,held=false,click=false},['numlock']={id=0x90,held=false,click=false},['scrolllock']={id=0x91,held=false,click=false},['lshift']={id=0xA0,held=false,click=false},['rshift']={id=0xA1,held=false,click=false},['lctrl']={id=0xA2,held=false,click=false},['rctrl']={id=0xA3,held=false,click=false},['lalt']={id=0xA4,held=false,click=false},['ralt']={id=0xA5,held=false,click=false},['semicolon']={id=0xBA,held=false,click=false},['plus']={id=0xBB,held=false,click=false},['comma']={id=0xBC,held=false,click=false},['minus']={id=0xBD,held=false,click=false},['period']={id=0xBE,held=false,click=false},['slash']={id=0xBF,held=false,click=false},['tilde']={id=0xC0,held=false,click=false},['lbracket']={id=0xDB,held=false,click=false},['backslash']={id=0xDC,held=false,click=false},['rbracket']={id=0xDD,held=false,click=false},['quote']={id=0xDE,held=false,click=false}},
         _slider_drag = nil,
+        _range_slider_drag = nil,
+        _range_slider_handle = nil,
         _menu_drag = nil,
         _input_ctx = nil,
         _button_held = nil,
@@ -835,6 +837,7 @@
                 suffix = suffix or '',
                 callback = callback,
                 tooltip = tooltip,
+                _active = true,
                 _y_offset = 0,
             }
             table.insert(self._tree[tabName]._items[sectionName]._items, item)
@@ -852,6 +855,72 @@
                     end
                     it.value = newValue
                     if it.callback then it.callback(newValue) end
+                end
+            handle.SetActive = function(_, active)
+                    local it = self._tree[tabName]._items[sectionName]._items[itemId]
+                    it._active = (active ~= false)
+                end
+            return handle
+        end
+
+        function UILib:_RangeSlider(tabName, sectionName, label, valueLow, valueHigh, step, min, max, suffix, callback, tooltip)
+            local itemId = #self._tree[tabName]._items[sectionName]._items + 1
+            -- guard against invalid step/min/max that would crash rendering
+            step = tonumber(step) or 1
+            if step <= 0 then step = 1 end
+            min = tonumber(min) or 0
+            max = tonumber(max) or 1
+            if max <= min then max = min + 1 end
+            local function snap(v)
+                v = tonumber(v) or min
+                if v < min then v = min end
+                if v > max then v = max end
+                v = min + math.floor(((v - min) / step) + 0.5) * step
+                if v > max then v = max end
+                if v < min then v = min end
+                return v
+            end
+            valueLow  = snap(valueLow)
+            valueHigh = snap(valueHigh)
+            if valueLow > valueHigh then valueLow, valueHigh = valueHigh, valueLow end
+            local item = {
+                type_ = 'range_slider',
+                label = label,
+                valueLow = valueLow,
+                valueHigh = valueHigh,
+                step = step,
+                min = min,
+                max = max,
+                suffix = suffix or '',
+                callback = callback,
+                tooltip = tooltip,
+                _active = true,
+                _drag_handle = nil, -- "low" | "high" | nil
+                _y_offset = 0,
+            }
+            table.insert(self._tree[tabName]._items[sectionName]._items, item)
+            local handle = self:_MakeItemHandle(tabName, sectionName, itemId, {})
+            handle.Set = function(_, lo, hi)
+                    local it = self._tree[tabName]._items[sectionName]._items[itemId]
+                    local function s(v)
+                        v = tonumber(v) or it.min
+                        if v < it.min then v = it.min end
+                        if v > it.max then v = it.max end
+                        if it.step and it.step > 0 then
+                            v = it.min + math.floor(((v - it.min) / it.step) + 0.5) * it.step
+                            if v > it.max then v = it.max end
+                        end
+                        return v
+                    end
+                    lo = s(lo); hi = s(hi)
+                    if lo > hi then lo, hi = hi, lo end
+                    it.valueLow = lo
+                    it.valueHigh = hi
+                    if it.callback then it.callback(lo, hi) end
+                end
+            handle.SetActive = function(_, active)
+                    local it = self._tree[tabName]._items[sectionName]._items[itemId]
+                    it._active = (active ~= false)
                 end
             return handle
         end
@@ -1012,6 +1081,11 @@
                         itemHandle:SetColumn(defaultColumn)
                         return itemHandle
                     end,
+                    RangeSlider = function(_, ...)
+                        local itemHandle = self:_RangeSlider(tabName, sectionName, ...)
+                        itemHandle:SetColumn(defaultColumn)
+                        return itemHandle
+                    end,
                     Dropdown = function(_, ...)
                         local itemHandle = self:_Dropdown(tabName, sectionName, ...)
                         itemHandle:SetColumn(defaultColumn)
@@ -1038,6 +1112,7 @@
             sectionApi = {
                 Toggle = function(_, ...) return self:_Toggle(tabName, sectionName, ...) end,
                 Slider = function(_, ...) return self:_Slider(tabName, sectionName, ...) end,
+                RangeSlider = function(_, ...) return self:_RangeSlider(tabName, sectionName, ...) end,
                 Dropdown = function(_, ...) return self:_Dropdown(tabName, sectionName, ...) end,
                 FontDropdown = function(_, label, currentFont, callback, opts)
                     return buildFontDropdown(label, currentFont, callback, opts)
@@ -1735,6 +1810,8 @@
             self._notifications = {}
             self._notifications_spawned = 0
             self._slider_drag = nil
+            self._range_slider_drag = nil
+            self._range_slider_handle = nil
             self._menu_drag = nil
             self._input_ctx = nil
             self._button_held = nil
@@ -1910,7 +1987,7 @@
                 local indMousePos = self:_GetMousePos()
                 local indMouseHeld = self:_IsKeyHeld('m1')
                 local indClickFrame = self:_IsKeyPressed('m1')
-                if indClickFrame and not self._indicator_drag and not self._menu_drag and not self._slider_drag
+                if indClickFrame and not self._indicator_drag and not self._menu_drag and not self._slider_drag and not self._range_slider_drag
                    and self:_IsMouseWithinBounds(indPos, Vector2.new(indW, indH)) then
                     -- cache start pos so drag-end can detect a real move vs a bare click
                     self._indicator_drag = Vector2.new(indMousePos.x - indPos.x, indMousePos.y - indPos.y)
@@ -3059,12 +3136,13 @@
                                 local trackH = 4
                                 local trackPos = Vector2.new(widgetX, rowPos.y + 18)
                                 local trackSize = Vector2.new(widgetW, trackH)
+                                local isActive = (sectionItem._active ~= false)
 
-                                -- interaction
+                                -- interaction (gated when passive)
                                 local newValue = itemValue
                                 local hitPos = Vector2.new(trackPos.x - 4, trackPos.y - 6)
                                 local hitSize = Vector2.new(trackSize.x + 8, trackSize.y + 12)
-                                if mouseHeld then
+                                if mouseHeld and isActive then
                                     if self:_IsMouseWithinBounds(hitPos, hitSize) and clickFrame then
                                         self._slider_drag = sectionItemId
                                         clickFrame = false
@@ -3104,11 +3182,17 @@
                                     animatedFillPercent = self:_StepAnim(sectionItemId .. '_slider_fill_anim', fillPercent, 22)
                                 end
 
+                                -- color palette w passive dim
+                                local fillCol  = isActive and self._theming.accent or self:_LerpColor(self._theming.accent, self._theming.surface1, 0.5)
+                                local knobActiveCol = isActive and self._theming.text   or self:_LerpColor(self._theming.text, self._theming.subtext, 0.6)
+                                local valCol   = fillCol
+                                local labelCol = isActive and self._theming.text or self._theming.subtext
+
                                 -- track bg
                                 self:_Draw(sectionItemId .. '_track_bg', 'rect', self._theming.surface1, 12, trackPos, trackSize, true)
                                 -- track fill
                                 if animatedFillPercent > 0.002 then
-                                    self:_Draw(sectionItemId .. '_track_fill', 'rect', self._theming.accent, 13, trackPos, Vector2.new(trackSize.x * animatedFillPercent, trackH), true)
+                                    self:_Draw(sectionItemId .. '_track_fill', 'rect', fillCol, 13, trackPos, Vector2.new(trackSize.x * animatedFillPercent, trackH), true)
                                 else
                                     self:_Undraw(sectionItemId .. '_track_fill')
                                 end
@@ -3119,7 +3203,7 @@
                                 if knobX < trackPos.x then knobX = trackPos.x end
                                 if knobX > trackPos.x + trackSize.x - 6 then knobX = trackPos.x + trackSize.x - 6 end
                                 local knobY = trackPos.y - 3
-                                local knobColor = (self._slider_drag == sectionItemId) and self._theming.accent or self._theming.text
+                                local knobColor = (self._slider_drag == sectionItemId) and fillCol or knobActiveCol
                                 self:_Draw(sectionItemId .. '_knob', 'rect', knobColor, 15, Vector2.new(knobX, knobY), Vector2.new(6, 10), true)
                                 self:_Draw(sectionItemId .. '_knob_border', 'rect', self._theming.crust, 16, Vector2.new(knobX, knobY), Vector2.new(6, 10), false)
 
@@ -3127,8 +3211,137 @@
                                 local valText = formatStep(itemValue, sectionItem.step) .. (sectionItem.suffix or '')
                                 local valSize = self:_GetTextBounds(valText)
                                 local sliderLabel = self:_TruncateText(sectionItem.label, widgetW - valSize.x - 10)
-                                self:_Draw(sectionItemId .. '_label', 'text', self._theming.text, 12, Vector2.new(widgetX, rowPos.y), sliderLabel, true)
-                                self:_Draw(sectionItemId .. '_value', 'text', self._theming.accent, 12, Vector2.new(widgetX + widgetW - valSize.x, rowPos.y), valText, true)
+                                self:_Draw(sectionItemId .. '_label', 'text', labelCol, 12, Vector2.new(widgetX, rowPos.y), sliderLabel, true)
+                                self:_Draw(sectionItemId .. '_value', 'text', valCol, 12, Vector2.new(widgetX + widgetW - valSize.x, rowPos.y), valText, true)
+
+                                cursorY = cursorY + rowH + 4
+
+                            elseif itemType == 'range_slider' then
+                                local rowH = 30
+                                local rowPos = Vector2.new(widgetX, cursorY)
+                                local trackH = 4
+                                local trackPos = Vector2.new(widgetX, rowPos.y + 18)
+                                local trackSize = Vector2.new(widgetW, trackH)
+                                local isActive = (sectionItem._active ~= false)
+                                local sMin = sectionItem.min or 0
+                                local sMax = sectionItem.max or 1
+                                local sStep = sectionItem.step
+                                local rng = sMax - sMin
+                                if rng <= 0 then rng = 1 end
+
+                                local function snapVal(v)
+                                    v = tonumber(v) or sMin
+                                    if v < sMin then v = sMin end
+                                    if v > sMax then v = sMax end
+                                    if sStep and sStep > 0 then
+                                        v = sMin + math.floor(((v - sMin) / sStep) + 0.5) * sStep
+                                        if v > sMax then v = sMax end
+                                        if v < sMin then v = sMin end
+                                    end
+                                    return v
+                                end
+
+                                local lowVal  = snapVal(sectionItem.valueLow)
+                                local highVal = snapVal(sectionItem.valueHigh)
+
+                                -- interaction (gated when passive)
+                                local hitPos = Vector2.new(trackPos.x - 4, trackPos.y - 6)
+                                local hitSize = Vector2.new(trackSize.x + 8, trackSize.y + 12)
+                                if mouseHeld and isActive then
+                                    local mxNow = self:_GetMousePos().x
+                                    if self:_IsMouseWithinBounds(hitPos, hitSize) and clickFrame and not self._slider_drag and not self._range_slider_drag then
+                                        -- pick handle nearest to click x; tiebreak by mouse side when stacked
+                                        local lowX  = trackPos.x + trackSize.x * ((lowVal  - sMin) / rng)
+                                        local highX = trackPos.x + trackSize.x * ((highVal - sMin) / rng)
+                                        local pick
+                                        if lowX == highX then
+                                            pick = (mxNow >= lowX) and 'high' or 'low'
+                                        elseif math.abs(mxNow - lowX) < math.abs(mxNow - highX) then
+                                            pick = 'low'
+                                        else
+                                            pick = 'high'
+                                        end
+                                        self._range_slider_drag = sectionItemId
+                                        self._range_slider_handle = pick
+                                        clickFrame = false
+                                    end
+                                    if self._range_slider_drag == sectionItemId then
+                                        local mouseX = mxNow - trackPos.x
+                                        local percent = clamp(mouseX / trackSize.x, 0, 1)
+                                        local v = sMin + (sMax - sMin) * percent
+                                        v = snapVal(v)
+                                        if self._range_slider_handle == 'low' then
+                                            lowVal = v
+                                            if lowVal > highVal then
+                                                lowVal, highVal = highVal, lowVal
+                                                self._range_slider_handle = 'high'
+                                            end
+                                        else
+                                            highVal = v
+                                            if highVal < lowVal then
+                                                lowVal, highVal = highVal, lowVal
+                                                self._range_slider_handle = 'low'
+                                            end
+                                        end
+                                    end
+                                else
+                                    if self._range_slider_drag == sectionItemId then
+                                        self._range_slider_drag = nil
+                                        self._range_slider_handle = nil
+                                    end
+                                end
+
+                                if lowVal ~= sectionItem.valueLow or highVal ~= sectionItem.valueHigh then
+                                    sectionItem.valueLow  = lowVal
+                                    sectionItem.valueHigh = highVal
+                                    if itemCallback then itemCallback(lowVal, highVal) end
+                                end
+
+                                local pctLow  = clamp((lowVal  - sMin) / rng, 0, 1)
+                                local pctHigh = clamp((highVal - sMin) / rng, 0, 1)
+                                local animLow  = self:_StepAnim(sectionItemId .. '_range_low_anim',  pctLow,  22)
+                                local animHigh = self:_StepAnim(sectionItemId .. '_range_high_anim', pctHigh, 22)
+
+                                local fillCol  = isActive and self._theming.accent or self:_LerpColor(self._theming.accent, self._theming.surface1, 0.5)
+                                local knobCol  = isActive and self._theming.text   or self:_LerpColor(self._theming.text, self._theming.subtext, 0.6)
+                                local valCol   = fillCol
+                                local labelCol = isActive and self._theming.text or self._theming.subtext
+
+                                -- track bg
+                                self:_Draw(sectionItemId .. '_rs_track_bg', 'rect', self._theming.surface1, 12, trackPos, trackSize, true)
+                                -- inner fill (between handles)
+                                local fillX = trackPos.x + trackSize.x * animLow
+                                local fillW = trackSize.x * (animHigh - animLow)
+                                if fillW > 0.5 then
+                                    self:_Draw(sectionItemId .. '_rs_fill', 'rect', fillCol, 13, Vector2.new(fillX, trackPos.y), Vector2.new(fillW, trackH), true)
+                                else
+                                    self:_Undraw(sectionItemId .. '_rs_fill')
+                                end
+                                self:_Draw(sectionItemId .. '_rs_track_border', 'rect', self._theming.crust, 14, trackPos, trackSize, false)
+
+                                -- low knob
+                                local lowKnobX = trackPos.x + trackSize.x * animLow - 3
+                                if lowKnobX < trackPos.x then lowKnobX = trackPos.x end
+                                if lowKnobX > trackPos.x + trackSize.x - 6 then lowKnobX = trackPos.x + trackSize.x - 6 end
+                                local lowKnobCol = (self._range_slider_drag == sectionItemId and self._range_slider_handle == 'low') and fillCol or knobCol
+                                self:_Draw(sectionItemId .. '_rs_knob_low', 'rect', lowKnobCol, 15, Vector2.new(lowKnobX, trackPos.y - 3), Vector2.new(6, 10), true)
+                                self:_Draw(sectionItemId .. '_rs_knob_low_b', 'rect', self._theming.crust, 16, Vector2.new(lowKnobX, trackPos.y - 3), Vector2.new(6, 10), false)
+
+                                -- high knob
+                                local highKnobX = trackPos.x + trackSize.x * animHigh - 3
+                                if highKnobX < trackPos.x then highKnobX = trackPos.x end
+                                if highKnobX > trackPos.x + trackSize.x - 6 then highKnobX = trackPos.x + trackSize.x - 6 end
+                                local highKnobCol = (self._range_slider_drag == sectionItemId and self._range_slider_handle == 'high') and fillCol or knobCol
+                                self:_Draw(sectionItemId .. '_rs_knob_high', 'rect', highKnobCol, 15, Vector2.new(highKnobX, trackPos.y - 3), Vector2.new(6, 10), true)
+                                self:_Draw(sectionItemId .. '_rs_knob_high_b', 'rect', self._theming.crust, 16, Vector2.new(highKnobX, trackPos.y - 3), Vector2.new(6, 10), false)
+
+                                -- label + value (low - high)
+                                local sfx = sectionItem.suffix or ''
+                                local valText = formatStep(lowVal, sStep) .. sfx .. ' - ' .. formatStep(highVal, sStep) .. sfx
+                                local valSize = self:_GetTextBounds(valText)
+                                local sliderLabel = self:_TruncateText(sectionItem.label, widgetW - valSize.x - 10)
+                                self:_Draw(sectionItemId .. '_rs_label', 'text', labelCol, 12, Vector2.new(widgetX, rowPos.y), sliderLabel, true)
+                                self:_Draw(sectionItemId .. '_rs_value', 'text', valCol, 12, Vector2.new(widgetX + widgetW - valSize.x, rowPos.y), valText, true)
 
                                 cursorY = cursorY + rowH + 4
 
@@ -3430,6 +3643,8 @@
                 self._input_ctx = nil
                 self._menu_drag = nil
                 self._slider_drag = nil
+                self._range_slider_drag = nil
+                self._range_slider_handle = nil
                 self._button_held = nil
                 -- clear any sticky keybind listening state so menu open doesnt resume capture
                 for _, tabData in pairs(self._tree) do
